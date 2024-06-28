@@ -6,11 +6,7 @@ import os
 from collections import OrderedDict
 
 # External dependencies
-import astropy
 from astropy.io import fits
-from astropy.io.fits import verify
-from astropy.io.fits.hdu.image import PrimaryHDU
-from astropy.time import Time
 from astropy.table import Table
 import numpy as np
 import pandas as pd
@@ -22,17 +18,17 @@ import hashlib
 from core.tools.git import *
 from core.models.receipt_columns import *
 from core.models.config_columns import *
-from kpfpipe.models.metadata.KPF_definitions import FITS_TYPE_MAP
+from core.models.definitions import FITS_TYPE_MAP
 
-class KPFDataModel(object):
-    '''The base class for all KPF data models.
+class RVDataModel(object):
+    '''The base class for all RV data models.
 
     Warning: 
-        This class (KPFDataModel) should not be used directly.
+        This class (RVDataModel) should not be used directly.
         Based on the data level of your .fits file, used the appropriate
         level specific data model.
 
-    This is the base model for all KPF data models. Level specific data inherit
+    This is the base model for all data models. Level specific data inherit
     from this class, so any attribute and method listed here applies to all data
     models.
 
@@ -45,35 +41,25 @@ class KPFDataModel(object):
             of Astropy header objects. The first layer is the name of the header, and the second layer 
             is the name of the key.
             
-            Note: 
-                For KPF, FITS extensions are identified by their name
-
-            Examples
-                >>> from kpfpipe.models.level0 import KPF0
-                # Assume we have an NEID level 0 file called "level0.fits"
-                >>> level0 = KPF0.from_fits('level0.fits', 'NEID')
-                # Accessing key 'OBS_TIME' from the 'PRIMARY' HDU
-                >>> obs_time = level0.header['PRIMARY']['OBS_TIME'] 
-
         receipt (pandas.DataFrame): a table that records the history of this data
 
             The receipt keeps track of the data process history, so that the information
             stored by this instance can be reproduced from the original data. It is 
             structured as a pandas.DataFrame table, with each row as an entry
 
-            Primitives that modifies the content of a data product are expected to also 
+            Anything that modifies the content of a data product are expected to also 
             write to the receipt. Three string inputs from the primitive are required: name, 
             any relevant parameters, and a status. The receipt will also automatically fill 
             in additional information, such as the time of execution, code release version, 
             current branch, ect. 
 
             Note: 
-                It is not recommended to modify the Dataframe directly. Use the provided methods
+                It is not recommended to modify the receipt Dataframe directly. Use the provided methods
                 to make any adjustments.
 
             Examples:
-                >>> from kpfpipe.models.level0 import KPF0
-                >>> data = KPF0()
+                >>> from core.models.level1 import RV1
+                >>> data = RV1()
                 # Add an entry into the receipt
                 # Three args are required: name_of_primitive, param, status
                 >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
@@ -88,13 +74,13 @@ class KPFDataModel(object):
             one may modify it directly. Creating an extension will also create a new key-value 
             pair in header, so that one can write header keywords to the extension. When writing to
             FITS extensions are stored in the FITS data type as specified in 
-            kpfpipe.models.metadata.KPF_definitions.FITS_TYPE_MAP (image or binary table). Whitespace or 
+            core.models.definitions.FITS_TYPE_MAP (image or binary table). Whitespace or 
             any symbols that may be interpreted by Python as an operator (e.g. -) are not
             allowed in extension names.
 
             Examples:
-                >>> from kpfpipe.models.level0 import KPF0
-                >>> data = KPF0()
+                >>> from core.models.level1 import RV1
+                >>> data = RV1()
                 # Add an extension
                 # A unique name is required
                 >>> data.create_extension('extension1', pd.DataFrame)
@@ -159,16 +145,15 @@ class KPFDataModel(object):
 # =============================================================================
 # I/O related methods
     @classmethod
-    def from_fits(cls, fn, data_type='KPF'):
+    def from_fits(cls, fn):
         """Create a data instance from a file
 
         This method emplys the ``read`` method for reading the file. Refer to 
-        it for more detail.
+        it for more detail. It is assume that the input FITS file is in RVData standard format
 
         Args: 
             fn (str): file path (relative to the repository)
-            data_type (str): (optional) instrument type of the file [default='KPF']
-            
+
         Returns: 
             cls (data model class): the data instance containing the file content
 
@@ -176,19 +161,18 @@ class KPFDataModel(object):
         this_data = cls()
         if not os.path.isfile(fn):
             raise IOError(f'{fn} does not exist.')
-            # this_data.to_fits(fn)
+
         # populate it with self.read()
-        this_data.read(fn, data_type=data_type)
+        this_data.read(fn)
         # Return this instance
         return this_data
 
-    def read(self, fn, data_type, overwrite=False):
-        """Read the content of a .fits file and populate this 
+    def read(self, fn):
+        """Read the content of a RVData standard .fits file and populate this 
         data structure. 
 
         Args: 
             fn (str): file path (relative to the repository)
-            data_type (str): instrument type of the file
             overwrite (bool): if this instance is not empty, specifies whether to overwrite
         
         Raises:
@@ -202,11 +186,6 @@ class KPFDataModel(object):
         if not fn.endswith('.fits'):
             # Can only read .fits files
             raise IOError('input files must be FITS files')
-
-        if not overwrite and self.filename is not None:
-            # This instance already contains data, and
-            # we don't want to overwrite 
-            raise IOError('Cannot overwrite existing data')
 
         self.filename = os.path.basename(fn)
         self.dirname = os.path.dirname(fn)
@@ -227,13 +206,6 @@ class KPFDataModel(object):
                         setattr(self, hdu.name.lower(), getattr(self, hdu.name))
                     self.header[hdu.name] = hdu.header
                     setattr(self, hdu.name, t.to_pandas())
-            # Leave the rest of HDUs to level specific readers
-            if data_type in self.read_methods.keys():
-                self.read_methods[data_type](hdu_list)
-            else:
-                # the provided data_type is not recognized, ie.
-                # not in the self.read_methods list
-                raise IOError('cannot recognize data type {}'.format(data_type))
 
         # compute MD5 sum of source file and write it into a receipt entry for tracking.
         # Note that MD5 sum has known security vulnerabilities, but we are only using
@@ -268,15 +240,7 @@ class KPFDataModel(object):
             raise TypeError('Write method not found. Is this the base class?')
         else: 
             hdu_list = gen_hdul()
-        
-        # check that no card in any HDU is greater than 80
-        # this is a hard limit by FITS 
-        for hdu in hdu_list:
-            if 'OBS FILE' in hdu.header.keys():
-                del hdu.header['OBS FILE']
-            elif 'PRIMARY' in hdu.header.keys():
-                del hdu.header['PRIMARY']
-            
+                    
         # finish up writing
         hdul = fits.HDUList(hdu_list)
         if not os.path.isdir(os.path.dirname(fn)):
@@ -321,21 +285,13 @@ class KPFDataModel(object):
 
         # add the row to the bottom of the table
         row = {'Time': time,
-               'Code_Release': git_tag,
+               'Code_Tag': git_tag,
                'Commit_Hash': git_commit_hash,
-               'Branch_Name': git_branch,
-               'Chip': chip,
-               'Module_Name': module,
-               'Module_Level': str(self.level),
-               'Module_Path': mod_path,
-               'Module_Param': param,
-               'Status': status}
+               'Branch_Name': git_branch}
+        
         self.receipt = self.receipt.append(row, ignore_index=True)
         self.RECEIPT = self.receipt
 
-        # add DRPTAG and DRPHASH to primary header
-        self.header['PRIMARY']['DRPTAG'] = git_tag
-        self.header['PRIMARY']['DRPHASH'] = git_commit_hash
 
     def receipt_info(self, receipt_name):
         '''
@@ -345,7 +301,7 @@ class KPFDataModel(object):
             receipt_name (string): name of the receipt
         '''
         rec = getattr(self, receipt_name)
-        msg = rec['Time', 'Module_Name', 'Status']
+        msg = rec['Time', 'Code_Tag', 'Status']
         print(msg)
 
 # =============================================================================
@@ -385,17 +341,13 @@ class KPFDataModel(object):
             ext_name (str): extension name
             
         '''
-        base = KPFDataModel()
+        base = RVDataModel()
         core_extensions = base.header.keys()
         if ext_name in core_extensions:
             raise KeyError('Can not remove any of the core extensions: {}'.format(core_extensions))
         elif ext_name not in self.extensions.keys():
             return
-            # raise KeyError('Extension {} could not be found'.format(ext_name))
         
         delattr(self, ext_name)
         del self.header[ext_name]
         del self.extensions[ext_name]
-
-if __name__ == '__main__':
-    pass
