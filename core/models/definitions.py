@@ -8,12 +8,12 @@ from collections import OrderedDict
 
 ## Header keywords required by all levels of data
 # defined in a series of CSV files
-LEVEL1_HEADER_FILE = os.path.abspath(os.path.dirname(__file__)) + '/headers/L1.csv'
+LEVEL2_HEADER_FILE = os.path.abspath(os.path.dirname(__file__)) + '/headers/L2.csv'
 
 # Minimum level 1 extensions should be defined here
 # as a dictionary with the name of the extensions as keys
 # and the fits data type as the values
-LEVEL1_EXTENSIONS = {'PRIMARY': fits.PrimaryHDU,
+LEVEL2_EXTENSIONS = {'PRIMARY': fits.PrimaryHDU,
                      'RECEIPT': fits.BinTableHDU,
                      'CONFIG': fits.BinTableHDU,
                      'TELEMETRY': fits.BinTableHDU,

@@ -14,9 +14,9 @@ import pandas as pd
 from core.models.base import RVDataModel
 from core.models import definitions
 
-class RV1(RVDataModel):
+class RV2(RVDataModel):
     """
-    The level 1 RV data. Initialized with empty fields.
+    The level 2 RV data. Initialized with empty fields.
     Attributes inherited from RVDataModel, additional attributes below.
 
     """

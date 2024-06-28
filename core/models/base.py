@@ -250,15 +250,13 @@ class RVDataModel(object):
 
 # =============================================================================
 # Receipt related members
-    def receipt_add_entry(self, module, mod_path, param, status, chip='all'):
+    def receipt_add_entry(self, module, status):
         '''
         Add an entry to the receipt
 
         Args:
             module (str): Name of the module making this entry
-            param (str): param to be recorded
             status (str): status to be recorded
-            chip (str): (optional) which ccd [default='all']
         '''
         
         # time of execution in ISO format
