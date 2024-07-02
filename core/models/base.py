@@ -283,23 +283,25 @@ class RVDataModel(object):
 
         # add the row to the bottom of the table
         row = {'Time': time,
-               'Code_Tag': git_tag,
+               'Code_Release': git_tag,
                'Commit_Hash': git_commit_hash,
-               'Branch_Name': git_branch}
+               'Branch_Name': git_branch,
+               'Module_Name': module,
+               'Status': status}
         
         self.receipt = self.receipt.append(row, ignore_index=True)
         self.RECEIPT = self.receipt
 
 
-    def receipt_info(self, receipt_name):
+    def receipt_info(self):
         '''
         Print the short version of the receipt
 
         Args:
             receipt_name (string): name of the receipt
         '''
-        rec = getattr(self, receipt_name)
-        msg = rec['Time', 'Code_Tag', 'Status']
+        rec = self.receipt
+        msg = rec['Time', 'Module_Name', 'Status']
         print(msg)
 
 # =============================================================================
