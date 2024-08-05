@@ -24,7 +24,7 @@ class RV2(RVDataModel):
 
     def __init__(self):
         super().__init__()
-        self.level = 1
+        self.level = 2 
         extensions = copy.copy(definitions.LEVEL2_EXTENSIONS)
         python_types = copy.copy(definitions.FITS_TYPE_MAP)
         # add empty level2 extensions and empty headers for each extension
