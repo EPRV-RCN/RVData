@@ -1,5 +1,6 @@
 
 from astropy.io import fits
+from specutils import SpectrumCollection
 
 import numpy as np
 import os
@@ -16,23 +17,17 @@ LEVEL2_HEADER_FILE = os.path.abspath(os.path.dirname(__file__)) + '/headers/L2.c
 LEVEL2_EXTENSIONS = {'PRIMARY': fits.PrimaryHDU,
                      'RECEIPT': fits.BinTableHDU,
                      'CONFIG': fits.BinTableHDU,
-                     'TELEMETRY': fits.BinTableHDU,
 
-                     'SCI_FLUX': fits.ImageHDU,
-                     'SKY_FLUX': fits.ImageHDU,
-                     'CAL_FLUX': fits.ImageHDU,
-                     'SCI_VAR': fits.ImageHDU,
-                     'SKY_VAR': fits.ImageHDU,
-                     'CAL_VAR': fits.ImageHDU,
-                     'SCI_WAVE': fits.ImageHDU,
-                     'SKY_WAVE': fits.ImageHDU,
-                     'CAL_WAVE': fits.ImageHDU,
-                     'TELLURIC': fits.BinTableHDU,
+                     'SCI': fits.ImageHDU,
+                     'SKY': fits.ImageHDU,
+                     'CAL': fits.ImageHDU,
                      
                      'BARY_CORR': fits.BinTableHDU
                     }
 
 # mapping between fits extension data types and Python object data types
 FITS_TYPE_MAP = {fits.PrimaryHDU: OrderedDict,
-                 fits.ImageHDU: np.array,
+                 fits.ImageHDU: SpectrumCollection,
                  fits.BinTableHDU: pd.DataFrame}
+
+INSTRUMENT_READERS = {'KPF': {'module': 'instruments.kpf.level2', 'class': 'KPFRV2', 'method': '_read'}}
