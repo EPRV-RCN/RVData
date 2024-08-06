@@ -33,7 +33,6 @@ class KPFRV2(RV2):
                 setattr(self, out_ext, spec)
                 self.header[out_ext] = meta
             
-
             for fiber in ['SKY', 'CAL']:
                 flux_ext = f'{chip}_{fiber}_FLUX'
                 wave_ext = f'{chip}_{fiber}_WAVE'
