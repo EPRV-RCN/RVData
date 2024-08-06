@@ -4,6 +4,7 @@ Standard models for RV data
 # Standard dependencies
 import os
 from collections import OrderedDict
+import importlib
 
 # External dependencies
 from astropy.io import fits
@@ -18,7 +19,7 @@ import hashlib
 from core.tools.git import *
 from core.models.receipt_columns import *
 from core.models.config_columns import *
-from core.models.definitions import FITS_TYPE_MAP
+from core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
 
 class RVDataModel(object):
     '''The base class for all RV data models.
@@ -126,7 +127,7 @@ class RVDataModel(object):
 
         # level of data model
         self.level = None # set in each derived class
-        self.read_methods = dict()
+        self.read_methods = INSTRUMENT_READERS
 
     def __getitem__(self, key):
         return getattr(self, key.upper())
@@ -145,7 +146,7 @@ class RVDataModel(object):
 # =============================================================================
 # I/O related methods
     @classmethod
-    def from_fits(cls, fn):
+    def from_fits(cls, fn, instrument=None):
         """Create a data instance from a file
 
         This method emplys the ``read`` method for reading the file. Refer to 
@@ -153,6 +154,7 @@ class RVDataModel(object):
 
         Args: 
             fn (str): file path (relative to the repository)
+            instrument (str): name of instrument. None implies FITS file is in EPRV standard format.
 
         Returns: 
             cls (data model class): the data instance containing the file content
@@ -163,16 +165,17 @@ class RVDataModel(object):
             raise IOError(f'{fn} does not exist.')
 
         # populate it with self.read()
-        this_data.read(fn)
+        this_data.read(fn, instrument)
         # Return this instance
         return this_data
 
-    def read(self, fn):
+    def read(self, fn, instrument=None, overwrite=False):
         """Read the content of a RVData standard .fits file and populate this 
         data structure. 
 
         Args: 
             fn (str): file path (relative to the repository)
+            instrument (str): instrument name. None implies FITS file is in EPRV standard format.
             overwrite (bool): if this instance is not empty, specifies whether to overwrite
         
         Raises:
@@ -207,6 +210,18 @@ class RVDataModel(object):
                     self.header[hdu.name] = hdu.header
                     setattr(self, hdu.name, t.to_pandas())
 
+            # Leave the rest of HDUs to level specific readers
+            if instrument == None:
+                pass
+            elif instrument in self.read_methods.keys():
+                module = importlib.import_module(self.read_methods[instrument]['module'])
+                cls = getattr(module, self.read_methods[instrument]['class'])
+                method = getattr(cls, self.read_methods[instrument]['method'])
+                method(self, hdu_list)
+            else:
+                # the provided data_type is not recognized, ie.
+                # not in the self.read_methods list
+                raise IOError('cannot recognize data type {}'.format(instrument))
         # compute MD5 sum of source file and write it into a receipt entry for tracking.
         # Note that MD5 sum has known security vulnerabilities, but we are only using
         # this to ensure data integrity, and there is no known reason for someone to try
@@ -216,8 +231,7 @@ class RVDataModel(object):
         with open(fn, 'rb') as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 md5.update(chunk)
-        self.receipt_add_entry('from_fits', self.__module__,
-                               f'md5_sum={md5.hexdigest()}', 'PASS')
+        self.receipt_add_entry('from_fits', 'PASS')
 
     
     def to_fits(self, fn):
@@ -289,7 +303,7 @@ class RVDataModel(object):
                'Module_Name': module,
                'Status': status}
         
-        self.receipt = self.receipt.append(row, ignore_index=True)
+        self.receipt = pd.concat([self.receipt, pd.DataFrame([row])], ignore_index=True)
         self.RECEIPT = self.receipt
 
 
@@ -345,9 +359,10 @@ class RVDataModel(object):
         core_extensions = base.header.keys()
         if ext_name in core_extensions:
             raise KeyError('Can not remove any of the core extensions: {}'.format(core_extensions))
-        elif ext_name not in self.extensions.keys():
-            return
         
-        delattr(self, ext_name)
-        del self.header[ext_name]
-        del self.extensions[ext_name]
+        if ext_name in self.extensions.keys():
+            delattr(self, ext_name)
+            del self.extensions[ext_name]
+        if ext_name in self.header.keys():
+            del self.header[ext_name]
+        
