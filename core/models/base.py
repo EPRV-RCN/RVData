@@ -19,6 +19,7 @@ import hashlib
 from core.tools.git import *
 from core.models.receipt_columns import *
 from core.models.config_columns import *
+import core.models.level2
 from core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
 
 class RVDataModel(object):
@@ -212,7 +213,8 @@ class RVDataModel(object):
 
             # Leave the rest of HDUs to level specific readers
             if instrument == None:
-                pass
+                method = core.models.level2.RV2._read
+                method(self, hdu_list)
             elif instrument in self.read_methods.keys():
                 module = importlib.import_module(self.read_methods[instrument]['module'])
                 cls = getattr(module, self.read_methods[instrument]['class'])
