@@ -2,3 +2,5 @@ astropy
 numpy
 pandas
 specutils
+sphinx-rtd-theme
+sphinxcontrib-napoleon

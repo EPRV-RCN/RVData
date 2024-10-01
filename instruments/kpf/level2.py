@@ -10,12 +10,12 @@ from core.models.level2 import RV2
 class KPFRV2(RV2):
 
     def _read(self, hdul: fits.HDUList) -> None:
-        for chip in ['RED', 'GREEN']:
+        for c, chip in enumerate(['GREEN', 'RED']):
             for i in range(1,4):
                 flux_ext = f'{chip}_SCI_FLUX{i}'
                 wave_ext = f'{chip}_SCI_WAVE{i}'
                 var_ext = f'{chip}_SCI_VAR{i}'
-                out_ext = f'{chip}_SCI{i}'
+                out_ext = f'C{str(c+1)}_SCI{i}'
 
                 flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
                 wave = u.Quantity(hdul[wave_ext].data, unit='AA')
@@ -28,16 +28,16 @@ class KPFRV2(RV2):
                                             uncertainty=var,
                                             wcs=wcs, meta=meta)
 
-                self.create_extension(out_ext, SpectrumCollection)
+                if out_ext not in self.extensions.keys():
+                    self.create_extension(out_ext, SpectrumCollection)
                 setattr(self, out_ext, spec)
                 self.header[out_ext] = meta
             
-
             for fiber in ['SKY', 'CAL']:
                 flux_ext = f'{chip}_{fiber}_FLUX'
                 wave_ext = f'{chip}_{fiber}_WAVE'
                 var_ext = f'{chip}_{fiber}_VAR'
-                out_ext = f'{chip}_{fiber}'
+                out_ext = f'C{str(c+1)}_{fiber}1'
 
                 flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
                 wave = u.Quantity(hdul[wave_ext].data, unit='AA')
@@ -49,14 +49,11 @@ class KPFRV2(RV2):
                                           spectral_axis=wave,
                                           uncertainty=var,
                                           wcs=wcs, meta=meta)
-
-                self.create_extension(out_ext, SpectrumCollection)
+                if out_ext not in self.extensions.keys():
+                    self.create_extension(out_ext, SpectrumCollection)
                 setattr(self, out_ext, spec)
                 self.header[out_ext] = meta
     
-        self.del_extension('SCI')
-        self.del_extension('SKY')
-        self.del_extension('CAL')
         self.del_extension('RED_TELLURIC')
         self.del_extension('GREEN_TELLURIC')
         self.del_extension('TELEMETRY')

@@ -1,6 +1,6 @@
 notebook:
 	pip3 install jupyter
-	jupyter notebook --port ${KPFPIPE_PORT} --allow-root --ip=0.0.0.0 ""
+	jupyter notebook --port 8001 --allow-root --ip=0.0.0.0 ""
 
 docker:
 	docker build --cache-from rvdata:latest --tag rvdata:latest .

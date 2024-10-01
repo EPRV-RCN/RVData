@@ -18,9 +18,9 @@ LEVEL2_EXTENSIONS = {'PRIMARY': fits.PrimaryHDU,
                      'RECEIPT': fits.BinTableHDU,
                      'CONFIG': fits.BinTableHDU,
 
-                     'SCI': fits.ImageHDU,
-                     'SKY': fits.ImageHDU,
-                     'CAL': fits.ImageHDU,
+                     'C1_SCI1': fits.ImageHDU,
+                     'C1_SKY1': fits.ImageHDU,
+                     'C1_CAL1': fits.ImageHDU,
                      
                      'BARY_CORR': fits.BinTableHDU
                     }

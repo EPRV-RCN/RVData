@@ -8,16 +8,18 @@ import warnings
 # External dependencies
 from astropy.io import fits
 from astropy.table import Table
+import astropy.units as u
 from specutils import SpectrumCollection
+from astropy.nddata import VarianceUncertainty
 from specutils.utils.wcs_utils import gwcs_from_array
 import numpy as np
 import pandas as pd
 
-from core.models.base import RVDataModel
+import core.models.base
 from core.models import definitions
 from core.tools.headers import to_ascii_safe
 
-class RV2(RVDataModel):
+class RV2(core.models.base.RVDataModel):
     """
     The level 2 RV data. Initialized with empty fields.
     Attributes inherited from RVDataModel, additional attributes below.
@@ -63,28 +65,63 @@ class RV2(RVDataModel):
             self.header[ext_name][key] = (val, desc)
 
     def _read(self, hdul: fits.HDUList) -> None:
-        '''
-        Parse the HDUL based on RV standard
+        extension_names = [hdu.name for hdu in hdul]
 
-        Args:
-            hdul (fits.HDUList): List of HDUs parsed with astropy.
+        chips = []
+        for i in range(1, 20):  # limit 20 chips
+            chips.append(f"C{i}")
 
-        '''
-        for hdu in hdul:
-            if isinstance(hdu, fits.ImageHDU):
-                if hdu.name not in self.extensions:
-                    self.create_extension(hdu.name, np.ndarray)
-                setattr(self, hdu.name, hdu.data)
-            elif isinstance(hdu, fits.BinTableHDU):
-                if hdu.name not in self.extensions:
-                    self.create_extension(hdu.name, pd.DataFrame)
-                table = Table(hdu.data).to_pandas()
-                setattr(self, hdu.name, table)
-            elif hdu.name != 'PRIMARY' and hdu.name != 'RECEIPT':
-                warnings.warn("Unrecognized extension {} of type {}".format(hdu.name, type(hdu)))
-                continue
+        for c, chip in enumerate(chips):
+            for i in range(1,10):  # limit 10 orderlets
+                flux_ext = f'{chip}_SCI{i}_FLUX'
+                wave_ext = f'{chip}_SCI{i}_WAVE'
+                var_ext = f'{chip}_SCI{i}_VAR'
+                out_ext = f'C{str(c+1)}_SCI{i}'
+
+                if flux_ext not in extension_names:
+                    continue
+
+                flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
+                wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+                wcs = np.array([gwcs_from_array(x) for x in wave])
+                var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+                meta = hdul[flux_ext].header
+
+                spec = SpectrumCollection(flux=flux, 
+                                            spectral_axis=wave,
+                                            uncertainty=var,
+                                            wcs=wcs, meta=meta)
+
+                if out_ext not in self.extensions.keys():
+                    self.create_extension(out_ext, SpectrumCollection)
+                setattr(self, out_ext, spec)
+                self.header[out_ext] = meta
             
-            self.header[hdu.name] = hdu.header
+            for fiber in ['SKY', 'CAL']:
+                for i in range(1,10):  # limit 10 sky or cal fibers
+                    flux_ext = f'{chip}_{fiber}{i}_FLUX'
+                    wave_ext = f'{chip}_{fiber}{i}_WAVE'
+                    var_ext = f'{chip}_{fiber}{i}_VAR'
+                    out_ext = f'C{str(c+1)}_{fiber}1'
+
+                    if flux_ext not in extension_names:
+                        continue
+
+                    flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
+                    wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+                    wcs = np.array([gwcs_from_array(x) for x in wave])
+                    var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+                    meta = hdul[flux_ext].header
+
+                    spec = SpectrumCollection(flux=flux, 
+                                            spectral_axis=wave,
+                                            uncertainty=var,
+                                            wcs=wcs, meta=meta)
+                    if out_ext not in self.extensions.keys():
+                        self.create_extension(out_ext, SpectrumCollection)
+                    setattr(self, out_ext, spec)
+                    self.header[out_ext] = meta
+    
     
     def info(self):
         '''
