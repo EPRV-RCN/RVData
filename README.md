@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/eprv-data-standard/badge/?version=latest)](https://eprv-data-standard.readthedocs.io/en/latest/?badge=latest)
+
 # EPRV_DataStandard
 Development of a community endorsed, standardized EPRV data format at the 1D extracted spectra level, and a set of translator tools
 

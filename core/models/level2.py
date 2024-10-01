@@ -8,14 +8,18 @@ import warnings
 # External dependencies
 from astropy.io import fits
 from astropy.table import Table
+import astropy.units as u
+from specutils import SpectrumCollection
+from astropy.nddata import VarianceUncertainty
+from specutils.utils.wcs_utils import gwcs_from_array
 import numpy as np
 import pandas as pd
 
-from core.models.base import RVDataModel
+import core.models.base
 from core.models import definitions
 from core.tools.headers import to_ascii_safe
 
-class RV2(RVDataModel):
+class RV2(core.models.base.RVDataModel):
     """
     The level 2 RV data. Initialized with empty fields.
     Attributes inherited from RVDataModel, additional attributes below.
@@ -24,13 +28,13 @@ class RV2(RVDataModel):
 
     def __init__(self):
         super().__init__()
-        self.level = 1
+        self.level = 2
         extensions = copy.copy(definitions.LEVEL2_EXTENSIONS)
         python_types = copy.copy(definitions.FITS_TYPE_MAP)
         # add empty level2 extensions and empty headers for each extension
         for key, value in extensions.items():
             if key not in ['PRIMARY', 'RECEIPT', 'CONFIG']:
-                if python_types[value] == np.ndarray:
+                if python_types[value] == SpectrumCollection:
                     atr = np.array([])
                 else:    
                     atr = python_types[value]([])
@@ -61,28 +65,63 @@ class RV2(RVDataModel):
             self.header[ext_name][key] = (val, desc)
 
     def _read(self, hdul: fits.HDUList) -> None:
-        '''
-        Parse the HDUL based on RV standard
+        extension_names = [hdu.name for hdu in hdul]
 
-        Args:
-            hdul (fits.HDUList): List of HDUs parsed with astropy.
+        chips = []
+        for i in range(1, 20):  # limit 20 chips
+            chips.append(f"C{i}")
 
-        '''
-        for hdu in hdul:
-            if isinstance(hdu, fits.ImageHDU):
-                if hdu.name not in self.extensions:
-                    self.create_extension(hdu.name, np.ndarray)
-                setattr(self, hdu.name, hdu.data)
-            elif isinstance(hdu, fits.BinTableHDU):
-                if hdu.name not in self.extensions:
-                    self.create_extension(hdu.name, pd.DataFrame)
-                table = Table(hdu.data).to_pandas()
-                setattr(self, hdu.name, table)
-            elif hdu.name != 'PRIMARY' and hdu.name != 'RECEIPT':
-                warnings.warn("Unrecognized extension {} of type {}".format(hdu.name, type(hdu)))
-                continue
+        for c, chip in enumerate(chips):
+            for i in range(1,10):  # limit 10 orderlets
+                flux_ext = f'{chip}_SCI{i}_FLUX'
+                wave_ext = f'{chip}_SCI{i}_WAVE'
+                var_ext = f'{chip}_SCI{i}_VAR'
+                out_ext = f'C{str(c+1)}_SCI{i}'
+
+                if flux_ext not in extension_names:
+                    continue
+
+                flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
+                wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+                wcs = np.array([gwcs_from_array(x) for x in wave])
+                var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+                meta = hdul[flux_ext].header
+
+                spec = SpectrumCollection(flux=flux, 
+                                            spectral_axis=wave,
+                                            uncertainty=var,
+                                            wcs=wcs, meta=meta)
+
+                if out_ext not in self.extensions.keys():
+                    self.create_extension(out_ext, SpectrumCollection)
+                setattr(self, out_ext, spec)
+                self.header[out_ext] = meta
             
-            self.header[hdu.name] = hdu.header
+            for fiber in ['SKY', 'CAL']:
+                for i in range(1,10):  # limit 10 sky or cal fibers
+                    flux_ext = f'{chip}_{fiber}{i}_FLUX'
+                    wave_ext = f'{chip}_{fiber}{i}_WAVE'
+                    var_ext = f'{chip}_{fiber}{i}_VAR'
+                    out_ext = f'C{str(c+1)}_{fiber}1'
+
+                    if flux_ext not in extension_names:
+                        continue
+
+                    flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
+                    wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+                    wcs = np.array([gwcs_from_array(x) for x in wave])
+                    var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+                    meta = hdul[flux_ext].header
+
+                    spec = SpectrumCollection(flux=flux, 
+                                            spectral_axis=wave,
+                                            uncertainty=var,
+                                            wcs=wcs, meta=meta)
+                    if out_ext not in self.extensions.keys():
+                        self.create_extension(out_ext, SpectrumCollection)
+                    setattr(self, out_ext, spec)
+                    self.header[out_ext] = meta
+    
     
     def info(self):
         '''
@@ -112,9 +151,9 @@ class RV2(RVDataModel):
                 continue
             
             ext = getattr(self, name)
-            if isinstance(ext, (np.ndarray, np.generic)):
-                row = '|{:20s} |{:20s} |{:20s}\n'.format(name, 'image',
-                                                        str(ext.shape))
+            if isinstance(ext, SpectrumCollection):
+                row = '|{:20s} |{:20s} |{:20s}\n'.format(name, 'spectrum',
+                                                        str(ext.spectral_axis.shape))
                 head += row
             elif isinstance(ext, pd.DataFrame):
                 row = '|{:20s} |{:20s} |{:20s}\n'.format(name, 'table',
@@ -130,46 +169,67 @@ class RV2(RVDataModel):
         hdu_list = []
         hdu_definitions = self.extensions.items()
         for key, value in hdu_definitions:
+            hduname = key
             if value == fits.PrimaryHDU:
                 head = self.header[key]
                 hdu = fits.PrimaryHDU(header=head)
+                hdu_list.insert(0, hdu)
             elif value == fits.ImageHDU:
                 data = getattr(self, key)
-                if data is None:
-                    ndim = 0
-                else:
-                    ndim = len(data.shape)
-                self.header[key]['NAXIS'] = ndim
-                if ndim == 0:
-                    self.header[key]['NAXIS1'] = 0
-                else:
-                    for d in range(ndim):
-                        self.header[key]['NAXIS{}'.format(d+1)] = data.shape[d]
-                head = self.header[key]
-                try:
-                    hdu = fits.ImageHDU(data=data, header=head)
-                except KeyError as ke:
-                    print("KeyError exception raised: -->ke=" + str(ke))
-                    print("Attempting to handle it...")
-                    if str(ke) == '\'bool\'':
-                        data = data.astype(float)
-                        print("------>SHAPE=" + str(data.shape))
+                if isinstance(data, SpectrumCollection):
+                    flux = np.array(getattr(self, key).flux)
+                    wave = np.array(getattr(self, key).spectral_axis)
+                    var = getattr(self, key).uncertainty.array
+
+                    for name, data in zip(['FLUX', 'WAVE', 'VAR'], [flux, wave, var]):
+                        ndim = len(data.shape)
+                        self.header[key]['NAXIS'] = ndim
+                        if ndim == 0:
+                            self.header[key]['NAXIS1'] = 0
+                        else:
+                            for d in range(ndim):
+                                self.header[key]['NAXIS{}'.format(d+1)] = data.shape[d]
+                        head = self.header[key]
                         hdu = fits.ImageHDU(data=data, header=head)
+                        hduname = key+'_'+name
+                        hdu.name = hduname
+                        hdu_list.append(hdu)
+                else:
+                    if data is None:
+                        ndim = 0
                     else:
-                        raise KeyError("A different error...")
+                        ndim = len(data.shape)
+                    self.header[key]['NAXIS'] = ndim
+                    if ndim == 0:
+                        self.header[key]['NAXIS1'] = 0
+                    else:
+                        for d in range(ndim):
+                            self.header[key]['NAXIS{}'.format(d+1)] = data.shape[d]
+                    head = self.header[key]
+                    try:
+                        hdu = fits.ImageHDU(data=data, header=head)
+                        hdu.name = hduname
+                        hdu_list.append(hdu)
+                    except KeyError as ke:
+                        print("KeyError exception raised: -->ke=" + str(ke))
+                        print("Attempting to handle it...")
+                        if str(ke) == '\'bool\'':
+                            data = data.astype(float)
+                            print("------>SHAPE=" + str(data.shape))
+                            hdu = fits.ImageHDU(data=data, header=head)
+                            hdu_list.append(hdu)
+                        else:
+                            raise KeyError("A different error...")
             elif value == fits.BinTableHDU:
                 table = Table.from_pandas(getattr(self, key))
                 self.header[key]['NAXIS1'] = len(table)
                 head = self.header[key]
                 hdu = fits.BinTableHDU(data=table, header=head)
+                hdu.name = hduname
+                hdu_list.append(hdu)
             else:
                 print("Can't translate {} into a valid FITS format."\
                       .format(type(getattr(self, key))))
                 continue
-            hdu.name = key
-            if hdu.name == 'PRIMARY':
-                hdu_list.insert(0, hdu)
-            else:
-                hdu_list.append(hdu)
 
         return hdu_list

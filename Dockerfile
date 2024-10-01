@@ -1,5 +1,5 @@
-# Use python 3.6 
-FROM python:3.6-slim
+# Use python 3.12
+FROM python:3.12-slim
 
 ENV PYTHONHASHSEED=0
 ENV PYTHONUNBUFFERED=1

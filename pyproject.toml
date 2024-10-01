@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools", "wheel", "sphinx"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "RVdata"
+version = "0.0.1"
+description = "EPRV Data Standardization Project"
+authors = [
+    { name="BJ Fulton", email="bjfulton@ipac.caltech.edu" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+
+# Optional dependencies
+dependencies = [
+    "numpy",
+    "pandas",
+    "sphinx",
+    "sphinx-rtd-theme",  # ReadTheDocs theme for Sphinx
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",       # Code formatting
+    "flake8",      # Code linting
+    "pytest",      # Testing
+    "sphinx",      # Documentation
+    "sphinx-autodoc-typehints",
+    "sphinx-rtd-theme",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.sphinx]
+source-dir = "docs/source"
+build-dir = "docs/_build"
+
+[tool.setuptools]
+packages = ["core", "core.models", "core.tools"]  # Include your package directories here
+
+[tool.poe.tasks]
+# Task automation using poe the poet (Optional)
+docs = "sphinx-build -b html docs/source docs/_build/html"
+test = "pytest"
