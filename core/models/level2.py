@@ -64,31 +64,6 @@ class RV2(RVDataModel):
 
             self.header[ext_name][key] = (val, desc)
 
-    # def _read(self, hdul: fits.HDUList) -> None:
-    #     '''
-    #     Parse the HDUL based on RV standard
-
-    #     Args:
-    #         hdul (fits.HDUList): List of HDUs parsed with astropy.
-
-    #     '''
-    #     for hdu in hdul:
-    #         if isinstance(hdu, fits.ImageHDU):
-    #             print(hdu.name)
-    #             if hdu.name not in self.extensions:
-    #                 self.create_extension(hdu.name, np.ndarray)
-    #             setattr(self, hdu.name, hdu.data)
-    #         elif isinstance(hdu, fits.BinTableHDU):
-    #             if hdu.name not in self.extensions:
-    #                 self.create_extension(hdu.name, pd.DataFrame)
-    #             table = Table(hdu.data).to_pandas()
-    #             setattr(self, hdu.name, table)
-    #         elif hdu.name != 'PRIMARY' and hdu.name != 'RECEIPT':
-    #             warnings.warn("Unrecognized extension {} of type {}".format(hdu.name, type(hdu)))
-    #             continue
-            
-    #         self.header[hdu.name] = hdu.header
-
     def _read(self, hdul: fits.HDUList) -> None:
         extension_names = [hdu.name for hdu in hdul]
 
