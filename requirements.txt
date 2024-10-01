@@ -1,6 +1,7 @@
 astropy
 numpy
 pandas
+GitPython
 specutils
 sphinx-rtd-theme
 sphinxcontrib-napoleon
