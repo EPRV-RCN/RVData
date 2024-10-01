@@ -15,11 +15,11 @@ from specutils.utils.wcs_utils import gwcs_from_array
 import numpy as np
 import pandas as pd
 
-from core.models.base import RVDataModel
+import core.models.base
 from core.models import definitions
 from core.tools.headers import to_ascii_safe
 
-class RV2(RVDataModel):
+class RV2(core.models.base.RVDataModel):
     """
     The level 2 RV data. Initialized with empty fields.
     Attributes inherited from RVDataModel, additional attributes below.
