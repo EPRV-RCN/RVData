@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "RVdata"
-version = "0.0.1"
+version = "0.0.2"
 description = "EPRV Data Standardization Project"
 authors = [
     { name="BJ Fulton", email="bjfulton@ipac.caltech.edu" }

@@ -3,13 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to the Documentation for EPRV Data Standardization Project!
-==================================
+Documentation for EPRV Data Standardization Project!
+====================================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   new.rst
    api.rst
 
 Indices and tables
