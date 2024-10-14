@@ -59,50 +59,88 @@ class KPFRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
-        for c, chip in enumerate(['GREEN', 'RED']):
-            for i in range(1,4):
+        for i in range(1,4):
+            flux_array = None
+            wave_array = None
+            var_array = None
+            for c, chip in enumerate(['GREEN', 'RED']):
                 flux_ext = f'{chip}_SCI_FLUX{i}'
                 wave_ext = f'{chip}_SCI_WAVE{i}'
                 var_ext = f'{chip}_SCI_VAR{i}'
-                out_ext = f'C{str(c+1)}_SCI{i}'
 
-                flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
-                wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-                wcs = np.array([gwcs_from_array(x) for x in wave])
-                var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
-                meta = hdul[flux_ext].header
+                if flux_array is None:
+                    flux_array = hdul[flux_ext].data
+                    meta = hdul[flux_ext].header
+                else:
+                    flux_array = np.concatenate((flux_array, hdul[flux_ext].data), axis=0)
 
-                spec = SpectrumCollection(flux=flux, 
-                                            spectral_axis=wave,
-                                            uncertainty=var,
-                                            wcs=wcs, meta=meta)
+                if wave_array is None:
+                    wave_array = hdul[wave_ext].data
+                else:
+                    wave_array = np.concatenate((wave_array, hdul[wave_ext].data), axis=0)
+                  
+                if var_array is None:
+                    var_array = hdul[var_ext].data
+                else:
+                    var_array = np.concatenate((var_array, hdul[var_ext].data), axis=0)
+        
+        out_ext = f'SCI1'
 
-                if out_ext not in self.extensions.keys():
-                    self.create_extension(out_ext, SpectrumCollection)
-                setattr(self, out_ext, spec)
-                self.header[out_ext] = meta
-            
-            for fiber in ['SKY', 'CAL']:
+        flux = u.Quantity(flux_array, unit=u.electron)
+        wave = u.Quantity(wave_array, unit='AA')
+        wcs = np.array([gwcs_from_array(x) for x in wave])
+        var = VarianceUncertainty(var_array, unit=u.electron)
+
+        spec = SpectrumCollection(flux=flux, 
+                                  spectral_axis=wave,
+                                  uncertainty=var,
+                                  wcs=wcs, meta=meta)
+
+        if out_ext not in self.extensions.keys():
+            self.create_extension(out_ext, SpectrumCollection)
+        setattr(self, out_ext, spec)
+        self.header[out_ext] = meta        
+        
+        for fiber in ['SKY', 'CAL']:
+            flux_array = None
+            wave_array = None
+            var_array = None
+            out_ext = f'{fiber}1'
+
+            for c, chip in enumerate(['GREEN', 'RED']):
                 flux_ext = f'{chip}_{fiber}_FLUX'
                 wave_ext = f'{chip}_{fiber}_WAVE'
                 var_ext = f'{chip}_{fiber}_VAR'
-                out_ext = f'C{str(c+1)}_{fiber}1'
 
-                flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
-                wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-                wcs = np.array([gwcs_from_array(x) for x in wave])
-                var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
-                meta = hdul[flux_ext].header
+                if flux_array is None:
+                    flux_array = hdul[flux_ext].data
+                    meta = hdul[flux_ext].header
+                else:
+                    flux_array = np.concatenate((flux_array, hdul[flux_ext].data), axis=0)
 
-                spec = SpectrumCollection(flux=flux, 
-                                          spectral_axis=wave,
-                                          uncertainty=var,
-                                          wcs=wcs, meta=meta)
-                if out_ext not in self.extensions.keys():
-                    self.create_extension(out_ext, SpectrumCollection)
-                setattr(self, out_ext, spec)
-                self.header[out_ext] = meta
+                if wave_array is None:
+                    wave_array = hdul[wave_ext].data
+                else:
+                    wave_array = np.concatenate((wave_array, hdul[wave_ext].data), axis=0)
+                  
+                if var_array is None:
+                    var_array = hdul[var_ext].data
+                else:
+                    var_array = np.concatenate((var_array, hdul[var_ext].data), axis=0)
+
+            flux = u.Quantity(flux_array, unit=u.electron)
+            wave = u.Quantity(wave_array, unit='AA')
+            wcs = np.array([gwcs_from_array(x) for x in wave])
+            var = VarianceUncertainty(var_array, unit=u.electron)
+            meta = hdul[flux_ext].header
+
+            spec = SpectrumCollection(flux=flux, 
+                                      spectral_axis=wave,
+                                      uncertainty=var,
+                                      wcs=wcs, meta=meta)
+            
+            if out_ext not in self.extensions.keys():
+                self.create_extension(out_ext, SpectrumCollection)
+            setattr(self, out_ext, spec)
+            self.header[out_ext] = meta
     
-        self.del_extension('RED_TELLURIC')
-        self.del_extension('GREEN_TELLURIC')
-        self.del_extension('TELEMETRY')
