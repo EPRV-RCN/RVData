@@ -55,7 +55,12 @@ class NEIDRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
-        for fiber in ['SCI', 'SKY', 'CAL']:
+        if hdul[0].header['OBS-MODE'] == 'HR':
+            fiber_list = ['SCI', 'SKY', 'CAL']
+        elif hdul[0].header['OBS-MODE'] == 'HE':
+            fiber_list = ['SCI', 'SKY']
+            
+        for fiber in fiber_list:
             flux_ext = f'{fiber}FLUX'
             wave_ext = f'{fiber}WAVE'
             var_ext = f'{fiber}VAR'
