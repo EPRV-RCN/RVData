@@ -12,14 +12,18 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.8"
 
-# Optional dependencies
 dependencies = [
+    "astropy",
     "numpy",
     "pandas",
+    "GitPython",
+    "specutils",
     "sphinx",
     "sphinx-rtd-theme",  # ReadTheDocs theme for Sphinx
+    "sphinxcontrib-napoleon"
 ]
 
+# Optional dependencies
 [project.optional-dependencies]
 dev = [
     "black",       # Code formatting
