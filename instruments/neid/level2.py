@@ -8,10 +8,10 @@ import numpy as np
 # import base class
 from core.models.level2 import RV2
 
-# KPF Level2 Reader
-class KPFRV2(RV2):
+# NEID Level2 Reader
+class NEIDRV2(RV2):
     """
-    Read a KPF level 2 file and convert it to the EPRV standard format Python object.
+    Read a NEID level 2 file and convert it to the EPRV standard format Python object.
 
     This class extends the `RV2` base class to handle the reading of KPF (Keck Planet Finder) 
     Level 2 files and converts them into a standardized EPRV 
@@ -59,50 +59,23 @@ class KPFRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
-        for c, chip in enumerate(['GREEN', 'RED']):
-            for i in range(1,4):
-                flux_ext = f'{chip}_SCI_FLUX{i}'
-                wave_ext = f'{chip}_SCI_WAVE{i}'
-                var_ext = f'{chip}_SCI_VAR{i}'
-                out_ext = f'C{str(c+1)}_SCI{i}'
+        for fiber in ['SCI', 'SKY', 'CAL']:
+            flux_ext = f'{fiber}FLUX'
+            wave_ext = f'{fiber}WAVE'
+            var_ext = f'{fiber}VAR'
+            out_ext = f'C1_{fiber}1'
 
-                flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
-                wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-                wcs = np.array([gwcs_from_array(x) for x in wave])
-                var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
-                meta = hdul[flux_ext].header
+            flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
+            wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+            wcs = np.array([gwcs_from_array(x) for x in wave])
+            var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+            meta = hdul[flux_ext].header
 
-                spec = SpectrumCollection(flux=flux, 
-                                            spectral_axis=wave,
-                                            uncertainty=var,
-                                            wcs=wcs, meta=meta)
-
-                if out_ext not in self.extensions.keys():
-                    self.create_extension(out_ext, SpectrumCollection)
-                setattr(self, out_ext, spec)
-                self.header[out_ext] = meta
-            
-            for fiber in ['SKY', 'CAL']:
-                flux_ext = f'{chip}_{fiber}_FLUX'
-                wave_ext = f'{chip}_{fiber}_WAVE'
-                var_ext = f'{chip}_{fiber}_VAR'
-                out_ext = f'C{str(c+1)}_{fiber}1'
-
-                flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
-                wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-                wcs = np.array([gwcs_from_array(x) for x in wave])
-                var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
-                meta = hdul[flux_ext].header
-
-                spec = SpectrumCollection(flux=flux, 
-                                          spectral_axis=wave,
-                                          uncertainty=var,
-                                          wcs=wcs, meta=meta)
-                if out_ext not in self.extensions.keys():
-                    self.create_extension(out_ext, SpectrumCollection)
-                setattr(self, out_ext, spec)
-                self.header[out_ext] = meta
-    
-        self.del_extension('RED_TELLURIC')
-        self.del_extension('GREEN_TELLURIC')
-        self.del_extension('TELEMETRY')
+            spec = SpectrumCollection(flux=flux, 
+                                      spectral_axis=wave,
+                                      uncertainty=var,
+                                      wcs=wcs, meta=meta)
+            if out_ext not in self.extensions.keys():
+                self.create_extension(out_ext, SpectrumCollection)
+            setattr(self, out_ext, spec)
+            self.header[out_ext] = meta
