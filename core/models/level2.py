@@ -116,7 +116,13 @@ class RV2(core.models.base.RVDataModel):
                     self.create_extension(out_ext, SpectrumCollection)
                 setattr(self, out_ext, spec)
                 self.header[out_ext] = meta
-    
+
+        setattr(self, 'BARY_KMS', hdul['BARY_KMS'].data)
+        self.header['BARY_KMS'] = hdul['BARY_KMS'].header
+        setattr(self, 'BARY_Z', hdul['BARY_Z'].data)
+        self.header['BARY_Z'] = hdul['BARY_Z'].header
+        setattr(self, 'BJD', hdul['BJD'].data)
+        self.header['BJD'] = hdul['BJD'].header
     
     def info(self):
         '''
