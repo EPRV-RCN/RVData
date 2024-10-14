@@ -83,8 +83,6 @@ class KPFRV2(RV2):
                     var_array = hdul[var_ext].data
                 else:
                     var_array = np.concatenate((var_array, hdul[var_ext].data), axis=0)
-
-                print(wave_array.shape)
         
         out_ext = f'SCI1'
 
