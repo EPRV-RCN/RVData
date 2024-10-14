@@ -11,29 +11,27 @@ from core.models.level2 import RV2
 # NEID Level2 Reader
 class NEIDRV2(RV2):
     """
-    Read a NEID level 2 file and convert it to the EPRV standard format Python object.
+    Read a NEID level 1 file and convert it to the EPRV standard format Python object.
 
-    This class extends the `RV2` base class to handle the reading of KPF (Keck Planet Finder) 
-    Level 2 files and converts them into a standardized EPRV 
-    format. Each extension from the FITS file is read, and relevant data, including flux, 
-    wavelength, variance, and metadata, are stored as attributes of the resulting Python object.
+    This class extends the `RV2` base class to handle the reading of NEID Level 2 files and 
+    converts them into a standardized EPRV level 2 data format. Each extension from the FITS file 
+    is read, and relevant data, including flux, wavelength, variance, and metadata, are stored as 
+    attributes of the resulting Python object.
 
     Methods
     -------
     _read(hdul: fits.HDUList) -> None:
         Reads the input FITS HDU list, extracts specific extensions related to the science 
         data for different chips and fibers, and stores them in a standardized format.
-
-        - The method processes science data (`SCI_FLUX`, `SCI_WAVE`, `SCI_VAR`) from both 
-          the GREEN and RED chips and different fibers (`SKY`, `CAL`).
-        - For each chip and fiber, the flux, wavelength, variance, and metadata are extracted 
-          and stored as a `SpectrumCollection` object.
-        - Deletes unused extensions such as `RED_TELLURIC`, `GREEN_TELLURIC`, and `TELEMETRY`.
+        - The method processes data from different fibers depending on NEID OBS-MODE:
+          SCI/SKY/CAL for HR mode and SCI/SKY for HE mode. (note about CAL extension in HE)
+        - For each fiber, the flux, wavelength, variance, and metadata are extracted and stored as 
+          a `SpectrumCollection` object.
 
     Attributes
     ----------
     extensions : dict
-        A dictionary containing all the created extensions (e.g., `C1_SCI1`, `C1_SKY1`, `C2_CAL1`) 
+        A dictionary containing all the created extensions (e.g., `C1_SCI1`, `C1_SKY1`, `C1_CAL1`) 
         where the keys are the extension names and the values are `SpectrumCollection` objects 
         for each respective dataset.
     
@@ -43,18 +41,16 @@ class NEIDRV2(RV2):
 
     Notes
     -----
-    - The `_read` method processes science and calibration data from the GREEN and RED chips, 
-      and it extracts and organizes data for both the SCI, SKY, and CAL fibers.
+    - The `_read` method processes and organizes science and calibration data from all SCI, SKY, 
+      and CAL fibers.
     - The method converts the flux, wavelength, and variance for each extension into 
       `SpectrumCollection` objects.
-    - Unused extensions (like `RED_TELLURIC`, `GREEN_TELLURIC`, and `TELEMETRY`) are removed 
-      from the object.
     
     Example
     -------
     >>> from astropy.io import fits
-    >>> hdul = fits.open('kpf_level2_file.fits')
-    >>> rv2_obj = KPFRV2()
+    >>> hdul = fits.open('neidL1_YYYYMMDDTHHMMSS.fits')
+    >>> rv2_obj = NEIDRV2()
     >>> rv2_obj._read(hdul)
     """
 
