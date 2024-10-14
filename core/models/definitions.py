@@ -18,11 +18,13 @@ LEVEL2_EXTENSIONS = {'PRIMARY': fits.PrimaryHDU,
                      'RECEIPT': fits.BinTableHDU,
                      'CONFIG': fits.BinTableHDU,
 
-                     'C1_SCI1': fits.ImageHDU,
-                     'C1_SKY1': fits.ImageHDU,
-                     'C1_CAL1': fits.ImageHDU,
+                     'SCI1': fits.ImageHDU,
+                     'SKY1': fits.ImageHDU,
+                     'CAL1': fits.ImageHDU,
                      
-                     'BARY_CORR': fits.BinTableHDU
+                     'BARY_KMS': fits.ImageHDU,
+                     'BARY_Z': fits.ImageHDU,
+                     'BJD': fits.ImageHDU
                     }
 
 # mapping between fits extension data types and Python object data types
@@ -30,4 +32,6 @@ FITS_TYPE_MAP = {fits.PrimaryHDU: OrderedDict,
                  fits.ImageHDU: SpectrumCollection,
                  fits.BinTableHDU: pd.DataFrame}
 
-INSTRUMENT_READERS = {'KPF': {'module': 'instruments.kpf.level2', 'class': 'KPFRV2', 'method': '_read'}}
+INSTRUMENT_READERS = {'KPF': 
+                      {'module': 'instruments.kpf.level2', 'class': 'KPFRV2', 'method': '_read'}
+                     }
