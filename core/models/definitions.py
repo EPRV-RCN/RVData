@@ -22,7 +22,9 @@ LEVEL2_EXTENSIONS = {'PRIMARY': fits.PrimaryHDU,
                      'SKY1': fits.ImageHDU,
                      'CAL1': fits.ImageHDU,
                      
-                     'BARY_CORR': fits.BinTableHDU
+                     'BARY_KMS': fits.ImageHDU,
+                     'BARY_Z': fits.ImageHDU,
+                     'BJD': fits.ImageHDU
                     }
 
 # mapping between fits extension data types and Python object data types

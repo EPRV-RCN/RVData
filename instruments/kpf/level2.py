@@ -144,3 +144,16 @@ class KPFRV2(RV2):
             setattr(self, out_ext, spec)
             self.header[out_ext] = meta
     
+        bary = hdul['BARY_CORR'].data
+        bary_kms = bary['BARYVEL'] / 1000.
+        setattr(self, 'BARY_KMS', bary_kms)
+        setattr(self, 'BARY_Z', bary_kms / 3e5)  # aproximate!!!
+        setattr(self, 'BJD', bary['PHOTON_BJD'])
+
+        extra_headers = []
+        for key in self.header.keys():
+            if key not in self.extensions.keys():
+                extra_headers.append(key)
+
+        for key in extra_headers:
+            del self.header[key]
