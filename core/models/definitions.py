@@ -5,7 +5,7 @@ import os
 import pandas as pd
 from collections import OrderedDict
 
-## Header keywords required by all levels of data
+# Header keywords required by all levels of data
 # defined in a series of CSV files
 LEVEL2_HEADER_FILE = os.path.abspath(os.path.dirname(__file__)) + "/headers/L2.csv"
 
