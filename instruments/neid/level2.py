@@ -62,25 +62,25 @@ class NEIDRV2(RV2):
             out_ext = f'{fiber}1'
 
             if fiber == 'CAL' and hdul[0].header['OBS-MODE'] == 'HE':
-              flux = u.Quantity(np.array([]), unit=u.electron)
-              wave = u.Quantity(np.array([]), unit='AA')
-              wcs = np.array([gwcs_from_array(x) for x in wave])
-              meta = hdul[flux_ext].header
+                flux = u.Quantity(np.array([]), unit=u.electron)
+                wave = u.Quantity(np.array([]), unit='AA')
+                wcs = np.array([gwcs_from_array(x) for x in wave])
+                meta = hdul[flux_ext].header
 
-              spec = SpectrumCollection(flux=flux, 
-                                        spectral_axis=wave, 
-                                        wcs=wcs, meta=meta)
+                spec = SpectrumCollection(flux=flux, 
+                                          spectral_axis=wave, 
+                                          wcs=wcs, meta=meta)
             else:
-              flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
-              wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-              wcs = np.array([gwcs_from_array(x) for x in wave])
-              var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
-              meta = hdul[flux_ext].header
+                flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
+                wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+                wcs = np.array([gwcs_from_array(x) for x in wave])
+                var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+                meta = hdul[flux_ext].header
 
-              spec = SpectrumCollection(flux=flux, 
-                                        spectral_axis=wave,
-                                        uncertainty=var,
-                                        wcs=wcs, meta=meta)
+                spec = SpectrumCollection(flux=flux, 
+                                          spectral_axis=wave,
+                                          uncertainty=var,
+                                          wcs=wcs, meta=meta)
             
             if out_ext not in self.extensions.keys():
                 self.create_extension(out_ext, SpectrumCollection)
