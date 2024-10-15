@@ -67,16 +67,37 @@ class RV2(core.models.base.RVDataModel):
     def _read(self, hdul: fits.HDUList) -> None:
         extension_names = [hdu.name for hdu in hdul]
 
-        chips = []
-        for i in range(1, 20):  # limit 20 chips
-            chips.append(f"C{i}")
+        for i in range(1,10):  # limit 10 science tracesa
+            flux_ext = f'SCI{i}_FLUX'
+            wave_ext = f'SCI{i}_WAVE'
+            var_ext = f'SCI{i}_VAR'
+            out_ext = f'SCI{i}'
 
-        for c, chip in enumerate(chips):
-            for i in range(1,10):  # limit 10 orderlets
-                flux_ext = f'{chip}_SCI{i}_FLUX'
-                wave_ext = f'{chip}_SCI{i}_WAVE'
-                var_ext = f'{chip}_SCI{i}_VAR'
-                out_ext = f'C{str(c+1)}_SCI{i}'
+            if flux_ext not in extension_names:
+                continue
+
+            flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
+            wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+            wcs = np.array([gwcs_from_array(x) for x in wave])
+            var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+            meta = hdul[flux_ext].header
+
+            spec = SpectrumCollection(flux=flux, 
+                                        spectral_axis=wave,
+                                        uncertainty=var,
+                                        wcs=wcs, meta=meta)
+
+            if out_ext not in self.extensions.keys():
+                self.create_extension(out_ext, SpectrumCollection)
+            setattr(self, out_ext, spec)
+            self.header[out_ext] = meta
+        
+        for fiber in ['SKY', 'CAL']:
+            for i in range(1,10):  # limit 10 sky or cal fibers
+                flux_ext = f'{fiber}{i}_FLUX'
+                wave_ext = f'{fiber}{i}_WAVE'
+                var_ext = f'{fiber}{i}_VAR'
+                out_ext = f'{fiber}1'
 
                 if flux_ext not in extension_names:
                     continue
@@ -88,40 +109,20 @@ class RV2(core.models.base.RVDataModel):
                 meta = hdul[flux_ext].header
 
                 spec = SpectrumCollection(flux=flux, 
-                                            spectral_axis=wave,
-                                            uncertainty=var,
-                                            wcs=wcs, meta=meta)
-
+                                        spectral_axis=wave,
+                                        uncertainty=var,
+                                        wcs=wcs, meta=meta)
                 if out_ext not in self.extensions.keys():
                     self.create_extension(out_ext, SpectrumCollection)
                 setattr(self, out_ext, spec)
                 self.header[out_ext] = meta
-            
-            for fiber in ['SKY', 'CAL']:
-                for i in range(1,10):  # limit 10 sky or cal fibers
-                    flux_ext = f'{chip}_{fiber}{i}_FLUX'
-                    wave_ext = f'{chip}_{fiber}{i}_WAVE'
-                    var_ext = f'{chip}_{fiber}{i}_VAR'
-                    out_ext = f'C{str(c+1)}_{fiber}1'
 
-                    if flux_ext not in extension_names:
-                        continue
-
-                    flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
-                    wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-                    wcs = np.array([gwcs_from_array(x) for x in wave])
-                    var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
-                    meta = hdul[flux_ext].header
-
-                    spec = SpectrumCollection(flux=flux, 
-                                            spectral_axis=wave,
-                                            uncertainty=var,
-                                            wcs=wcs, meta=meta)
-                    if out_ext not in self.extensions.keys():
-                        self.create_extension(out_ext, SpectrumCollection)
-                    setattr(self, out_ext, spec)
-                    self.header[out_ext] = meta
-    
+        setattr(self, 'BARY_KMS', hdul['BARY_KMS'].data)
+        self.header['BARY_KMS'] = hdul['BARY_KMS'].header
+        setattr(self, 'BARY_Z', hdul['BARY_Z'].data)
+        self.header['BARY_Z'] = hdul['BARY_Z'].header
+        setattr(self, 'BJD', hdul['BJD'].data)
+        self.header['BJD'] = hdul['BJD'].header
     
     def info(self):
         '''
