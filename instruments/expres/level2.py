@@ -1,13 +1,18 @@
 from astropy.io import fits
 from astropy.constants import c
+from astropy.time import Time
 import astropy.units as u
 from astropy.nddata import VarianceUncertainty
 from specutils import SpectrumCollection
 from specutils.utils.wcs_utils import gwcs_from_array
 import numpy as np
+import pandas as pd
 
 # import base class
 from core.models.level2 import RV2
+
+epoch, epoch_start_isot = np.loadtxt('./config/expres_epochs.csv',delimiter=',',skiprows=1,dtype='str').T
+epoch_start_mjd = Time(epoch_start_isot).mjd
 
 # EXPRES Level2 Reader
 class EXPRESRV2(RV2):
@@ -93,3 +98,9 @@ class EXPRESRV2(RV2):
 
         # Delete Unused Extensions
         #self.del_extension('tellurics')
+
+    def getEpoch(time_mjd):
+        return epoch[np.sum(time_mjd>=epoch_start_mjd)-1]
+
+    def matchHeader(keyword,value):
+        val = str(value).strip().lower()
