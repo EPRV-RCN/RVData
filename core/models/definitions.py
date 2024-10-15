@@ -9,13 +9,22 @@ from collections import OrderedDict
 # defined in a series of CSV files
 LEVEL2_HEADER_FILE = os.path.abspath(os.path.dirname(__file__)) + "/headers/L2.csv"
 
-# Minimum level 1 extensions should be defined here
+# Base extensions for all data levels
+# extensions should be defined here
 # as a dictionary with the name of the extensions as keys
 # and the fits data type as the values
-LEVEL2_EXTENSIONS = {
+BASE_EXTENSIONS = {
     "PRIMARY": fits.PrimaryHDU,
+    "INSTRUMENT_HEADER": fits.BinTableHDU,
     "RECEIPT": fits.BinTableHDU,
     "CONFIG": fits.BinTableHDU,
+}
+
+# Minimum level 1 extensions, used in addition to BASE_EXTENSIONS
+LEVEL1_EXTENSIONS = {}
+
+# Minimum level 2 extensions, used in addtion to BASE_EXTENSIONS
+LEVEL2_EXTENSIONS = {
     "SCI1": fits.ImageHDU,
     "SKY1": fits.ImageHDU,
     "CAL1": fits.ImageHDU,
