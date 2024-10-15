@@ -11,10 +11,10 @@ from core.models.level2 import RV2
 # KPF Level2 Reader
 class KPFRV2(RV2):
     """
-    Read a KPF level 2 file and convert it to the EPRV standard format Python object.
+    Read a KPF level 1 file and convert it to the EPRV standard format Python object.
 
     This class extends the `RV2` base class to handle the reading of KPF (Keck Planet Finder) 
-    Level 2 files and converts them into a standardized EPRV 
+    Level 1 files and converts them into a standardized EPRV 
     format. Each extension from the FITS file is read, and relevant data, including flux, 
     wavelength, variance, and metadata, are stored as attributes of the resulting Python object.
 
@@ -52,10 +52,9 @@ class KPFRV2(RV2):
     
     Example
     -------
-    >>> from astropy.io import fits
-    >>> hdul = fits.open('kpf_level2_file.fits')
-    >>> rv2_obj = KPFRV2()
-    >>> rv2_obj._read(hdul)
+    >>> from core.models.level2 import RV2
+    >>> rv2_obj = RV2.from_fits("kpf_level1_file.fits")
+    >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
