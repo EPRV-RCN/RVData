@@ -14,9 +14,9 @@ class KPFRV2(RV2):
     """
     Read a KPF level 1 file and convert it to the EPRV standard format Python object.
 
-    This class extends the `RV2` base class to handle the reading of KPF (Keck Planet Finder) 
-    Level 1 files and converts them into a standardized EPRV 
-    format. Each extension from the FITS file is read, and relevant data, including flux, 
+    This class extends the `RV2` base class to handle the reading of KPF (Keck Planet Finder)
+    Level 1 files and converts them into a standardized EPRV
+    format. Each extension from the FITS file is read, and relevant data, including flux,
     wavelength, variance, and metadata, are stored as attributes of the resulting Python object.
 
     Methods
