@@ -1,4 +1,1 @@
-CONFIG_COL = [
-    'number',
-    'line'        
-]
+CONFIG_COL = ["number", "line"]
