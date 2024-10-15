@@ -2,9 +2,6 @@
 Level 2 Data Model for RV spectral data
 """
 
-# Standard dependencies
-import copy
-
 # External dependencies
 from astropy.io import fits
 from astropy.table import Table
@@ -30,28 +27,21 @@ class RV2(core.models.base.RVDataModel):
     def __init__(self):
         super().__init__()
         self.level = 2
-        extensions = copy.copy(definitions.LEVEL2_EXTENSIONS)
-        python_types = copy.copy(definitions.FITS_TYPE_MAP)
+        l2_extensions = dict(definitions.LEVEL2_EXTENSIONS)
+        python_types = dict(definitions.FITS_TYPE_MAP)
         # add empty level2 extensions and empty headers for each extension
-        for key, value in extensions.items():
-            if key not in ["PRIMARY", "RECEIPT", "CONFIG"]:
-                if python_types[value] == SpectrumCollection:
-                    atr = np.array([])
-                else:
-                    atr = python_types[value]([])
-                self.header[key] = fits.Header()
+        for key, value in l2_extensions.items():
+            if python_types[value] == SpectrumCollection:
+                atr = np.array([])
             else:
-                continue
+                atr = python_types[value]([])
+            self.header[key] = fits.Header()
             self.create_extension(key, python_types[value])
             setattr(self, key, atr)
 
         # add level2 header keywords for PRIMARY header
         self.header_definitions = pd.read_csv(definitions.LEVEL2_HEADER_FILE)
-        for i, row in self.header_definitions.iterrows():
-            # ext_name = row['Ext']
-            ext_name = "PRIMARY"
-            if ext_name not in self.header.keys():
-                continue
+        for _, row in self.header_definitions.iterrows():
             key = row["Keyword"]
             if key is np.nan:
                 continue
@@ -63,7 +53,7 @@ class RV2(core.models.base.RVDataModel):
             if desc is np.nan:
                 desc = None
 
-            self.header[ext_name][key] = (val, desc)
+            self.header["PRIMARY"][key] = (val, desc)
 
     def _read(self, hdul: fits.HDUList) -> None:
         extension_names = [hdu.name for hdu in hdul]

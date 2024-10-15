@@ -110,17 +110,21 @@ class RVDataModel(object):
 
         self.header = OrderedDict()
         self.header["PRIMARY"] = fits.Header()
+        self.header["INSTRUMENT_HEADER"] = fits.Header()
         self.header["RECEIPT"] = fits.Header()
         self.header["CONFIG"] = fits.Header()
+
+        self.primary = OrderedDict()
+        self.PRIMARY = self.primary
+
+        self.instrument_header = pd.DataFrame([])
+        self.INSTRUMENT_HEADER = self.instrument_header
 
         self.receipt = pd.DataFrame([], columns=RECEIPT_COL)
         self.RECEIPT = self.receipt
 
         self.config = pd.DataFrame([], columns=CONFIG_COL)
         self.CONFIG = self.config
-
-        self.primary = OrderedDict()
-        self.PRIMARY = self.primary
 
         self.extensions = OrderedDict(
             PRIMARY=fits.PrimaryHDU, RECEIPT=fits.BinTableHDU, CONFIG=fits.BinTableHDU
