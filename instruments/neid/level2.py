@@ -86,3 +86,13 @@ class NEIDRV2(RV2):
                 self.create_extension(out_ext, SpectrumCollection)
             setattr(self, out_ext, spec)
             self.header[out_ext] = meta
+
+        # Add BJD and barycentric correction extensions
+        bary_kms = [hdul[0].header[f'SSBRV{173-order:03d}'] for order in range(122)]
+        bary_z = [hdul[0].header[f'SSBZ{173-order:03d}'] for order in range(122)]
+        bjd = [hdul[0].header[f'SSBJD{173-order:03d}'] for order in range(122)]
+
+        setattr(self, "BARY_KMS", bary_kms)
+        setattr(self, "BARY_Z", bary_z)
+        setattr(self, "BJD", bjd)
+
