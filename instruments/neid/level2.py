@@ -99,6 +99,28 @@ class NEIDRV2(RV2):
             self.header[out_ext] = meta
 
             ### For dealing with blaze, will need NEID L2 file.
+            
+            # blaze_ext = f'{fiber}BLAZE'
+            # out_ext = f'{fiber}1_BLAZE'
+
+            # # Blaze flux from extension, wavelength from target flux extension
+            # blaze_flux = u.Quantity(hdul2[blaze_ext].data, unit=u.electron)
+            # wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+            # wcs = np.array([gwcs_from_array(x) for x in wave])
+
+            # # Header
+            # meta = hdul2[blaze_ext].header
+
+            # # Construct spectrum collection and output to the data object
+            # spec = SpectrumCollection(flux=flux, 
+            #                           spectral_axis=wave,
+            #                           wcs=wcs, 
+            #                           meta=meta)
+            
+            # if out_ext not in self.extensions.keys():
+            #     self.create_extension(out_ext, SpectrumCollection)
+            # setattr(self, out_ext, spec)
+            # self.header[out_ext] = meta
 
         # Add BJD and barycentric correction extensions
         bary_kms = np.array([hdul[0].header[f'SSBRV{173-order:03d}'] for order in range(122)])
