@@ -55,32 +55,37 @@ class NEIDRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
-        for fiber in ['SCI', 'SKY', 'CAL']:
+        # Check observation mode to set fiber list
+        if hdul[0].header['OBS-MODE'] == 'HR':
+            fiber_list = ['SCI', 'SKY', 'CAL']
+        elif hdul[0].header['OBS-MODE'] == 'HE':
+            fiber_list = ['SCI', 'SKY']
+
+        for fiber in fiber_list:
             flux_ext = f'{fiber}FLUX'
             wave_ext = f'{fiber}WAVE'
             var_ext = f'{fiber}VAR'
             out_ext = f'{fiber}1'
 
-            if fiber == 'CAL' and hdul[0].header['OBS-MODE'] == 'HE':
-                flux = u.Quantity(np.array([]), unit=u.electron)
-                wave = u.Quantity(np.array([]), unit='AA')
-                wcs = np.array([gwcs_from_array(x) for x in wave])
-                meta = hdul[flux_ext].header
+            # Extracted flux
+            flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
 
-                spec = SpectrumCollection(flux=flux, 
-                                          spectral_axis=wave, 
-                                          wcs=wcs, meta=meta)
-            else:
-                flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
-                wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-                wcs = np.array([gwcs_from_array(x) for x in wave])
-                var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
-                meta = hdul[flux_ext].header
+            # Wavelength array and associated WCS
+            wave = u.Quantity(hdul[wave_ext].data, unit='AA')
+            wcs = np.array([gwcs_from_array(x) for x in wave])
 
-                spec = SpectrumCollection(flux=flux, 
-                                          spectral_axis=wave,
-                                          uncertainty=var,
-                                          wcs=wcs, meta=meta)
+            # Variance array
+            var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+
+            # Header
+            meta = hdul[flux_ext].header
+
+            # Construct spectrum collection and output to the data object
+            spec = SpectrumCollection(flux=flux, 
+                                      spectral_axis=wave,
+                                      uncertainty=var,
+                                      wcs=wcs, 
+                                      meta=meta)
             
             if out_ext not in self.extensions.keys():
                 self.create_extension(out_ext, SpectrumCollection)
