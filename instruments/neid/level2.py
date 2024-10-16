@@ -55,6 +55,12 @@ class NEIDRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
+        # Output original primary header to own extension (will clean up after definitions)
+        instrument_header_ext = 'INSTRUMENT_HEADER'
+        if instrument_header_ext not in self.extensions.keys():
+            self.create_extension(instrument_header_ext, SpectrumCollection)
+        self.header[instrument_header_ext] = hdul[0].header
+        
         # Check observation mode to set fiber list
         if hdul[0].header['OBS-MODE'] == 'HR':
             fiber_list = ['SCI', 'SKY', 'CAL']
@@ -91,6 +97,8 @@ class NEIDRV2(RV2):
                 self.create_extension(out_ext, SpectrumCollection)
             setattr(self, out_ext, spec)
             self.header[out_ext] = meta
+
+            ### For dealing with blaze, will need NEID L2 file.
 
         # Add BJD and barycentric correction extensions
         bary_kms = [hdul[0].header[f'SSBRV{173-order:03d}'] for order in range(122)]
