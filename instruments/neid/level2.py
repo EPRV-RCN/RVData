@@ -101,9 +101,9 @@ class NEIDRV2(RV2):
             ### For dealing with blaze, will need NEID L2 file.
 
         # Add BJD and barycentric correction extensions
-        bary_kms = [hdul[0].header[f'SSBRV{173-order:03d}'] for order in range(122)]
-        bary_z = [hdul[0].header[f'SSBZ{173-order:03d}'] for order in range(122)]
-        bjd = [hdul[0].header[f'SSBJD{173-order:03d}'] for order in range(122)]
+        bary_kms = np.array([hdul[0].header[f'SSBRV{173-order:03d}'] for order in range(122)])
+        bary_z = np.array([hdul[0].header[f'SSBZ{173-order:03d}'] for order in range(122)])
+        bjd = np.array([hdul[0].header[f'SSBJD{173-order:03d}'] for order in range(122)])
 
         setattr(self, "BARY_KMS", bary_kms)
         setattr(self, "BARY_Z", bary_z)
