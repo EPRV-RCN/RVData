@@ -2,25 +2,28 @@
 Standard models for RV data
 """
 
+import datetime
+import hashlib
+import importlib
+
 # Standard dependencies
 import os
 from collections import OrderedDict
-import importlib
+
+import git
+import numpy as np
+import pandas as pd
 
 # External dependencies
 from astropy.io import fits
 from astropy.table import Table
-import numpy as np
-import pandas as pd
-import git
-import datetime
-import hashlib
+
+from core.models.config_columns import CONFIG_COL
+from core.models.definitions import BASE_EXTENSIONS, FITS_TYPE_MAP, INSTRUMENT_READERS
+from core.models.receipt_columns import RECEIPT_COL
 
 # Pipeline dependencies
-from core.tools.git import get_git_revision_hash, get_git_branch, get_git_tag
-from core.models.receipt_columns import RECEIPT_COL
-from core.models.config_columns import CONFIG_COL
-from core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
+from core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 
 
 class RVDataModel(object):
@@ -120,18 +123,17 @@ class RVDataModel(object):
         self.instrument_header = pd.DataFrame([])
         self.INSTRUMENT_HEADER = self.instrument_header
 
-        self.receipt = pd.DataFrame([], columns=RECEIPT_COL)
+        self.receipt = pd.DataFrame([], columns=[c.upper() for c in RECEIPT_COL])
         self.RECEIPT = self.receipt
 
-        self.config = pd.DataFrame([], columns=CONFIG_COL)
+        self.config = pd.DataFrame([], columns=[c.upper() for c in CONFIG_COL])
         self.CONFIG = self.config
 
         self.extensions = OrderedDict(
             PRIMARY=fits.PrimaryHDU, RECEIPT=fits.BinTableHDU, CONFIG=fits.BinTableHDU
         )
 
-        # level of data model
-        self.level = None  # set in each derived class
+        self.level = None  # level of data model is set in each derived class
         self.read_methods = INSTRUMENT_READERS
 
     def __getitem__(self, key):
@@ -206,7 +208,7 @@ class RVDataModel(object):
                     t = Table.read(hdu)
                     if "RECEIPT" in hdu.name:
                         # Table contains the RECEIPT
-                        df = t.to_pandas()
+                        df: pd.DataFrame = t.to_pandas()
                         df = df.reindex(
                             df.columns.union(RECEIPT_COL, sort=False),
                             axis=1,
@@ -372,11 +374,11 @@ class RVDataModel(object):
             ext_name (str): extension name
 
         """
-        base = RVDataModel()
-        core_extensions = base.header.keys()
-        if ext_name in core_extensions:
+        if ext_name in BASE_EXTENSIONS.keys():
             raise KeyError(
-                "Can not remove any of the core extensions: {}".format(core_extensions)
+                "Can not remove any of the core extensions: {}".format(
+                    BASE_EXTENSIONS.keys()
+                )
             )
 
         if ext_name in self.extensions.keys():
