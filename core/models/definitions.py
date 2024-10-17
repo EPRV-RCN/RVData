@@ -9,34 +9,6 @@ from astropy.io import fits
 # Definition is in the form of a list of dicts.
 # Columns headers for tables are a list of strings.
 
-# Base extensions for all data levels
-BASE_EXTENSIONS = [
-    {
-        "name": "PRIMARY",
-        "fits_type": fits.PrimaryHDU,
-        "py_type": OrderedDict,
-        "columns": [],
-    },
-    {
-        "name": "INSTRUMENT_HEADER",
-        "fits_type": fits.BinTableHDU,
-        "py_type": pd.DataFrame,
-        "columns": [],
-    },
-    {
-        "name": "RECEIPT",
-        "fits_type": fits.BinTableHDU,
-        "py_type": pd.DataFrame,
-        "columns": [],
-    },
-    {
-        "name": "DRP_CONFIG",
-        "fits_type": fits.BinTableHDU,
-        "py_type": pd.DataFrame,
-        "columns": [],
-    },
-]
-
 # Minimum level 1 extensions, used in addition to BASE_EXTENSIONS
 LEVEL1_EXTENSIONS = {}
 
@@ -68,7 +40,3 @@ LEVEL2_EXTENSIONS = pd.read_csv(config_path / "L2-extensions.csv")
 INSTRUMENT_READERS = {
     "KPF": {"module": "instruments.kpf.level2", "class": "KPFRV2", "method": "_read"}
 }
-
-
-def read_csv(filename):
-    dataframe = pd.read_csv(filename)

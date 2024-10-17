@@ -331,7 +331,7 @@ class RVDataModel(object):
         self.extensions[ext_name] = ext_type
         self.headers[ext_name] = header
         # NOTE: can't init OrderDict(None), so use OrderedDict([])
-        if data == None:
+        if data is None:
             self.data[ext_name] = FITS_TYPE_MAP[ext_type]([])
         else:
             self.data[ext_name] = FITS_TYPE_MAP[ext_type](data)
