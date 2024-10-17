@@ -1,24 +1,41 @@
-from astropy.io import fits
-from specutils import SpectrumCollection
-
-import os
-import pandas as pd
 from collections import OrderedDict
+from pathlib import Path
 
-# Header keywords required by all levels of data
-# defined in a series of CSV files
-LEVEL2_HEADER_FILE = os.path.abspath(os.path.dirname(__file__)) + "/headers/L2.csv"
+import numpy as np
+import pandas as pd
+from astropy.io import fits
+
+# Extensions (FITS HDUs) should be defined here.
+# Definition is in the form of a list of dicts.
+# Columns headers for tables are a list of strings.
 
 # Base extensions for all data levels
-# extensions should be defined here
-# as a dictionary with the name of the extensions as keys
-# and the fits data type as the values
-BASE_EXTENSIONS = {
-    "PRIMARY": fits.PrimaryHDU,
-    "INSTRUMENT_HEADER": fits.BinTableHDU,
-    "RECEIPT": fits.BinTableHDU,
-    "CONFIG": fits.BinTableHDU,
-}
+BASE_EXTENSIONS = [
+    {
+        "name": "PRIMARY",
+        "fits_type": fits.PrimaryHDU,
+        "py_type": OrderedDict,
+        "columns": [],
+    },
+    {
+        "name": "INSTRUMENT_HEADER",
+        "fits_type": fits.BinTableHDU,
+        "py_type": pd.DataFrame,
+        "columns": [],
+    },
+    {
+        "name": "RECEIPT",
+        "fits_type": fits.BinTableHDU,
+        "py_type": pd.DataFrame,
+        "columns": [],
+    },
+    {
+        "name": "DRP_CONFIG",
+        "fits_type": fits.BinTableHDU,
+        "py_type": pd.DataFrame,
+        "columns": [],
+    },
+]
 
 # Minimum level 1 extensions, used in addition to BASE_EXTENSIONS
 LEVEL1_EXTENSIONS = {}
@@ -35,11 +52,23 @@ LEVEL2_EXTENSIONS = {
 
 # mapping between fits extension data types and Python object data types
 FITS_TYPE_MAP = {
-    fits.PrimaryHDU: OrderedDict,
-    fits.ImageHDU: SpectrumCollection,
-    fits.BinTableHDU: pd.DataFrame,
+    "PrimaryHDU": OrderedDict,
+    "ImageHDU": np.array,
+    "BinTableHDU": pd.DataFrame,
 }
+
+# Header keywords required by all levels of data
+# defined in a series of CSV files
+config_path = Path("core/models/config")
+
+LEVEL2_EXTENSIONS = pd.read_csv(config_path / "L2-extensions.csv")
+
+# LEVEL2_HEADER_FILE = os.path.abspath(os.path.dirname(__file__)) + "/headers/L2.csv"
 
 INSTRUMENT_READERS = {
     "KPF": {"module": "instruments.kpf.level2", "class": "KPFRV2", "method": "_read"}
 }
+
+
+def read_csv(filename):
+    dataframe = pd.read_csv(filename)
