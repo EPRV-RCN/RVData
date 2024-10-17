@@ -29,8 +29,6 @@ class RV2(core.models.base.RVDataModel):
                 self.create_extension(row["Name"], row["DataType"])
 
     def _read(self, hdul: fits.HDUList) -> None:
-        extension_names = [hdu.name for hdu in hdul]
-        ntrace = hdul[0].header.get("NUMTRACE", default=1)
         l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
 
         for hdu in hdul:
