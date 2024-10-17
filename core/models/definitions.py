@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from astropy.io import fits
 
 # Extensions (FITS HDUs) should be defined here.
 # Definition is in the form of a list of dicts.

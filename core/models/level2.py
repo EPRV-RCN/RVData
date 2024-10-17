@@ -5,16 +5,10 @@ Level 2 Data Model for RV spectral data
 # External dependencies
 from astropy.io import fits
 from astropy.table import Table
-import astropy.units as u
-from specutils import SpectrumCollection
-from astropy.nddata import VarianceUncertainty
-from specutils.utils.wcs_utils import gwcs_from_array
 import numpy as np
 import pandas as pd
 
 import core.models.base
-from core.models import definitions
-from core.tools.headers import to_ascii_safe
 from core.models.definitions import LEVEL2_EXTENSIONS
 
 

@@ -20,8 +20,7 @@ from astropy.table import Table
 
 from core.models.definitions import (
     FITS_TYPE_MAP,
-    INSTRUMENT_READERS,
-    LEVEL2_EXTENSIONS,
+    INSTRUMENT_READERS
 )
 from core.models.receipt_columns import RECEIPT_COL
 
