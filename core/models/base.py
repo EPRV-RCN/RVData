@@ -120,11 +120,6 @@ class RVDataModel(object):
         self.headers = OrderedDict()  # map name to extension header
         self.data = OrderedDict()  # map name to extension data
 
-        for i, row in LEVEL2_EXTENSIONS.iterrows():
-            if row["Required"]:
-                # TODO: set description and comment
-                self.create_extension(row["Name"], row["DataType"])
-
     # =============================================================================
     # I/O related methods
     @classmethod
@@ -312,7 +307,7 @@ class RVDataModel(object):
     # =============================================================================
     # Extension methods
 
-    def create_extension(self, ext_name: str, ext_type: str, header=None, data=None):
+    def create_extension(self, ext_name: str, ext_type: str, header=OrderedDict(), data=None):
         """
         Create a new empty extension
 
@@ -329,7 +324,10 @@ class RVDataModel(object):
 
         ext_name = ext_name.upper()
         self.extensions[ext_name] = ext_type
-        self.headers[ext_name] = header
+        if header is None:
+            self.headers[ext_name] = OrderedDict([])
+        else:
+            self.headers[ext_name] = header
         # NOTE: can't init OrderDict(None), so use OrderedDict([])
         if data is None:
             self.data[ext_name] = FITS_TYPE_MAP[ext_type]([])
@@ -375,7 +373,7 @@ class RVDataModel(object):
         """
         # check whether the extension already exist
         if ext_name in self.extensions.keys():
-            if FITS_TYPE_MAP[self.extensions[ext_name]] == type(data):
+            if isinstance(data, type(FITS_TYPE_MAP[self.extensions[ext_name]]([]))):
                 self.data[ext_name] = data
             else:
                 raise TypeError(
