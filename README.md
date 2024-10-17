@@ -33,7 +33,7 @@ We recommend that developers use the following workflow:
 
 **First, setup your working environment:**
 
-1) Create a fork of the repository into your github account by clicking the *Fork* icon on the right top corner of the page.
+1) Create a fork of the repository into your github account by clicking the *Fork* icon on the right top corner of the main github EPRV-RCN/RVdata repo page.
 
 2) Clone your fork to your local computer:
 ```git clone git@github.com:YourGithubID/RVdata.git```
@@ -56,5 +56,5 @@ git push origin feature_branch_name
 
 3) Setup a pull request from your feature branch into the project level develop branch. Use the *Pull requests* menu item on the top bar of github.com. Be sure that the pull request points into the **EPRV-RCN/RVdata _develop_** branch. This will trigger a review request. Two reviews from the core development team are required before merging.
 
-4) Iterate with reviewers as needed, using the pull request to capture discussion comments. Once the reviewers approve the pull request, the original author is responsible for merging. **If you encounter a merge conflict, ask for help. _Do not proceed_**
+4) Iterate with reviewers as needed, using the pull request to capture discussion comments. Once the reviewers approve the pull request, the original author is responsible for merging. **If you encounter a merge conflict, ask for help. _Do not proceed!_**
  
