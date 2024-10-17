@@ -15,5 +15,5 @@ HDU,Name,DataType,Multiplicity,Required,Description,Comments
 13,TELEMETRY,BinTableHDU,False,No,table with 4 columns: time stamp; sensor name; value; units
 14,TRACE1_TELLURIC,ImageHDU,True,False,telluric model in same form as the TRACEX_FLUX HDU (generally used for Science traces)
 15,TRACE1_SKYMODEL,ImageHDU,True,False,sky model for trace 1
-16,ANCILLARY_SPECTRUMP,ImageHDU,True,False,Set of P extensions that store additional spectra (e.g. H&K) that aren’t in the primary spectrum
-17,IMAGEQ,ImageHDU,True,False,set of Q extensions that store useful support images used for quality control (guider cams; sky monitoring; pupil image)
+16,ANCILLARY_SPECTRUM,ImageHDU,True,False,Set of extensions that store additional spectra (e.g. H&K) that aren’t in the primary spectrum
+17,IMAGE,ImageHDU,True,False,set of extensions that store useful support images used for quality control (guider cams; sky monitoring; pupil image)
