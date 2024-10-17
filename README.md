@@ -22,9 +22,9 @@ Level 2 Header Keywords: [Google Doc Here](https://docs.google.com/spreadsheets/
 
 ### Branch Structure
 
--'main' - Release branch from which tagged releases are generated.
--'develop' - Development branch where updates are aggregated between releases
--'feature_name' - Feature branches should be forked off of develop, and should be named with a human readable intuitive name.  Delete feature branches once merged into develop and work in them is complete.
+- *main* - Release branch from which tagged releases are generated.
+- *develop* - Development branch where updates are aggregated between releases
+- *feature_branch_name* - Feature branches should be forked off of develop, and should be named with a human readable intuitive name.  Delete feature branches once merged into develop and work in them is complete.
 
 
 
@@ -35,9 +35,11 @@ We recommend that developers use the following workflow:
 
 1) Create a fork of the repository into your github account by clicking the *Fork* icon on the right top corner of the page.
 
-2) Clone your fork to your local computer: `git clone git@github.com:YourGithubID/RVdata.git`
+2) Clone your fork to your local computer:
+```git clone git@github.com:YourGithubID/RVdata.git```
 
-3) Setup a new *remote* named **upstream** that points to the project level repository: `git remote add upstream git@github.com:EPRV-RCN/RVdata.git`
+3) Setup a new *remote* named **upstream** that points to the project level repository:
+```git remote add upstream git@github.com:EPRV-RCN/RVdata.git```
 
 **To add a new feature or bugfix to the repository:**
 
@@ -52,7 +54,7 @@ git commit -m "Description of committed changes"
 git push origin feature_branch_name
 ```
 
-3) Setup a pull request from your feature branch into the project level develop branch. Use the *Pull requests* menu item on the top bar of github.com. Be sure that the pull request points into the **EPRV-RCN/RVdata develop** branch. This will trigger a review request. Two reviews from the core development team are required before merging.
+3) Setup a pull request from your feature branch into the project level develop branch. Use the *Pull requests* menu item on the top bar of github.com. Be sure that the pull request points into the **EPRV-RCN/RVdata _develop_** branch. This will trigger a review request. Two reviews from the core development team are required before merging.
 
-4) Iterate with reviewers as needed, using the pull request to capture discussion comments. Once the reviewers approve the pull request, the original author is responsible for merging. **If you encounter a merge conflict, ask for help. DO NOT PROCEED**
+4) Iterate with reviewers as needed, using the pull request to capture discussion comments. Once the reviewers approve the pull request, the original author is responsible for merging. **If you encounter a merge conflict, ask for help. _Do not proceed_**
  
