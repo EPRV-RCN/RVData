@@ -17,6 +17,7 @@ from core.models import definitions
 from core.tools.headers import to_ascii_safe
 from core.models.definitions import LEVEL2_EXTENSIONS
 
+
 class RV2(core.models.base.RVDataModel):
     """
     The level 2 RV data. Initialized with empty fields.
@@ -35,15 +36,15 @@ class RV2(core.models.base.RVDataModel):
 
     def _read(self, hdul: fits.HDUList) -> None:
         extension_names = [hdu.name for hdu in hdul]
-        ntrace = hdul[0].header.get('NUMTRACE', default=1)
-        l2_ext = LEVEL2_EXTENSIONS.set_index('Name')
+        ntrace = hdul[0].header.get("NUMTRACE", default=1)
+        l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
 
         for hdu in hdul:
-            fits_type = l2_ext.loc[hdu.name]['DataType']
+            fits_type = l2_ext.loc[hdu.name]["DataType"]
             if hdu.name not in self.extensions.keys():
                 self.create_extension(hdu.name, fits_type)
 
-            if hdu.name == 'PRIMARY':
+            if hdu.name == "PRIMARY":
                 pass
             elif fits_type == "ImageHDU":
                 data = np.array(hdu.data)
@@ -51,7 +52,7 @@ class RV2(core.models.base.RVDataModel):
             elif fits_type == "BinTableHDU":
                 data = Table(hdu.data).to_pandas()
                 self.set_data(hdu.name, data)
-    
+
             self.set_header(hdu.name, hdu.header)
 
     def info(self):
@@ -85,9 +86,7 @@ class RV2(core.models.base.RVDataModel):
 
             ext = self.data[name]
             if isinstance(ext, np.ndarray):
-                row = "|{:20s} |{:20s} |{:20s}\n".format(
-                    name, "array", str(ext.shape)
-                )
+                row = "|{:20s} |{:20s} |{:20s}\n".format(name, "array", str(ext.shape))
                 head += row
             elif isinstance(ext, pd.DataFrame):
                 row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
