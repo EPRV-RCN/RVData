@@ -1,0 +1,25 @@
+HDU,Name,DataType,Description,Comments,Variable definitions
+0,PRIMARY,PrimaryHDU,EPRV Standard FITS HEADER (no data)
+1,INSTRUMENT_HEADER,ImageHDU,Inherited instrument header (no data)
+2,RECEIPT,BinTableHDU,Table of operations that have been performed to go from native data to L2 (Table)
+3,DRP_CONFIG,BinTableHDU,Pipeline details (settings etc) to go from native data to L2 (Table, string)
+4,TRACE1_FLUX,ImageHDU,Flux in trace 1
+5,TRACE1_WAVE,ImageHDU,wavelength solution for trace 1
+6,TRACE1_VAR,ImageHDU,variance for trace 1
+7,TRACE1_BLAZE,ImageHDU,blaze for trace 1
+
+16,TRACE4_FLUX,ImageHDU,Flux in trace 4,,
+17,TRACE4_WAVE,ImageHDU,wavelength solution for trace 4,,
+18,TRACE4_VAR,ImageHDU,variance for trace 4,,
+19,TRACE4_BLAZE,ImageHDU,blaze for trace 4,,
+20,BARYCORR_KMS,ImageHDU,barycentric correction in km/s (can be a single value; array of Norder; or array of Nord x M pix)
+21,BARYCORR_Z,ImageHDU,barycentric correction in redshift (same as above)
+22,BJD_TDB,ImageHDU,photon weighted midpoint following the same structure as the barycentric HDU)
+Optional Extensions:,,,
+23,DRIFT,ImageHDU,drift measurement in delta lambda with some structure as barycorr HDU (as defined by the instrument team)
+24,EXPMETER,BinTableHDU,table where # columns
+25,TELEMETRY,BinTableHDU,table with 4 columns: time stamp; sensor name; value; units
+26,TRACE1_TELLURIC,ImageHDU,telluric model in same form as the TRACEX_FLUX HDU (generally used for Science traces)
+27,TRACE1_SKYMODEL,ImageHDU,sky model for trace 1
+27,ANCILLARY_SPECTRUMP,ImageHDU,Set of P extensions that store additional spectra (e.g. H&K) that aren’t in the primary spectrum
+28,IMAGEQ,ImageHDU,set of Q extensions that store useful support images used for quality control (guider cams; sky monitoring; pupil image)
