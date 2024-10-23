@@ -23,6 +23,7 @@ FITS_TYPE_MAP = {
 config_path = Path("core/models/config")
 
 LEVEL2_EXTENSIONS = pd.read_csv(config_path / "L2-extensions.csv")
+LEVEL2_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L2-PRIMARY-keywords.csv")
 
 # LEVEL2_HEADER_FILE = os.path.abspath(os.path.dirname(__file__)) + "/headers/L2.csv"
 
