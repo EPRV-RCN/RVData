@@ -1,5 +1,4 @@
 HDU,Name,DataType,Multiplicity,Required,Description,Comments
-
 0,PRIMARY,PrimaryHDU,False,True,EPRV Standard FITS HEADER (no data),Carried forward from L2 FITS file
 1,INSTRUMENT_HEADER,ImageHDU,False,True,Inherited instrument header (no data),Carried forward from L2 FITS file
 2,RECEIPT,BinTableHDU,False,True,Table of operations that have been performed on this file,
