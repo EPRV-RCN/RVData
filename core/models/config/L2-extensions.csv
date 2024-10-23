@@ -1,0 +1,19 @@
+HDU,Name,DataType,Multiplicity,Required,Description,Comments
+0,PRIMARY,PrimaryHDU,False,True,EPRV Standard FITS HEADER (no data),
+1,INSTRUMENT_HEADER,ImageHDU,False,True,Inherited instrument header (no data),If this L2 file was translated from an instrument's native data product then this header contains the original data header
+2,RECEIPT,BinTableHDU,False,True,Table of operations that have been performed on this file,
+3,DRP_CONFIG,BinTableHDU,False,True,Pipeline details (settings etc) to go from native data to L2,
+4,TRACE1_FLUX,ImageHDU,True,True,Flux in trace 1,
+5,TRACE1_WAVE,ImageHDU,True,True,wavelength solution for trace 1,
+6,TRACE1_VAR,ImageHDU,True,True,variance for trace 1,
+7,TRACE1_BLAZE,ImageHDU,True,True,blaze for trace 1, 
+8,BARYCORR_KMS,ImageHDU,False,True,barycentric correction in km/s, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+9,BARYCORR_Z,ImageHDU,False,True,barycentric correction in redshift, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+10,BJD_TDB,ImageHDU,False,True,Photon weighted midpoint, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+11,DRIFT,ImageHDU,False,True,Drift measurement map in delta lambda, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+12,EXPMETER,BinTableHDU,False,False,Table of exposure meter counts timeseries over the exposure,Table has # of columns equal to the number of wavelengths where the exposure counts are measured and number of rows equal to exposure time / exp meter cadence
+13,TELEMETRY,BinTableHDU,False,False,Table of telemetry collected during the exposure,Table has 4 columns: time stamp; sensor name; value; units
+14,TRACE1_TELLURIC,ImageHDU,True,False,Telluric model for trace 1,Follows same format as TRACE1_FLUX HDU; generally used for Science Object traces
+15,TRACE1_SKYMODEL,ImageHDU,True,False,Sky model for trace 1,Follows same format as TRACE1_FLUX HDU
+16,ANCILLARY_SPECTRUM,ImageHDU,True,False,Extension(s) that store ancillary spectra, Options include Ca II H&K if separate spectrograph used
+17,IMAGE,ImageHDU,True,False,Extension(s) that store useful support images, Options include guider cam or sky monitoring or pupil image
