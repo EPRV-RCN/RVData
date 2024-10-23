@@ -1,9 +1,7 @@
 from astropy.io import fits
-import astropy.units as u
-from astropy.nddata import VarianceUncertainty
-from specutils import SpectrumCollection
-from specutils.utils.wcs_utils import gwcs_from_array
+from astropy.table import Table
 import numpy as np
+from collections import OrderedDict
 
 # import base class
 from core.models.level2 import RV2
@@ -59,10 +57,13 @@ class KPFRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
+
         for i in range(1, 4):
             flux_array = None
             wave_array = None
             var_array = None
+            out_prefix = f"TRACE{i+1}_"
+
             for c, chip in enumerate(["GREEN", "RED"]):
                 flux_ext = f"{chip}_SCI_FLUX{i}"
                 wave_ext = f"{chip}_SCI_WAVE{i}"
@@ -70,7 +71,7 @@ class KPFRV2(RV2):
 
                 if flux_array is None:
                     flux_array = hdul[flux_ext].data
-                    meta = hdul[flux_ext].header
+                    flux_meta = OrderedDict(hdul[flux_ext].header)
                 else:
                     flux_array = np.concatenate(
                         (flux_array, hdul[flux_ext].data), axis=0
@@ -78,6 +79,7 @@ class KPFRV2(RV2):
 
                 if wave_array is None:
                     wave_array = hdul[wave_ext].data
+                    wave_meta = OrderedDict(hdul[wave_ext].header)
                 else:
                     wave_array = np.concatenate(
                         (wave_array, hdul[wave_ext].data), axis=0
@@ -85,30 +87,29 @@ class KPFRV2(RV2):
 
                 if var_array is None:
                     var_array = hdul[var_ext].data
+                    var_meta = OrderedDict(hdul[var_ext].header)
                 else:
                     var_array = np.concatenate((var_array, hdul[var_ext].data), axis=0)
 
-        out_ext = "SCI1"
+            self.create_extension(
+                out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
+            )
+            self.create_extension(
+                out_prefix + "WAVE", "ImageHDU", data=wave_array, header=wave_meta
+            )
+            self.create_extension(
+                out_prefix + "VAR", "ImageHDU", data=var_array, header=var_meta
+            )
+            blaze = flux_array * 0.0 + 1.0
+            self.create_extension(
+                out_prefix + "BLAZE", "ImageHDU", data=blaze, header=flux_meta
+            )
 
-        flux = u.Quantity(flux_array, unit=u.electron)
-        wave = u.Quantity(wave_array, unit="AA")
-        wcs = np.array([gwcs_from_array(x) for x in wave])
-        var = VarianceUncertainty(var_array, unit=u.electron)
-
-        spec = SpectrumCollection(
-            flux=flux, spectral_axis=wave, uncertainty=var, wcs=wcs, meta=meta
-        )
-
-        if out_ext not in self.extensions.keys():
-            self.create_extension(out_ext, SpectrumCollection)
-        setattr(self, out_ext, spec)
-        self.header[out_ext] = meta
-
-        for fiber in ["SKY", "CAL"]:
+        for i, fiber in zip([1, 5], ["CAL", "SKY"]):
             flux_array = None
             wave_array = None
             var_array = None
-            out_ext = f"{fiber}1"
+            out_prefix = f"TRACE{i}_"
 
             for c, chip in enumerate(["GREEN", "RED"]):
                 flux_ext = f"{chip}_{fiber}_FLUX"
@@ -117,7 +118,7 @@ class KPFRV2(RV2):
 
                 if flux_array is None:
                     flux_array = hdul[flux_ext].data
-                    meta = hdul[flux_ext].header
+                    flux_meta = OrderedDict(hdul[flux_ext].header)
                 else:
                     flux_array = np.concatenate(
                         (flux_array, hdul[flux_ext].data), axis=0
@@ -125,6 +126,7 @@ class KPFRV2(RV2):
 
                 if wave_array is None:
                     wave_array = hdul[wave_ext].data
+                    wave_meta = OrderedDict(hdul[wave_ext].header)
                 else:
                     wave_array = np.concatenate(
                         (wave_array, hdul[wave_ext].data), axis=0
@@ -132,34 +134,55 @@ class KPFRV2(RV2):
 
                 if var_array is None:
                     var_array = hdul[var_ext].data
+                    var_meta = OrderedDict(hdul[var_ext].header)
                 else:
                     var_array = np.concatenate((var_array, hdul[var_ext].data), axis=0)
 
-            flux = u.Quantity(flux_array, unit=u.electron)
-            wave = u.Quantity(wave_array, unit="AA")
-            wcs = np.array([gwcs_from_array(x) for x in wave])
-            var = VarianceUncertainty(var_array, unit=u.electron)
-            meta = hdul[flux_ext].header
+            if i == 1:
+                self.set_header(out_prefix + "FLUX", flux_meta)
+                self.set_data(out_prefix + "FLUX", flux_array)
 
-            spec = SpectrumCollection(
-                flux=flux, spectral_axis=wave, uncertainty=var, wcs=wcs, meta=meta
-            )
+                self.set_header(out_prefix + "WAVE", wave_meta)
+                self.set_data(out_prefix + "WAVE", wave_array)
 
-            if out_ext not in self.extensions.keys():
-                self.create_extension(out_ext, SpectrumCollection)
-            setattr(self, out_ext, spec)
-            self.header[out_ext] = meta
+                self.set_header(out_prefix + "VAR", var_meta)
+                self.set_data(out_prefix + "VAR", var_array)
+
+                self.set_header(out_prefix + "BLAZE", flux_meta)
+                self.set_data(out_prefix + "BLAZE", flux_array * 0.0 + 1.0)
+            else:
+                self.create_extension(
+                    out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
+                )
+                self.create_extension(
+                    out_prefix + "WAVE", "ImageHDU", data=wave_array, header=wave_meta
+                )
+                self.create_extension(
+                    out_prefix + "VAR", "ImageHDU", data=var_array, header=var_meta
+                )
+                blaze = flux_array * 0.0 + 1.0
+                self.create_extension(
+                    out_prefix + "BLAZE", "ImageHDU", data=blaze, header=flux_meta
+                )
 
         bary = hdul["BARY_CORR"].data
         bary_kms = bary["BARYVEL"] / 1000.0
-        setattr(self, "BARY_KMS", bary_kms)
-        setattr(self, "BARY_Z", bary_kms / 3e5)  # aproximate!!!
-        setattr(self, "BJD", bary["PHOTON_BJD"])
 
-        extra_headers = []
-        for key in self.header.keys():
-            if key not in self.extensions.keys():
-                extra_headers.append(key)
+        self.set_header("DRIFT", wave_meta)
+        self.set_data("DRIFT", np.zeros_like(flux_array))
 
-        for key in extra_headers:
-            del self.header[key]
+        self.set_header("BARYCORR_KMS", OrderedDict(hdul["BARY_CORR"].header))
+        self.set_header("BARYCORR_Z", OrderedDict(hdul["BARY_CORR"].header))
+        self.set_data("BARYCORR_KMS", bary_kms)
+        self.set_data("BARYCORR_Z", bary_kms / 3e5)  # aproximate!!!
+
+        self.set_header("BJD_TDB", OrderedDict(hdul["BARY_CORR"].header))
+        self.set_data("BJD_TDB", bary["PHOTON_BJD"])
+
+        self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
+
+        self.set_header("DRP_CONFIG", OrderedDict(hdul["CONFIG"].header))
+        self.set_data("DRP_CONFIG", Table(hdul["CONFIG"].data).to_pandas())
+
+        self.set_header("RECEIPT", OrderedDict(hdul["RECEIPT"].header))
+        self.set_data("RECEIPT", Table(hdul["RECEIPT"].data).to_pandas())

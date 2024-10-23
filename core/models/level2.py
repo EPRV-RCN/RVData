@@ -23,6 +23,8 @@ class RV2(core.models.base.RVDataModel):
         super().__init__()
         self.level = 2
 
+        # TODO: initialize header keywords for each extension
+
         for i, row in LEVEL2_EXTENSIONS.iterrows():
             if row["Required"]:
                 # TODO: set description and comment
