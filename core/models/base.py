@@ -5,26 +5,17 @@ Standard models for RV data
 import datetime
 import hashlib
 import importlib
-
-# Standard dependencies
 import os
 import warnings
 from collections import OrderedDict
 
 import git
 import pandas as pd
-
-# External dependencies
 from astropy.io import fits
 from astropy.table import Table
 
-from core.models.definitions import (
-    FITS_TYPE_MAP,
-    INSTRUMENT_READERS
-)
+from core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
 from core.models.receipt_columns import RECEIPT_COL
-
-# Pipeline dependencies
 from core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 
 
@@ -41,13 +32,23 @@ class RVDataModel(object):
     models.
 
     Attributes:
-        header (dict): a dictionary of headers of each extension (HDU)
+        extensions (dict): a dictionary of extensions
 
-            Header stores all header information from the FITS file. Since Each file is
-            organized into extensions (HDUs), and Astropy parses each extension's
-            header cards into a dictionary, this attribute is structured as a dictionary
-            of Astropy header objects. The first layer is the name of the header, and the second layer
-            is the name of the key.
+            This maps extension name to their FITS data type, e.g. PrimaryHDU,
+            ImageHDU, BinTableHDU.
+
+        headers (dict): a dictionary of headers of each extension (HDU)
+
+            This stores all header information from the FITS file as a dictionary
+            with extension name as the keys and the header content as the values.
+            Headers are stored as OrderedDict types.
+
+        data (dict): a dictionary of data of each extension (HDU)
+
+            This stores all extension data from the FITS file as a dictionary
+            with extension name as the keys and the data content as the values.
+            Data type is translated from the FITS type to an appropriate Python
+            data type by core.model.definitions.FITS_TYPE_MAP.
 
         receipt (pandas.DataFrame): a table that records the history of this data
 
@@ -61,50 +62,11 @@ class RVDataModel(object):
             in additional information, such as the time of execution, code release version,
             current branch, ect.
 
-            Note:
-                It is not recommended to modify the receipt Dataframe directly. Use the provided methods
-                to make any adjustments.
-
-            Examples:
+            It is not recommended to modify the receipt Dataframe directly. Use the provided
+            methods to make any adjustments, such as:
                 >>> from core.models.level1 import RV1
                 >>> data = RV1()
-                # Add an entry into the receipt
-                # Three args are required: name_of_primitive, param, status
                 >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
-                >>> data.receipt
-                                        Time     ...  Module_Param Status
-                0  2020-06-22T15:42:18.360409     ...        input1   PASS
-
-        extensions (dict): a dictionary of extensions.
-
-            This attribute stores any additional information that any primitive may wish to
-            record to FITS. Creating an extension creates an empty extension of the given type and
-            one may modify it directly. Creating an extension will also create a new key-value
-            pair in header, so that one can write header keywords to the extension. When writing to
-            FITS extensions are stored in the FITS data type as specified in
-            core.models.definitions.FITS_TYPE_MAP (image or binary table). Whitespace or
-            any symbols that may be interpreted by Python as an operator (e.g. -) are not
-            allowed in extension names.
-
-            Examples:
-                >>> from core.models.level1 import RV1
-                >>> data = RV1()
-                # Add an extension
-                # A unique name is required
-                >>> data.create_extension('extension1', pd.DataFrame)
-                # Access the extension by using its name as an attribute
-                # Add a column called 'col1' to the Dataframe
-                >>> data.extension1['col1'] = [1, 2, 3]
-                >>> data.extension1['extension1']
-                col1
-                0     1
-                1     2
-                2     3
-                # add a key-value pair to the header
-                >>> data.header['extension1']['key'] = 'value'
-                # delete the extension we just made
-                >>> data.del_extension['extension1']
-        config (DataFrame): two-column dataframe that stores each line of the input configuration file
     """
 
     def __init__(self):
@@ -118,6 +80,7 @@ class RVDataModel(object):
         self.extensions = OrderedDict()  # map name to FITS type
         self.headers = OrderedDict()  # map name to extension header
         self.data = OrderedDict()  # map name to extension data
+        self.receipt = pd.DataFrame([])
 
     # =============================================================================
     # I/O related methods
@@ -125,7 +88,7 @@ class RVDataModel(object):
     def from_fits(cls, fn, instrument=None):
         """Create a data instance from a file
 
-        This method emplys the ``read`` method for reading the file. Refer to
+        This method implys the ``read`` method for reading the file. Refer to
         it for more detail. It is assume that the input FITS file is in RVData standard format
 
         Args:
@@ -178,6 +141,7 @@ class RVDataModel(object):
                     if "RECEIPT" in hdu.name:
                         # Table contains the RECEIPT
                         df: pd.DataFrame = t.to_pandas()
+                        # TODO: get receipt columns from core.models.config.BASE-RECEIPT-columns.csv
                         df = df.reindex(
                             df.columns.union(RECEIPT_COL, sort=False),
                             axis=1,
@@ -290,7 +254,6 @@ class RVDataModel(object):
         }
 
         self.receipt = pd.concat([self.receipt, pd.DataFrame([row])], ignore_index=True)
-        self.RECEIPT = self.receipt
 
     def receipt_info(self):
         """
@@ -306,7 +269,7 @@ class RVDataModel(object):
     # =============================================================================
     # Extension methods
 
-    def create_extension(self, ext_name: str, ext_type: str, header=OrderedDict(), data=None):
+    def create_extension(self, ext_name: str, ext_type: str, header=None, data=None):
         """
         Create a new empty extension
 
@@ -317,17 +280,20 @@ class RVDataModel(object):
             data: optional data to initialize extension data
         """
 
+        # enforce upper-case
+        ext_name = ext_name.upper()
+
         # check whether the extension already exist
         if ext_name in self.extensions:
             raise NameError("Name {} already exists as extension".format(ext_name))
 
-        ext_name = ext_name.upper()
         self.extensions[ext_name] = ext_type
+
+        # NOTE: OrderDict(None) and np.array(None) don't work, so use [] to init.
         if header is None:
             self.headers[ext_name] = OrderedDict([])
         else:
             self.headers[ext_name] = header
-        # NOTE: can't init OrderDict(None), so use OrderedDict([])
         if data is None:
             self.data[ext_name] = FITS_TYPE_MAP[ext_type]([])
         else:
