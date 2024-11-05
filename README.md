@@ -22,6 +22,8 @@ Level 2 Header Keywords: [Google Doc Here](https://docs.google.com/spreadsheets/
 
 ## Repository structure and how to interact with it
 
+This repo follows the [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
+
 ### Branch Structure
 
 - *main* - Release branch from which tagged releases are generated.
