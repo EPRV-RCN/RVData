@@ -19,6 +19,8 @@ LEVEL2_EXTENSIONS = pd.read_csv(config_path / "L2-extensions.csv")
 LEVEL2_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L2-PRIMARY-keywords.csv")
 
 # Dictionary of instrument readers
-INSTRUMENT_READERS = {
-    "KPF": {"module": "instruments.kpf.level2", "class": "KPFRV2", "method": "_read"}
-}
+INSTRUMENT_READERS = {'KPF': 
+                      {'module': 'instruments.kpf.level2', 'class': 'KPFRV2', 'method': '_read'},
+                      'ESPRESSO':
+                      {'module': 'instruments.espresso.level2', 'class': 'ESPRESSORV2', 'method': '_read'},
+                     }
