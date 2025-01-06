@@ -1,40 +1,22 @@
-import os
-from collections import OrderedDict
-import importlib
 from astropy.io import fits
-import astropy.units as u
-from astropy.nddata import VarianceUncertainty
-from specutils import SpectrumCollection
-from specutils.utils.wcs_utils import gwcs_from_array
-import numpy as np
-from astropy.time import Time
-import pandas as pd
-import instruments.espresso.config.config as config
 # import base class
 from core.models.level2 import RV2
 import instruments.espresso.utils as utils
 # KPF Level2 Reader
 class ESPRESSORV2(RV2):
     """
-    Read a KPF level 1 file and convert it to the EPRV standard format Python object.
+    Read an ESPRESSO raw file and convert it to the EPRV standard format Python object. In order to run fully, this
+    translator also needs to open other data products from the ESPRESSO pipeline, that should be stored in the same
+    directory. The ESPRESSO pipeline products are: 2D spectrum on fiber A and B and blaze function for each fiber.
+    This translator assumes that the files are named according to the ESPRESSO pipeline convention, namely:
+    raw_file.fits, r.raw_file_S2D_BLAZE_A.fits, r.raw_file_S2D_BLAZE_B.fits. The names of the BLAZE files are
+    obtained from the primary header.
 
-    This class extends the `RV2` base class to handle the reading of KPF (Keck Planet Finder)
-    Level 1 files and converts them into a standardized EPRV
-    format. Each extension from the FITS file is read, and relevant data, including flux,
-    wavelength, variance, and metadata, are stored as attributes of the resulting Python object.
 
     Methods
     -------
     _read(hdul: fits.HDUList) -> None:
-        Reads the input FITS HDU list, extracts specific extensions related to the science
-        data for different chips and fibers, and stores them in a standardized format.
-
-        - The method processes science data (`SCI_FLUX`, `SCI_WAVE`, `SCI_VAR`) from both
-          the GREEN and RED chips and different fibers (`SKY`, `CAL`).
-        - For each chip and fiber, the flux, wavelength, variance, and metadata are extracted
-          and stored as a `SpectrumCollection` object.
-        - Deletes unused extensions such as `RED_TELLURIC`, `GREEN_TELLURIC`, and `TELEMETRY`.
-
+        This function calls the do_conversion method from the utils.py file, which handles the conversion
     Attributes
     ----------
     extensions : dict
@@ -46,24 +28,17 @@ class ESPRESSORV2(RV2):
         A dictionary containing metadata headers from the FITS file, with each extension's
         metadata stored under its respective key.
 
-    Notes
-    -----
-    - The `_read` method processes science and calibration data from the GREEN and RED chips,
-      and it extracts and organizes data for both the SCI, SKY, and CAL fibers.
-    - The method converts the flux, wavelength, and variance for each extension into
-      `SpectrumCollection` objects.
-    - Unused extensions (like `RED_TELLURIC`, `GREEN_TELLURIC`, and `TELEMETRY`) are removed
-      from the object.
+ 
+        
 
     Example
     -------
     >>> from core.models.level2 import RV2
-    >>> rv2_obj = RV2.from_fits("kpf_level1_file.fits")
+    >>> rv2_obj = RV2.from_fits("ESPRE.2000-00-00T00:00:00.fits")
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
-        #print(self.info())
-        utils.do_conversion(self, hdul)
+        utils.do_conversion(self)
         return
         

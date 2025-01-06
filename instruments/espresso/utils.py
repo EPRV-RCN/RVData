@@ -4,31 +4,42 @@ from astropy.time import Time
 import numpy as np
 import pandas as pd
 import os
-
 import instruments.espresso.config.config as config
-def do_conversion(RV2, hdul):
+
+def do_conversion(RV2):
+    """Complete all the necessary steps to convert the raw file to the level 2 format.
+
+    Args:
+        RV2 (RV2 instance): the RV2 object created with the from_fits() method
+
     """
-    Convert the raw file to a level 2 file by converting the e2ds, blaze, raw file information and adding the L2 header.
-    """
-    RV2.file_format = 'L2'
     RV2.blaze_file = []
-    convert_e2ds(RV2)
-    convert_rawfile(RV2)
-    create_l2_header(RV2)
+    convert_S2D(RV2)
+    convert_raw_file(RV2)
+    create_primary_header(RV2)
     convert_blaze(RV2)
     return
 
 
-    return
+def create_primary_header(RV2):
+    """Create.
 
+        Args:
+            fn (str): file path (relative to the repository)
+            instrument (str): instrument name. None implies FITS file is in EPRV standard format.
+            overwrite (bool): if this instance is not empty, specifies whether to overwrite
 
+        Raises:
+            IOError: when a invalid file is presented
 
-def create_l2_header(RV2):
-    """Creates the L2 header by copying the information from the raw file and adding the necessary information for the L2 file.
-    """
+        Note:
+            This is not a @classmethod so initialization is
+            required before calling this function
+
+        """
     #We create an empty HDU to store the L2 header
-    l2_hdu = fits.PrimaryHDU(data = None)
-    l2_hdu.header['EXTNAME'] = 'PRIMARY'
+    primary_HDU = fits.PrimaryHDU(data = None)
+    primary_HDU.header['EXTNAME'] = 'PRIMARY'
     #We load the header map to convert between raw file headers and L2 header
     header_map = pd.read_csv(os.path.dirname(os.path.realpath(__file__)) + '/config/header_map.csv')
     #We replace the %UT% in the header map with the front end ID to get the correct keywords depending on which UT was used
@@ -48,61 +59,60 @@ def create_l2_header(RV2):
         try:
             #If there is a fixed value to set, we set it
             if(pd.notna(header_map.value.iloc[index])):
-                l2_hdu.header[values[0]] = header_map.value.iloc[index]
+                primary_HDU.header[values[0]] = header_map.value.iloc[index]
             #Otherwise, we copy the value from the raw file
             elif(pd.notna(header_map['ESO_keyword'].iloc[index])):
-                l2_hdu.header[values[0]] = (RV2.headers['INSTRUMENT_HEADER'][header_map['ESO_keyword'].iloc[index]], RV2.headers['INSTRUMENT_HEADER'].comments[header_map['ESO_keyword'].iloc[index]].strip())
+                primary_HDU.header[values[0]] = (RV2.headers['INSTRUMENT_HEADER'][header_map['ESO_keyword'].iloc[index]], RV2.headers['INSTRUMENT_HEADER'].comments[header_map['ESO_keyword'].iloc[index]].strip())
             #If the value is not present in the raw file, we set it to None
             else:
-                l2_hdu.header[values[0]] = None
+                primary_HDU.header[values[0]] = None
         except Exception as e:
             print(e, values[0],RV2.headers['INSTRUMENT_HEADER'][header_map['ESO_keyword'].iloc[index]]) 
     
 
-    l2_hdu.header['FILENAME'] = ('r.'+RV2.filename[:-5] + '_L2.fits', 'Name of the file')
+    primary_HDU.header['FILENAME'] = ('r.'+RV2.filename[:-5] + '_L2.fits', 'Name of the file')
 
     #Getting Gaia identifier
     try:
         gaia_name = get_gaia_name(RV2.headers['INSTRUMENT_HEADER']['OBJECT'])
-        l2_hdu.header['CATSRC'] = (gaia_name[:9],'Catalog name')
-        l2_hdu.header['CATID'] = (gaia_name[9:], 'Catalog ID')
+        primary_HDU.header['CATSRC'] = (gaia_name[:9],'Catalog name')
+        primary_HDU.header['CATID'] = (gaia_name[9:], 'Catalog ID')
 
     except Exception as e:
         print('Could not find Gaia name: ' + str(e))
 
     current_time = Time.now()
-    l2_hdu.header['DATE']  = (current_time.iso, 'Date of file creation')
-    l2_hdu.header['TCSZA'] = (np.round(90 - l2_hdu.header['TCSEL'], 3), '[deg] Zenith angle')
+    primary_HDU.header['DATE']  = (current_time.iso, 'Date of file creation')
+    primary_HDU.header['TCSZA'] = (np.round(90 - primary_HDU.header['TCSEL'], 3), '[deg] Zenith angle')
 
     #Converting LST in seconds to hh:mm:ss.ms
-    lst = convert_lst(l2_hdu.header['TCSLST'])
-    l2_hdu.header['TCSLST'] = (lst, 'Local Sidereal Time')
-    ra, dec = convert_to_sexagesimal(l2_hdu.header['CATRA'], l2_hdu.header['CATDEC'])
-    l2_hdu.header['CATRA'] = (ra, 'Catalog Right Ascension')
-    l2_hdu.header['CATDEC'] = (dec, 'Catalog Declination')
-    tcs_ra, tcs_dec = convert_to_sexagesimal(l2_hdu.header['TCSRA'], l2_hdu.header['TCSDEC'])
-    l2_hdu.header['TCSRA'] = (tcs_ra, 'Telescope Right Ascension')
-    l2_hdu.header['TCSDEC'] = (tcs_dec, 'Telescope Declination')
-    l2_hdu.header['TCSHA'] = (compute_hour_angle(lst, tcs_ra), 'Hour angle')
-    l2_hdu.header['CATPMRA'] = (l2_hdu.header['CATPMRA']*1000, '[marcsec/yr] Proper Motion Alpha')
-    l2_hdu.header['CATPMDEC'] = (l2_hdu.header['CATPMDEC']*1000, '[marcsec/yr] Proper Motion Delta')    
+    lst = convert_lst(primary_HDU.header['TCSLST'])
+    primary_HDU.header['TCSLST'] = (lst, 'Local Sidereal Time')
+    ra, dec = convert_to_sexagesimal(primary_HDU.header['CATRA'], primary_HDU.header['CATDEC'])
+    primary_HDU.header['CATRA'] = (ra, 'Catalog Right Ascension')
+    primary_HDU.header['CATDEC'] = (dec, 'Catalog Declination')
+    tcs_ra, tcs_dec = convert_to_sexagesimal(primary_HDU.header['TCSRA'], primary_HDU.header['TCSDEC'])
+    primary_HDU.header['TCSRA'] = (tcs_ra, 'Telescope Right Ascension')
+    primary_HDU.header['TCSDEC'] = (tcs_dec, 'Telescope Declination')
+    primary_HDU.header['TCSHA'] = (compute_hour_angle(lst, tcs_ra), 'Hour angle')
+    primary_HDU.header['CATPMRA'] = (primary_HDU.header['CATPMRA']*1000, '[marcsec/yr] Proper Motion Alpha')
+    primary_HDU.header['CATPMDEC'] = (primary_HDU.header['CATPMDEC']*1000, '[marcsec/yr] Proper Motion Delta')    
     if('PRIMARY' not in RV2.extensions):
-        RV2.create_extension(ext_name = 'PRIMARY', ext_type = 'PrimaryHDU', header = l2_hdu.header)
+        RV2.create_extension(ext_name = 'PRIMARY', ext_type = 'PrimaryHDU', header = primary_HDU.header)
     else:
-        RV2.set_header(ext_name = 'PRIMARY', header = l2_hdu.header)
+        RV2.set_header(ext_name = 'PRIMARY', header = primary_HDU.header)
     return
 
-def convert_rawfile(RV2):
+def convert_raw_file(RV2):
     """Transfer the raw file information to the level 2 hdul file by keeping the same primary header
     and copying the exposure meter, pupil image and guiding frame information.
 
     """
     
-    with fits.open(RV2.dirname +'/'+ RV2.filename) as hdul:
-        prim_header = hdul['PRIMARY'].header.copy()
-        
-        ins_header = fits.ImageHDU(header=prim_header, data = None)
+    with fits.open(RV2.dirname +'/'+ RV2.filename) as hdul:        
+        ins_header = fits.ImageHDU(header=hdul['PRIMARY'].header.copy(), data = None)
         ins_header.header['EXTNAME'] = 'INSTRUMENT_HEADER'
+
         if(ins_header.header['EXTNAME'] not in RV2.extensions):
             RV2.create_extension(ext_name = ins_header.header['EXTNAME'], ext_type = 'ImageHDU', header = ins_header.header)
         else:
@@ -155,52 +165,19 @@ def convert_rawfile(RV2):
             RV2.set_data(ext_name = 'GUIDING_FRAME', data = guiding_frame_hdu.data)
             RV2.set_header(ext_name = 'GUIDING_FRAME', header = guiding_frame_hdu)
     return 
-def create_QC_header( header):
-    """Create a QC header by removing the ESO QC cards from the primary header and adding them to a new header.
 
-    Args:
-        header (fits.Header): The primary header of one of the s2d files produced by the espresso DRS
-
-    Returns:
-        fits.Header: The header containing all the ESO QC cards from the primary header
-    """
-    temp_head = fits.Header()
-    to_remove = [c for c in header.keys() if "ESO QC" in c]
-    qc_cards = [(key, header[key], header.comments[key]) for key in to_remove]
-    for key, value, comment in qc_cards:
-        header.remove(key)
-        
-        if(len(key) > 8):
-            key = 'HIERARCH ' + key.strip()
-        #Special case as the ESPRESSO drs sometimes produces values that are too long
-        if(len(str(value)) > 20):
-            if(type(value) == float):
-                value = float(str(value)[:20])
-            else:
-                value = str(value)[:20]
-        #Special case for the slope_x keyword that would raise a warning because of its length
-        if(key == 'HIERARCH ESO QC DRIFT DET0 SLOPE_X' or key == 'HIERARCH ESO QC DRIFT DET1 SLOPE_X'):
-            comment = comment.replace('for', '')
-        temp_head[key.strip()] = (value, comment.strip())
-        
-    return header, temp_head
-def convert_e2ds(RV2):
+def convert_S2D(RV2):
     """Converts the e2ds files to the level 2 format by extracting the values of the e2ds files and adding them to the level 2 file.
     """
     #Loop over the two fibers (science and FP)
     trace_number = 1
     for i, fiber in enumerate(config.fibers.keys()):
         #Load the s2d file
-        e2ds_file = RV2.dirname + '/r.' +RV2.filename[:-5] + '_S2D_BLAZE_' + fiber + '.fits'
+        fname = RV2.dirname + '/r.' +RV2.filename[:-5] + '_S2D_BLAZE_' + fiber + '.fits'
 
-        with fits.open(e2ds_file) as hdul:
+        with fits.open(fname) as hdul:
             #
-            prim_header = hdul['PRIMARY'].header.copy()
-            #We create the QC header and add it to the HDU list
-            prim_head, QC_head = create_QC_header(prim_header)
-            QC_hdu = fits.ImageHDU(data = None, header = QC_head)
-            QC_hdu.header['EXTNAME'] = config.fibers[fiber] + '_HEADER'
-            #self.l2.extend([QC_hdu])
+            prim_header = hdul['PRIMARY'].header.copy()            
             if(fiber == 'SCI'):
                 blaze_file = prim_header['HIERARCH ESO PRO REC1 CAL28 NAME']
             else:
@@ -210,22 +187,18 @@ def convert_e2ds(RV2):
             for slice in config.slices:
                 for field in config.extnames.keys():
                     #We extract the values from one invividual camera
-                    single_cam_values = hdul[field].data#[config.cam_range[camera][0]:config.cam_range[camera][1], :]
+                    values = hdul[field].data
                     if(field == 'WAVEDATA_VAC_BARY'):
                         #We doppler shift the wavelength values
-                        single_slice_bary = single_cam_values[slice::2,:].copy()
-                        #hdul_l2_bary = fits.ImageHDU(data = single_slice_bary.copy(), header = hdul[field].header)
-                        #hdul_l2_bary.header['EXTNAME'] = config.fibers[fiber]+ config.slice_names[slice] + config.cam_names[camera] + '_WAVE_BARY'
-
-                        single_cam_values = doppler_shift(single_cam_values, QC_head['HIERARCH ESO QC BERV'])
-                        bary_data = np.ones((1,1))*QC_head['HIERARCH ESO QC BERV']
+                        single_slice_bary = values[slice::2,:].copy()
+                        values = doppler_shift(values, prim_header['HIERARCH ESO QC BERV'])
+                        bary_data = np.ones((1,1))*prim_header['HIERARCH ESO QC BERV']
                         single_slice_berv = bary_data#[slice::2,:]
                         berv_hdu = fits.ImageHDU(data = single_slice_berv.copy())
                         berv_hdu.header['EXTNAME'] = 'TRACE'+str(trace_number)  + '_BERV'
 
-                        #self.l2.extend([hdul_l2_bary, berv_hdu])
                     #We extract the values from one individual slice (every other row in the camera values)
-                    single_slice_values = single_cam_values[slice::2,:]
+                    single_slice_values = values[slice::2,:]
                     #We create a new HDU with the values of the slice and the original header
                     hdu_l2 = fits.ImageHDU(data = single_slice_values.copy(), header = hdul[field].header)
 
@@ -237,7 +210,6 @@ def convert_e2ds(RV2):
                         print('Setting data for extension: ' + hdu_l2.header['EXTNAME'] + ' with data of shape ', hdu_l2.data.shape)
                         RV2.set_data(ext_name = hdu_l2.header['EXTNAME'], data =hdu_l2.data)
                         RV2.set_header(ext_name = hdu_l2.header['EXTNAME'], header = hdu_l2.header)
-                    #self.l2.extend([hdu_l2])
                 trace_number += 1
             
                     
@@ -286,7 +258,7 @@ def get_gaia_name(obj):
             result_table = Simbad.query_objectids(obj)
             #We iterate over the results to find the Gaia identifier
             for name in result_table:
-                if(name[0].lower().startswith('gaia')):
+                if(name[0].lower().startswith('gaia dr3')):
                     
                     return name[0]
         except:
