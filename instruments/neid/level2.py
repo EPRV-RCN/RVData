@@ -4,6 +4,7 @@ from astropy.nddata import VarianceUncertainty
 from specutils import SpectrumCollection
 from specutils.utils.wcs_utils import gwcs_from_array
 import numpy as np
+from collections import OrderedDict
 
 # import base class
 from core.models.level2 import RV2
@@ -55,79 +56,87 @@ class NEIDRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
-        # Output original primary header to own extension (will clean up after definitions)
-        instrument_header_ext = 'INSTRUMENT_HEADER'
-        if instrument_header_ext not in self.extensions.keys():
-            self.create_extension(instrument_header_ext, SpectrumCollection)
-        self.header[instrument_header_ext] = hdul[0].header
+
+        ## Output the original primary header to own extension for preservation
+        self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
         
+        ### Prepare fiber-related extensions
+
         # Check observation mode to set fiber list
-        if hdul[0].header['OBS-MODE'] == 'HR':
-            fiber_list = ['SCI', 'SKY', 'CAL']
-        elif hdul[0].header['OBS-MODE'] == 'HE':
-            fiber_list = ['SCI', 'SKY']
+        if hdul[0].header["OBS-MODE"] == "HR":
+            fiber_list = ["SCI", "SKY", "CAL"]
+        elif hdul[0].header["OBS-MODE"] == "HE":
+            fiber_list = ["SCI", "SKY"]
 
-        for fiber in fiber_list:
-            flux_ext = f'{fiber}FLUX'
-            wave_ext = f'{fiber}WAVE'
-            var_ext = f'{fiber}VAR'
-            out_ext = f'{fiber}1'
+        for i_fiber, fiber in enumerate(fiber_list):
+            ## Extension naming set up
 
-            # Extracted flux
-            flux = u.Quantity(hdul[flux_ext].data, unit=u.electron)
+            # Set the input extension names for this fiber
+            flux_ext = f"{fiber}FLUX"
+            wave_ext = f"{fiber}WAVE"
+            var_ext = f"{fiber}VAR"
+            blaze_ext = f"{fiber}BLAZE"
 
-            # Wavelength array and associated WCS
-            wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-            wcs = np.array([gwcs_from_array(x) for x in wave])
+            # Set the output extension name prefix for this fiber (1-indexed)
+            out_prefix = f"TRACE{i_fiber+1}_"
 
-            # Variance array
-            var = VarianceUncertainty(hdul[var_ext].data, unit=u.electron)
+            ## Collect data and header information for each extension
 
-            # Header
-            meta = hdul[flux_ext].header
+            # Flux
+            flux_array = hdul[flux_ext].data
+            flux_meta = OrderedDict(hdul[flux_ext].header)
 
-            # Construct spectrum collection and output to the data object
-            spec = SpectrumCollection(flux=flux, 
-                                      spectral_axis=wave,
-                                      uncertainty=var,
-                                      wcs=wcs, 
-                                      meta=meta)
-            
-            if out_ext not in self.extensions.keys():
-                self.create_extension(out_ext, SpectrumCollection)
-            setattr(self, out_ext, spec)
-            self.header[out_ext] = meta
+            # Wavelength
+            wave_array = hdul[wave_ext].data
+            wave_meta = OrderedDict(hdul[wave_ext].header)
 
-            ### For dealing with blaze, will need NEID L2 file.
-            
-            # blaze_ext = f'{fiber}BLAZE'
-            # out_ext = f'{fiber}1_BLAZE'
+            # Variance
+            var_array = hdul[var_ext].data
+            var_meta = OrderedDict(hdul[var_ext].header)
 
-            # # Blaze flux from extension, wavelength from target flux extension
-            # blaze_flux = u.Quantity(hdul2[blaze_ext].data, unit=u.electron)
-            # wave = u.Quantity(hdul[wave_ext].data, unit='AA')
-            # wcs = np.array([gwcs_from_array(x) for x in wave])
+            # Blaze -- this will require NEID L2 rather than NEID L1 files
+            blaze_array = hdul[blaze_ext].data
+            blaze_meta = OrderedDict(hdul[blaze_ext].header)
 
-            # # Header
-            # meta = hdul2[blaze_ext].header
+            ## Output extensions into base model
+            if i_fiber == 0:
+                self.set_header(out_prefix + "FLUX", flux_meta)
+                self.set_data(out_prefix + "FLUX", flux_array)
 
-            # # Construct spectrum collection and output to the data object
-            # spec = SpectrumCollection(flux=flux, 
-            #                           spectral_axis=wave,
-            #                           wcs=wcs, 
-            #                           meta=meta)
-            
-            # if out_ext not in self.extensions.keys():
-            #     self.create_extension(out_ext, SpectrumCollection)
-            # setattr(self, out_ext, spec)
-            # self.header[out_ext] = meta
+                self.set_header(out_prefix + "WAVE", wave_meta)
+                self.set_data(out_prefix + "WAVE", wave_array)
 
-        # Add BJD and barycentric correction extensions
+                self.set_header(out_prefix + "VAR", var_meta)
+                self.set_data(out_prefix + "VAR", var_array)
+
+                self.set_header(out_prefix + "BLAZE", blaze_meta)
+                self.set_data(out_prefix + "BLAZE", blaze_array)
+            else:
+                self.create_extension(
+                    out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
+                )
+
+                self.create_extension(
+                out_prefix + "WAVE", "ImageHDU", data=wave_array, header=wave_meta
+                )
+
+                self.create_extension(
+                out_prefix + "VAR", "ImageHDU", data=var_array, header=var_meta
+                )
+                
+                self.create_extension(
+                out_prefix + "BLAZE", "ImageHDU", data=blaze_array, header=blaze_meta
+                )
+
+        ### Barycentric correction and timing related extensions
+
+        # Extract barycentric velocities, redshifts, and JDs from NEID primary header
         bary_kms = np.array([hdul[0].header[f'SSBRV{173-order:03d}'] for order in range(122)])
         bary_z = np.array([hdul[0].header[f'SSBZ{173-order:03d}'] for order in range(122)])
         bjd = np.array([hdul[0].header[f'SSBJD{173-order:03d}'] for order in range(122)])
 
-        setattr(self, "BARY_KMS", bary_kms)
-        setattr(self, "BARY_Z", bary_z)
-        setattr(self, "BJD", bjd)
+        # Output (these currently do not have headers to inherit from the NEID data format)
+        self.set_data("BARYCORR_KMS", bary_kms)
+        self.set_data("BARYCORR_Z", bary_z)  # aproximate!!!
+        self.set_data("BJD_TDB", bjd)
 
