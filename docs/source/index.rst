@@ -12,6 +12,7 @@ Documentation for EPRV Data Standardization Project!
 
    new.rst
    api.rst
+   FITS-extensions.rst
 
 Indices and tables
 ==================
