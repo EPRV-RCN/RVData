@@ -1,6 +1,8 @@
 from astropy.io import fits
 from astropy.table import Table
 import numpy as np
+import pandas as pd
+import os
 from collections import OrderedDict
 
 # import base class
@@ -186,3 +188,23 @@ class KPFRV2(RV2):
 
         self.set_header("RECEIPT", OrderedDict(hdul["RECEIPT"].header))
         self.set_data("RECEIPT", Table(hdul["RECEIPT"].data).to_pandas())
+
+        hmap_path = os.path.join(os.path.dirname(__file__), 'config/header_map.csv')
+        headmap = pd.read_csv(hmap_path, header=0)
+
+        phead = fits.PrimaryHDU().header
+        ihead = self.headers['INSTRUMENT_HEADER']
+        for i, row in headmap.iterrows():
+            skey = row['STANDARD']
+            kpfkey = row['INSTRUMENT']
+            if pd.notnull(kpfkey):
+                kpfval = ihead[kpfkey]
+            else:
+                kpfval = row['DEFAULT']
+            if pd.notnull(kpfval):
+                phead[skey] = kpfval
+            else:
+                phead[skey] = None
+
+        self.set_header("PRIMARY", phead)
+        

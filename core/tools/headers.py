@@ -1,4 +1,11 @@
 import unicodedata
+from astropy.io import fits
+import pandas as pd
+
+
+# def initialize_header(header_csv):
+#     header_df = pd.read_csv(header_csv)
+
 
 
 def to_ascii_safe(input_string):
@@ -12,3 +19,4 @@ def to_ascii_safe(input_string):
     ascii_string = ascii_bytes.decode("ascii")
 
     return ascii_string
+
