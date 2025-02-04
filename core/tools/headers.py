@@ -1,6 +1,4 @@
 import unicodedata
-from astropy.io import fits
-import pandas as pd
 
 
 def to_ascii_safe(input_string):
