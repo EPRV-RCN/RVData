@@ -207,4 +207,3 @@ class KPFRV2(RV2):
                 phead[skey] = None
 
         self.set_header("PRIMARY", phead)
-        
