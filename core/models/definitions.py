@@ -23,4 +23,8 @@ INSTRUMENT_READERS = {'KPF':
                       {'module': 'instruments.kpf.level2', 'class': 'KPFRV2', 'method': '_read'},
                       'ESPRESSO':
                       {'module': 'instruments.espresso.level2', 'class': 'ESPRESSORV2', 'method': '_read'},
+                      'HARPS':
+                      {'module': 'instruments.harps.level2', 'class': 'HARPSRV2', 'method': 'do_convertion'},
+                      'HARPSN':
+                      {'module': 'instruments.harpsn.level2', 'class': 'HARPSNRV2', 'method': 'do_convertion'}
                      }

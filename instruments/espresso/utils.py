@@ -19,9 +19,6 @@ def do_conversion(RV2, hdul):
     return
 
 
-    return
-
-
 
 def create_l2_header(RV2):
     """Creates the L2 header by copying the information from the raw file and adding the necessary information for the L2 file.
@@ -97,7 +94,6 @@ def convert_rawfile(RV2):
     and copying the exposure meter, pupil image and guiding frame information.
 
     """
-    
     with fits.open(RV2.dirname +'/'+ RV2.filename) as hdul:
         prim_header = hdul['PRIMARY'].header.copy()
         
@@ -155,7 +151,7 @@ def convert_rawfile(RV2):
             RV2.set_data(ext_name = 'GUIDING_FRAME', data = guiding_frame_hdu.data)
             RV2.set_header(ext_name = 'GUIDING_FRAME', header = guiding_frame_hdu)
     return 
-def create_QC_header( header):
+def create_QC_header(header):
     """Create a QC header by removing the ESO QC cards from the primary header and adding them to a new header.
 
     Args:
@@ -192,7 +188,6 @@ def convert_e2ds(RV2):
     for i, fiber in enumerate(config.fibers.keys()):
         #Load the s2d file
         e2ds_file = RV2.dirname + '/r.' +RV2.filename[:-5] + '_S2D_BLAZE_' + fiber + '.fits'
-
         with fits.open(e2ds_file) as hdul:
             #
             prim_header = hdul['PRIMARY'].header.copy()
@@ -202,9 +197,9 @@ def convert_e2ds(RV2):
             QC_hdu.header['EXTNAME'] = config.fibers[fiber] + '_HEADER'
             #self.l2.extend([QC_hdu])
             if(fiber == 'SCI'):
-                blaze_file = prim_header['HIERARCH ESO PRO REC1 CAL28 NAME']
+                blaze_file = prim_header['HIERARCH ESO PRO REC1 CAL28 NAME'].replace(":", "_")
             else:
-                blaze_file = prim_header['HIERARCH ESO PRO REC1 CAL29 NAME']
+                blaze_file = prim_header['HIERARCH ESO PRO REC1 CAL29 NAME'].replace(":", "_")
             RV2.blaze_file.append(blaze_file)
             #We iterate over the cameras, slices and fields to extract the values from the e2ds file
             for slice in config.slices:
@@ -221,7 +216,7 @@ def convert_e2ds(RV2):
                         bary_data = np.ones((1,1))*QC_head['HIERARCH ESO QC BERV']
                         single_slice_berv = bary_data#[slice::2,:]
                         berv_hdu = fits.ImageHDU(data = single_slice_berv.copy())
-                        berv_hdu.header['EXTNAME'] = 'TRACE'+str(trace_number)  + '_BERV'
+                        berv_hdu.header['EXTNAME'] = 'TRACE'+str(trace_number)  + '_BERV'                     
 
                         #self.l2.extend([hdul_l2_bary, berv_hdu])
                     #We extract the values from one individual slice (every other row in the camera values)
