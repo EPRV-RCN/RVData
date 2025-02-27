@@ -15,6 +15,7 @@ external libraries
 ---------------------
 '''
 from astropy.io import fits
+import numpy as np
 
 '''
 ---------------------
@@ -22,6 +23,7 @@ internal libraries
 ---------------------
 '''
 from core.models.level2 import RV2
+import instruments.harpsn.config.config as config
 
 def convert_DRIFT(RV2: RV2, file_path: str) -> None:
     """

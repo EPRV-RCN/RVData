@@ -53,7 +53,7 @@ TRA,RA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS RA
 TDEC,DEC,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS DEC
 TEL,,,PRIMARY,,,True,[deg] TCS elevation angle
 TZA,,,PRIMARY,,,True,[deg] Zenith angle
-TAZ,HIERARCH TNG TEL AZ,,PRIMARY,S2D_BLAZE_A,,False,[deg] TCS azimuth angle
+TAZ,,,PRIMARY,,,True,[deg] TCS azimuth angle
 THA,,,PRIMARY,,,True,[sexa] TCS hour angle
 PARANG,HIERARCH TNG TEL PARANG START,Null,PRIMARY,S2D_BLAZE_A,,False,[deg] Parallactic angle at exposure start
 PARANG2,HIERARCH TNG TEL PARANG END,Null,PRIMARY,S2D_BLAZE_A,,False,[deg] Parallactic angle at exposure end

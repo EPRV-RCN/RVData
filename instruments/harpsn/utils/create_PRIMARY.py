@@ -33,22 +33,30 @@ import numpy as np
 internal libraries
 ---------------------
 '''
-import instruments.harps.config.config as config
+import instruments.harpsn.config.config as config
 from core.models.level2 import RV2
 
 
-def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int):
+def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int) -> None:
     """Creates the L2 header by copying the information from the raw file and adding the necessary information for the L2 file.
     """
     #We create an empty HDU to store the L2 Primary header
     l2_hdu = fits.PrimaryHDU(data = None)
     l2_hdu.header['EXTNAME'] = 'PRIMARY'
-    #We load the header map to convert between raw file headers and L2 header
-    header_map = pd.read_csv(os.path.dirname(os.path.realpath(__file__)) + '/config/header_map.csv')
+
+    # Get the parent directory of the "utils" folder  
+    base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+    # Properly construct the file path  
+    header_map_path = os.path.join(base_dir, "config", "header_map.csv")
+
+    # Load the CSV file  
+    header_map = pd.read_csv(header_map_path)
     
     for index, values in header_map.iterrows():
         if(header_map['skip'].iloc[index] == True):
             continue
+
         #Add the HIERARCH keyword to the header if the keyword is longer than 8 characters
         if(len(values.iloc[0]) > 8):
             values.iloc[0] = 'HIERARCH ' + values.iloc[0]
@@ -251,8 +259,23 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int):
     
     # TZA KEYWORD
     l2_hdu.header['TZA'] = (
-        np.round(90 - l2_hdu.header['TEL'], 3), 
+        np.round(90 - l2_hdu.header['TEL'], 4), 
         header_map[header_map['Keyword'] == 'TZA']['Description'].iloc[0]
+    )
+
+    # TAZ KEYWORD
+    target_azimuth = get_azimuth_target(
+        RV2.headers['INSTRUMENT_HEADER']['RA-DEG'],
+        RV2.headers['INSTRUMENT_HEADER']['DEC-DEG'],
+        l2_hdu.header['OBSLAT'], 
+        l2_hdu.header['OBSLON'],
+        l2_hdu.header['OBSALT'],
+        l2_hdu.header['DATE-OBS']
+    )
+
+    l2_hdu.header['TAZ'] = (
+        target_azimuth, 
+        header_map[header_map['Keyword'] == 'TAZ']['Description'].iloc[0]
     )
 
     # THA KEYWORD
@@ -711,3 +734,32 @@ def get_moon_velocity_in_target_direction(alpha_deg: float, delta_deg: float, ju
     projected_velocity_km_s = projected_velocity_au_per_day * au_per_day_to_km_s
 
     return projected_velocity_km_s
+
+def get_azimuth_target(target_ra: float, target_dec: float, obs_lat: float, obs_lon: float, obs_alt: float, obs_time: str) -> float:
+    """
+    Calculates the azimuth of a celestial target from a given observation location and time.
+
+    Args:
+        target_ra (float): Right Ascension (RA) of the target in degrees.
+        target_dec (float): Declination (Dec) of the target in degrees.
+        obs_lat (float): Observer's latitude in degrees.
+        obs_lon (float): Observer's longitude in degrees.
+        obs_alt (float): Observer's altitude in meters.
+        obs_time (str): Observation time in ISO format (e.g., "2024-02-19T12:00:00").
+
+    Returns:
+        target_azimuth (float): The azimuth of the target in degrees, rounded to four decimal places.
+    """
+
+    # Observer's location and observation time
+    location = EarthLocation(lat=obs_lat, lon=obs_lon, height=obs_alt)
+    time = Time(obs_time)
+
+    # Target's position
+    target_coord = SkyCoord(ra=target_ra, dec=target_dec, frame='icrs', unit="deg", obstime=time)
+
+    # Calculate the target's azimuth (GCRS here but could be ICRS, no impact)
+    altaz = target_coord.transform_to(AltAz(obstime=time, location=location))
+    target_azimuth = round(altaz.az.deg, 4)
+
+    return target_azimuth

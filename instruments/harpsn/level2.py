@@ -81,13 +81,6 @@ class HARPSNRV2(RV2):
         print(self.info())
         return
     
-    # Nécéssite un dossier contenant la liste des fichiers suivant :
-    #   * HARPN.${date}.fits
-    #   * r.HARPN.${date}_S2D_BLAZE_A.fits
-    #   * r.HARPN.${date}_S2D_BLAZE_B.fits
-    #   * r.HARPN.${date}_BLAZE_A.fits
-    #   * r.HARPN.${date}_BLAZE_B.fits
-    # Peut-être drift en +
 
     def do_convertion(self, hdul: fits.HDUList) -> None:
       """_summary_

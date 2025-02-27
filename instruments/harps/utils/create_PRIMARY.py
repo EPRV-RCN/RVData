@@ -43,8 +43,15 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int):
     #We create an empty HDU to store the L2 Primary header
     l2_hdu = fits.PrimaryHDU(data = None)
     l2_hdu.header['EXTNAME'] = 'PRIMARY'
-    #We load the header map to convert between raw file headers and L2 header
-    header_map = pd.read_csv(os.path.dirname(os.path.realpath(__file__)) + '/config/header_map.csv')
+    
+    # Get the parent directory of the "utils" folder  
+    base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+    # Properly construct the file path  
+    header_map_path = os.path.join(base_dir, "config", "header_map.csv")
+
+    # Load the CSV file  
+    header_map = pd.read_csv(header_map_path)
     
     for index, values in header_map.iterrows():
         if(header_map['skip'].iloc[index] == True):
