@@ -1,9 +1,17 @@
+# Required category for conversion
+DPR_CATG_REQUIRED = "SCIENCE"
+
+# Objects that should be excluded from conversion
+EXCLUDE_OBJECTS = {"SUN", "solar_spectrum", "Sun"}
+
+# DPR types that should be excluded from conversion
+EXCLUDE_DPR_TYPES = {"CIRPOL"}
+
 fiber = {
     "WAVE": {'A': 'SCI', 'B': 'FP'},
     "SKY": {'A': 'SCI', 'B': 'SKY'},
     "DARK": {'A': 'SCI'}
 }
-
 
 data_format = "L2"#Can either be original or L2
 

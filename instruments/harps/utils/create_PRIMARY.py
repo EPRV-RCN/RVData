@@ -613,10 +613,7 @@ def get_moon_sun_info(target_ra :float, target_dec: float,
 
     # Calculate the RV of reflected sunlight off moon
     moon_rv = round(get_moon_velocity_in_target_direction(target_ra, target_dec, jd_utc), 4)
-    print('sun_el', sun_el)
-    print('moon_ang', moon_ang)
-    print('moon_el', moon_el)
-    print('moon_illu', moon_illu)
+
     print('moon_rv', moon_rv)
     
     return [sun_el, moon_ang, moon_el, moon_illu, moon_rv]

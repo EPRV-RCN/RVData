@@ -345,17 +345,23 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int) -> 
         )
 
     # SUMMFLAG KEYWORD
-    flags = ["TELFLAG", "INSTFLAG", "DRPFLAG", "COLOFLAG", "OBSFLAG"]
+    flags = [ "COLOFLAG", "TELFLAG", "INSTFLAG", "DRPFLAG", "OBSFLAG"]
 
     # Récupérer toutes les valeurs des flags
     flag_values = [l2_hdu.header.get(flag, "Pass") for flag in flags]
 
     # Priorité des états : Fail > Warn > Pass
     if "Fail" in flag_values:
-        l2_hdu.header['SUMMFLAG'] = (
-            "Fail", 
+        if "Fail" == flag_values[0] and "Fail" not in flag_values[1:]:
+            l2_hdu.header['SUMMFLAG'] = (
+            "Warn", 
             header_map[header_map['Keyword'] == 'SUMMFLAG']['Description'].iloc[0]
         )
+        else:
+            l2_hdu.header['SUMMFLAG'] = (
+                "Fail", 
+                header_map[header_map['Keyword'] == 'SUMMFLAG']['Description'].iloc[0]
+            )
     elif "Warn" in flag_values:
         l2_hdu.header['SUMMFLAG'] = (
             "Warn", 
@@ -687,10 +693,7 @@ def get_moon_sun_info(target_ra :float, target_dec: float,
 
     # Calculate the RV of reflected sunlight off moon
     moon_rv = round(get_moon_velocity_in_target_direction(target_ra, target_dec, jd_utc), 4)
-    print('sun_el', sun_el)
-    print('moon_ang', moon_ang)
-    print('moon_el', moon_el)
-    print('moon_illu', moon_illu)
+
     print('moon_rv', moon_rv)
 
     return [sun_el, moon_ang, moon_el, moon_illu, moon_rv]
@@ -734,6 +737,7 @@ def get_moon_velocity_in_target_direction(alpha_deg: float, delta_deg: float, ju
     projected_velocity_km_s = projected_velocity_au_per_day * au_per_day_to_km_s
 
     return projected_velocity_km_s
+
 
 def get_azimuth_target(target_ra: float, target_dec: float, obs_lat: float, obs_lon: float, obs_alt: float, obs_time: str) -> float:
     """

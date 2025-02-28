@@ -25,7 +25,7 @@ internal libraries
 from core.models.level2 import RV2
 # import RVdata.instruments.harps.pasutils as pasutils
 import instruments.harps.config.config as config
-from instruments.harpsn.utils import convert_S2D_BLAZE, convert_BLAZE, convert_DRIFT, get_files_names, create_PRIMARY
+from instruments.harps.utils import convert_S2D_BLAZE, convert_BLAZE, convert_DRIFT, get_files_names, create_PRIMARY, validate_fits_file
 
 # KPF Level2 Reader
 class HARPSRV2(RV2):
@@ -88,29 +88,22 @@ class HARPSRV2(RV2):
         '''header'''
         path = os.path.join(self.dirname, self.filename)
 
-        # Vérifier que la convertion s'effectue sur un fichier SCIENCE sinon ce n'est pas possible.
-        with fits.open(path) as hdu_raw:
-          dpr_catg = hdu_raw['PRIMARY'].header['HIERARCH ESO DPR CATG']
-          object = hdu_raw['PRIMARY'].header['OBJECT']
-          dpr_type = hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE'].split(",")[1]
+        # Validate the FITS file before conversion. If it does not meet the criteria, raise an error
+        try :
+          validate_fits_file(path)
+          print("File is valid for conversion!")
+        except ValueError as e:
+          raise ValueError(e)
 
-          if(dpr_catg != 'SCIENCE'):
-            print('Not translatable')
-            raise ValueError(f"Erreur : Le fichier {self.filename} ne correspond pas à la catégorie SCIENCE, mais à '{dpr_catg}'. Conversion impossible.")
-          elif(object == 'SUN' or object == 'solar_spectrum'):
-            print('Not translatable')
-            raise ValueError(f"Erreur : Le fichier {self.filename} correspond à une observation du soleil. Conversion impossible pour le moment.")
-          elif(dpr_type == 'CIRPOL'):
-            print('Not translatable')
-            raise ValueError(f"Erreur : Le fichier {self.filename} correspond à une observation de type CIRPOL. Conversion impossible pour le moment.")
-        
         # Récupération des chemins vers les fichiers nécéssaires
-        print(object)
         names = get_files_names(path)
         # Converti les fichiers S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A et BLAZE_B
         trace_ind_start = 1
+
+        with fits.open(path) as hdu_raw:
+          dpr_type = hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE'].split(",")[1]
         fibers = config.fiber.get(dpr_type, {})
-        print(fibers)
+
         for fiber in fibers:
           convert_S2D_BLAZE(self, names["s2d_blaze_file_"+fiber], trace_ind_start, config.slice_nb)
           convert_BLAZE(self, names["blaze_file_"+fiber], trace_ind_start, config.slice_nb)

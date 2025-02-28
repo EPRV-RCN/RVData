@@ -24,7 +24,7 @@ internal libraries
 ---------------------
 '''
 from core.models.level2 import RV2
-import instruments.harpsn.config.config as config
+import instruments.harps.config.config as config
 
 
 def convert_S2D_BLAZE(RV2: RV2, file_path: str, trace_ind_start: int, slice_nb: int) -> None:

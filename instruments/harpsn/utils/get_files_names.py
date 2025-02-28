@@ -15,6 +15,7 @@ external libraries
 ---------------------
 '''
 from astropy.io import fits
+from datetime import datetime, timedelta
 import os
 
 '''
@@ -64,12 +65,12 @@ def get_files_names(full_path:str) -> dict:
     with fits.open(s2d_blaze_file_A) as hdul:
         for i in hdul['PRIMARY'].header['ESO PRO REC1 CAL* CATG']:
             if 'BLAZE_A' == hdul['PRIMARY'].header[i]:
-                blaze_file_A = os.path.join(
+                blaze_file_A = adjust_repo_path(
                     repo_path, 
                     hdul["PRIMARY"].header[i[:-4]+'NAME']
                 )
             if 'BLAZE_B' == hdul['PRIMARY'].header[i]:
-                blaze_file_B = os.path.join(
+                blaze_file_B = adjust_repo_path(
                     repo_path, 
                     hdul["PRIMARY"].header[i[:-4]+'NAME']
                 )
@@ -85,3 +86,41 @@ def get_files_names(full_path:str) -> dict:
         "drift_file_B": drift_file_B
     }
     return names
+
+
+def adjust_repo_path(repo_path: str, blaze_filename: str) -> str:
+    """
+    Adjusts the repository path based on the timestamp in the BLAZE file name.
+    If the file's timestamp is before noon, it should be placed in the previous day's directory.
+
+    Args:
+        repo_path (str): The original repository path.
+        blaze_filename (str): The BLAZE file name containing the timestamp.
+
+    Returns:
+        str: The corrected file path.
+    """
+    try:
+        # Extract the date and time from the filename
+        filename_parts = blaze_filename.split("_BLAZE")[0]
+
+        timestamp_str = filename_parts.split("r.HARPN.")[1]  
+   
+        # Convert timestamp to datetime object
+        file_datetime = datetime.strptime(timestamp_str, "%Y-%m-%dT%H-%M-%S.%f")
+
+        # Extract the current repo date
+        repo_date = file_datetime.date()
+        print('sheesh', repo_date)
+        # If file's time is before noon, shift repo_path to the previous day
+        if file_datetime.hour < 12:
+            new_repo_date = repo_date - timedelta(days=1)
+            new_repo_path = os.path.join(os.path.dirname(repo_path), new_repo_date.strftime("%Y-%m-%d"))
+            return os.path.join(new_repo_path, blaze_filename)
+
+        return os.path.join(repo_path, blaze_filename)  # No change if file was created after noon
+
+    except Exception as e:
+        print(f"Error processing repo path for BLAZE file '{blaze_filename}': {e}")
+        return os.path.join(repo_path, blaze_filename)  # Return original path if something goes wrong
+
