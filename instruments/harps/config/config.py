@@ -20,6 +20,7 @@ slice_nb = 1
 
 # Nombre de pixels par ordre
 num_pixel = 4096
+
 # Nombre d'ordre' dans une fibre 
 NUMORDER = 71
 

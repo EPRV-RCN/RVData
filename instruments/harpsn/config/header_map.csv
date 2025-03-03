@@ -2,29 +2,24 @@ Keyword,TNG_keyword,value,Extension,from,comment,skip,Description
 INSTRUME,INSTRUME,,PRIMARY,S2D_BLAZE_A,,False,Instrument name
 ORGANIZA,,TNG,PRIMARY,,,False,Organization the data belongs to
 ORIGIN,,TNG,PRIMARY,,,False,Institution that created this file
-DATALVL,,L2,PRIMARY,S2D_BLAZE_A,,False,Data Product Base Level
-    OBSERVER,OBSERVER,,PRIMARY,S2D_BLAZE_A,nok pas le keyword dans le S2D,True,Observer
+DATALVL,,L2,PRIMARY,,,False,Data Product Base Level
+OBSERVER,,UNKNOWN,PRIMARY,,,False,Observer
 PROGRAM,HIERARCH TNG OBS PROG ID,,PRIMARY,S2D_BLAZE_A,,False,Observing program name
 PINAME,HIERARCH TNG OBS PI-COI NAME,,PRIMARY,S2D_BLAZE_A,,False,Program PI Name
 OBSTYPE,HIERARCH TNG DPR CATG,,PRIMARY,RAW,,False,Observation type
 OBSMODE,HIERARCH TNG INS MODE,,PRIMARY,S2D_BLAZE_A,,False,Observing mode
-    RESMODE,,,PRIMARY,S2D_BLAZE_A,same as OBSMODE?,True
 READMODE,HIERARCH TNG DET READ MODE,,PRIMARY,S2D_BLAZE_A,,False,Readout method
 BINNING,,,PRIMARY,S2D_BLAZE_A,,True,Binning Mode
 NUMTRACE,,,PRIMARY,,,True,Iterator for Number of Object related keywords
 NUMORDER,NUMORDER,,PRIMARY,CONFIG,,false,Number of Orders
 OBJECT,HIERARCH TNG OBS TARG NAME,,PRIMARY,S2D_BLAZE_A,,False,Original target
 ALIASES,HIERARCH TNG OBS TARG NAME,,PRIMARY,S2D_BLAZE_A,,False,OB name 
-FILENAME,,,PRIMARY,S2D_BLAZE_A,,False,Name of the FITS file
+FILENAME,,,PRIMARY,,,True,Name of the FITS file
 DATE,DATE,,PRIMARY,,,True,[UTC] Last modification date of this file
 DATE-OBS,DATE-OBS,,PRIMARY,S2D_BLAZE_A,,False,[UTC] Date at start of exposure
 JD_UTC,MJD-OBS,,PRIMARY,S2D_BLAZE_A,,True,[day] Julian date of DATE-OBS
 EXPTIME,EXPTIME,,PRIMARY,S2D_BLAZE_A,,False,[s] Exposure time
-    FIBER1,HIERARCH TNG INS5 FESELA NAME,,PRIMARY,S2D_BLAZE_A,,True
-    FIBER2,HIERARCH TNG INS5 FESELB NAME,,PRIMARY,S2D_BLAZE_A,,True
-    FIBER3,,None,PRIMARY,S2D_BLAZE_A,,True
-    FIBERN,,None,PRIMARY,S2D_BLAZE_A,,True
-TRACE,,,,,,True,Type of object in trace
+TRACE,,,PRIMARY,,,True,Type of object in trace
 CLSRC,HIERARCH ESO PRO REC1 RAW1 CATG,,PRIMARY,RAW,,True,Name of calibration source in trace
 CSRC,gaia_source,,PRIMARY,Simbad,,True,Catalog source for obj in trace
 CID,gaia_name,,PRIMARY,Simbad,,True,Catalog DR2/3 name for obj in trace
@@ -64,11 +59,11 @@ MOONEL,,,PRIMARY,,,True,[deg] Moon Elevation Angle
 MOONILLU,,,PRIMARY,,,True,[%] Moon illumination
 MOONRV,,,PRIMARY,,,True,[km/s] RV of reflected sunlight off moon
 INHUM,,Null,,,,False,[%] Relative humidity inside dome
-INHUMT,,Null,,,,False,INHUM timestamp
+INHUMT,,Null,PRIMARY,,,False,INHUM timestamp
 OUTTMP,HIERARCH TNG METEO TEMP10M,,PRIMARY,S2D_BLAZE_A,,False,[C] Outside temperature
-OUTTMPT,,Null,,,,False,OUTTMP timestamp
+OUTTMPT,,Null,PRIMARY,,,False,OUTTMP timestamp
 OUTHUM,HIERARCH TNG METEO HUMIDITY,,PRIMARY,S2D_BLAZE_A,?,False,[%] Outiside relative humidity
-OUTHUMT,,Null,,,,False,OUTHUM timestamp
+OUTHUMT,,Null,PRIMARY,,,False,OUTHUM timestamp
 ENVWINDS,HIERARCH TNG METEO WINDSPEED,,PRIMARY,S2D_BLAZE_A,,False,[m/s] Wind speed
 ENVWINDD,HIERARCH TNG METEO WINDDIR,,PRIMARY,S2D_BLAZE_A,,False,[angle] Wind direction
 DRPTAG,HIERARCH ESO PRO REC1 PIPE ID,,PRIMARY,S2D_BLAZE_A,,False,RV DRP version
@@ -79,13 +74,13 @@ INSTERA,,,PRIMARY,,,True,Tag to track permanent changes to instrument
 EXTRACT,HIERARCH ESO PRO REC1 PARAM12 VALUE,,PRIMARY,S2D_BLAZE_A,,False,Type of 1D extraction
 EXSNR,,,PRIMARY,,,True,Extracted signal-to-noise in the order
 EXSNRW,,,PRIMARY,,,True,[Angstroms] Central wavelength of EXTSNRN
-FULLCOMP,,Yes,,,,False,Fully compliant with the RVSTAND EPRV standard?
-TELFLAG,,Pass,,,,False,Issues with observatory or telescope?
-INSTFLAG,,Pass,,,,False,Issues with instrument?
-DRPFLAG,,Pass,,,,False,Issues with pipeline? 
+FULLCOMP,,Yes,PRIMARY,,,False,Fully compliant with the RVSTAND EPRV standard?
+TELFLAG,,Pass,PRIMARY,,,False,Issues with observatory or telescope?
+INSTFLAG,,Pass,PRIMARY,,,False,Issues with instrument?
+DRPFLAG,,Pass,PRIMARY,,,False,Issues with pipeline? 
 COLOFLAG,HIERARCH TNG QC SCIRED DRIFT FLUX_RATIO CHECK,,,,,True,Issues with color?
-OBSFLAG,,Pass,,,,False,Observer pass/fail for exposure
-SUMMFLAG,,,,,,True,Roll up of other flag keywords
+OBSFLAG,,Pass,PRIMARY,,,False,Observer pass/fail for exposure
+SUMMFLAG,,,PRIMARY,,,True,Roll up of other flag keywords
 DQLVL0,,Null,PRIMARY,,,False,Quality check bitfield of N characters
+DQLVL1,,Null,PRIMARY,,,False,Quality check bitfield of N characters
 DQLVL2,,Null,PRIMARY,,,False,Quality check bitfield of N characters
-DQLVL3,,Null,PRIMARY,,,False,Quality check bitfield of N characters

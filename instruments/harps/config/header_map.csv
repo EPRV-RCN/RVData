@@ -2,28 +2,23 @@ Keyword,ESO_keyword,value,Extension,from,comment,skip,Description
 INSTRUME,INSTRUME,,PRIMARY,S2D_BLAZE_A,,False,Instrument name
 ORGANIZA,,ESO,PRIMARY,,,False,Organization the data belongs to
 ORIGIN,,ESO,PRIMARY,,,False,Institution that created this file
-DATALVL,,L2,PRIMARY,S2D_BLAZE_A,,False,Data Product Base Level
+DATALVL,,L2,PRIMARY,,,False,Data Product Base Level
 OBSERVER,OBSERVER,,PRIMARY,S2D_BLAZE_A,,False,Observer
 PROGRAM,HIERARCH ESO OBS PROG ID,,PRIMARY,S2D_BLAZE_A,,False,Observing program name
 PINAME,PI-COI,,PRIMARY,S2D_BLAZE_A,,False,Program PI Name
 OBSTYPE,HIERARCH ESO DPR CATG,,PRIMARY,RAW,,False,Observation type
 OBSMODE,HIERARCH ESO INS MODE,,PRIMARY,S2D_BLAZE_A,,False,Observing mode
-    RESMODE,,,PRIMARY,S2D_BLAZE_A,same as OBSMODE?,True
 READMODE,HIERARCH ESO DET READ MODE,,PRIMARY,S2D_BLAZE_A,,False,Readout method
 BINNING,,,PRIMARY,S2D_BLAZE_A,,True,Binning Mode
 NUMTRACE,,,PRIMARY,,,True,Iterator for Number of Object related keywords
 NUMORDER,NUMORDER,,PRIMARY,CONFIG,,False,Number of Orders
 OBJECT,OBJECT,,PRIMARY,S2D_BLAZE_A,,False,Original target
 ALIASES,HIERARCH ESO OBS NAME,,PRIMARY,S2D_BLAZE_A,,False,OB name 
-FILENAME,,,PRIMARY,S2D_BLAZE_A,,False,Name of the FITS file
+FILENAME,,,PRIMARY,,,True,Name of the FITS file
 DATE,DATE,,PRIMARY,,,True,[UTC] Last modification date of this file
 DATE-OBS,DATE-OBS,,PRIMARY,S2D_BLAZE_A,,False,[UTC] Date at start of exposure
 JD_UTC,MJD-OBS,,PRIMARY,S2D_BLAZE_A,,True,[day] Julian date of DATE-OBS
 EXPTIME,EXPTIME,,PRIMARY,S2D_BLAZE_A,,False,[s] Exposure time
-    FIBER1,HIERARCH ESO INS5 FESELA NAME,,PRIMARY,S2D_BLAZE_A,,True
-    FIBER2,HIERARCH ESO INS5 FESELB NAME,,PRIMARY,S2D_BLAZE_A,,True
-    FIBER3,,None,PRIMARY,S2D_BLAZE_A,,True
-    FIBERN,,None,PRIMARY,S2D_BLAZE_A,,True
 TRACE,,,,,,True,Type of object in trace
 CLSRC,HIERARCH ESO PRO REC1 RAW1 CATG,,PRIMARY,RAW,,True,Name of calibration source in trace
 CSRC,gaia_source,,PRIMARY,Simbad,,True,Catalog source for obj in trace
@@ -87,5 +82,5 @@ COLOFLAG,HIERARCH ESO QC SCIRED DRIFT FLUX_RATIO CHECK,,,,,True,Issues with colo
 OBSFLAG,,Pass,,,,False,Observer pass/fail for exposure
 SUMMFLAG,,,,,,True,Roll up of other flag keywords
 DQLVL0,,Null,PRIMARY,,,False,Quality check bitfield of N characters
+DQLVL1,,Null,PRIMARY,,,False,Quality check bitfield of N characters
 DQLVL2,,Null,PRIMARY,,,False,Quality check bitfield of N characters
-DQLVL3,,Null,PRIMARY,,,False,Quality check bitfield of N characters

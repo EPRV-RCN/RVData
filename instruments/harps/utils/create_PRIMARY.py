@@ -314,17 +314,23 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int):
         )
 
     # SUMMFLAG KEYWORD
-    flags = ["TELFLAG", "INSTFLAG", "DRPFLAG", "COLOFLAG", "OBSFLAG"]
+    flags = ["COLOFLAG", "TELFLAG", "INSTFLAG", "DRPFLAG", "OBSFLAG"]
 
     # Récupérer toutes les valeurs des flags
     flag_values = [l2_hdu.header.get(flag, "Pass") for flag in flags]
 
     # Priorité des états : Fail > Warn > Pass
     if "Fail" in flag_values:
-        l2_hdu.header['SUMMFLAG'] = (
-            "Fail", 
+        if "Fail" == flag_values[0] and "Fail" not in flag_values[1:]:
+            l2_hdu.header['SUMMFLAG'] = (
+            "Warn", 
             header_map[header_map['Keyword'] == 'SUMMFLAG']['Description'].iloc[0]
         )
+        else:
+            l2_hdu.header['SUMMFLAG'] = (
+                "Fail", 
+                header_map[header_map['Keyword'] == 'SUMMFLAG']['Description'].iloc[0]
+            )
     elif "Warn" in flag_values:
         l2_hdu.header['SUMMFLAG'] = (
             "Warn", 

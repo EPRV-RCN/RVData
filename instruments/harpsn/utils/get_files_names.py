@@ -111,7 +111,7 @@ def adjust_repo_path(repo_path: str, blaze_filename: str) -> str:
 
         # Extract the current repo date
         repo_date = file_datetime.date()
-        print('sheesh', repo_date)
+
         # If file's time is before noon, shift repo_path to the previous day
         if file_datetime.hour < 12:
             new_repo_date = repo_date - timedelta(days=1)

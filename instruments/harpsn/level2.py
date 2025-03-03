@@ -22,7 +22,6 @@ internal libraries
 ---------------------
 '''
 from core.models.level2 import RV2
-# import instruments.harpsn.utils as utils
 import instruments.harpsn.config.config as config
 from instruments.harpsn.utils import convert_S2D_BLAZE, convert_BLAZE, convert_DRIFT, get_files_names, create_PRIMARY, validate_fits_file
 
@@ -83,53 +82,57 @@ class HARPSNRV2(RV2):
     
 
     def do_convertion(self, hdul: fits.HDUList) -> None:
-      """_summary_
+        """
+        Converts FITS files based on certain conditions and configurations.
 
-      Args:
-          hdul (fits.HDUList): _description_
+        This function performs the following tasks:
+        1. Validates the FITS file to ensure it meets the criteria for conversion.
+        2. Retrieves necessary file paths and names for further processing.
+        3. Converts S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files based on the given fibers.
+        4. Converts the Drift file.
+        5. Creates the PRIMARY header and adds necessary extensions.
+        6. Removes unnecessary extensions such as 'RECEIPT' and 'DRP_CONFIG'.
 
-      Raises:
-          ValueError: _description_
-          ValueError: _description_
-          ValueError: _description_
-      """
-      path = os.path.join(self.dirname, self.filename)
+        Args:
+            hdul (fits.HDUList): The FITS HDU list to be processed.
+        
+        Raises:
+            ValueError: If the FITS file is invalid and does not meet the required criteria for conversion.
+        """
+        
+        path = os.path.join(self.dirname, self.filename)
 
-      # Validate the FITS file before conversion. If it does not meet the criteria, raise an error
-      try :
-        validate_fits_file(path)
-        print("File is valid for conversion!")
-      except ValueError as e:
-        raise ValueError(e)
+        # Validate the FITS file before conversion. If it does not meet the criteria, raise an error
+        try :
+            validate_fits_file(path)
+            print("File is valid for conversion!")
+        except ValueError as e:
+            raise ValueError(e)
 
-      # Récupération des chemins vers les fichiers nécéssaires
-      names = get_files_names(path)
+        # Retrieve the paths for the necessary files
+        names = get_files_names(path)
 
-      # Converti les fichiers S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A et BLAZE_B
-      trace_ind_start = 1
+        # Convert S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
+        trace_ind_start = 1
 
-      with fits.open(path) as hdu_raw:
-        dpr_type = hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE'].split(",")[1]
-      fibers = config.fiber.get(dpr_type, {})
-      
-      for fiber in fibers:
-        convert_S2D_BLAZE(self, names["s2d_blaze_file_"+fiber], trace_ind_start, config.slice_nb)
-        convert_BLAZE(self, names["blaze_file_"+fiber], trace_ind_start, config.slice_nb)
-        trace_ind_start+=config.slice_nb
+        with fits.open(path) as hdu_raw:
+            dpr_type = hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE'].split(",")[1]
+        fibers = config.fiber.get(dpr_type, {})
+        
+        for fiber in fibers:
+            convert_S2D_BLAZE(self, names["s2d_blaze_file_"+fiber], trace_ind_start, config.slice_nb)
+            convert_BLAZE(self, names["blaze_file_"+fiber], trace_ind_start, config.slice_nb)
+            trace_ind_start+=config.slice_nb
 
-      # Converti le fichier Drift
-      convert_DRIFT(self, names["drift_file_B"])
+        # Convert the Drift file
+        convert_DRIFT(self, names["drift_file_B"])
 
-      # On crée l'entête du PRIMARY HEADER
-      nb_fiber = len(fibers)
-      nb_trace = nb_fiber * config.slice_nb
-      create_PRIMARY(self, names, nb_trace, nb_fiber)
+        # Create the PRIMARY heade
+        nb_fiber = len(fibers)
+        nb_trace = nb_fiber * config.slice_nb
+        create_PRIMARY(self, names, nb_trace, nb_fiber)
 
-      # Ajouter à l'ensemble des extensions le checksum dans l'entête
-      # TODO ou alors modifier la fonction de génération du fichier de BJ
-      # utils.add_checksum_on_headers(self, ['PRIMARY', 'INSTRUMENT_HEADER'])
-      # utils.check_and_remove_empty_extensions(self)
-
-      self.del_extension('RECEIPT')
-      self.del_extension('DRP_CONFIG')
-      print('end')
+        # Remove unnecessary extensions
+        self.del_extension('RECEIPT')
+        self.del_extension('DRP_CONFIG')
+        print('end')
