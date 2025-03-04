@@ -1,8 +1,6 @@
 from astropy.io import fits
 import astropy.units as u
 from astropy.nddata import VarianceUncertainty
-from specutils import SpectrumCollection
-from specutils.utils.wcs_utils import gwcs_from_array
 import numpy as np
 from collections import OrderedDict
 
@@ -65,8 +63,10 @@ class NEIDRV2(RV2):
         # Check observation mode to set fiber list
         if hdul[0].header["OBS-MODE"] == "HR":
             fiber_list = ["SCI", "SKY", "CAL"]
+            expmeter_index = 4
         elif hdul[0].header["OBS-MODE"] == "HE":
             fiber_list = ["SCI", "SKY"]
+            expmeter_index = 3
 
         for i_fiber, fiber in enumerate(fiber_list):
             ## Extension naming set up
@@ -140,3 +140,19 @@ class NEIDRV2(RV2):
         self.set_data("BARYCORR_Z", bary_z)  # aproximate!!!
         self.set_data("BJD_TDB", bjd)
 
+        ### Drift
+
+        ### Expmeter (316 time stamps, 122 wavelengths)
+        expmeter_data = hdul['EXPMETER'].data[expmeter_index]
+        
+        ### Telemetry
+
+        ### Telluric model (from NEID L2 extension - use only line absorption model for now)
+        self.set_header("TRACE1_TELLURIC", OrderedDict(hdul['TELLURIC'].header))
+        self.set_data("TRACE1_TELLURIC", hdul['TELLURIC'].data[:,:,0])
+
+        ### Sky model
+
+        ### Ancillary spectra
+
+        ### Images
