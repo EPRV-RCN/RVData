@@ -35,23 +35,23 @@ def validate_fits_file(path: str) -> None:
     """
 
     with fits.open(path) as hdu_raw:
-        dpr_catg = hdu_raw['PRIMARY'].header['HIERARCH TNG DPR CATG']
-        object_name = hdu_raw['PRIMARY'].header['TNG OBS TARG NAME']
-        dpr_type = hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE'].split(",")[1]
-
-        print(dpr_catg, dpr_type, object_name)
-
+        
         # Check required DPR category
+        dpr_catg = hdu_raw['PRIMARY'].header['HIERARCH TNG DPR CATG']
         if dpr_catg != config.DPR_CATG_REQUIRED:
             print("Not translatable")
             raise ValueError(f"Error: File {path} is '{dpr_catg}' instead of 'SCIENCE'. Conversion not possible.")
 
         # Check excluded objects
+        object_name = hdu_raw['PRIMARY'].header['TNG OBS TARG NAME']
         if object_name in config.EXCLUDE_OBJECTS:
             print("Not translatable")
             raise ValueError(f"Error: File {path} corresponds to an observation of {object_name}. Conversion not possible.")
 
         # Check excluded DPR types
+        dpr_type = hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE'].split(",")[1]
         if dpr_type in config.EXCLUDE_DPR_TYPES:
             print("Not translatable")
             raise ValueError(f"Error: File {path} corresponds to a '{dpr_type}' observation. Conversion not possible.")
+        
+        print(dpr_catg, dpr_type, object_name)
