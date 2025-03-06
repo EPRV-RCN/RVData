@@ -12,14 +12,6 @@ fiber = {
     "SKY": {'A': 'SCI', 'B': 'SKY'}
 }
 
-# fibers = {'A': 'SCI',
-#           'B': 'FP'}
-
-# slice_names = {
-#     0 : '_SLICE1',
-#     1 : '_SLICE2'
-# }
-
 # Nombre de slice dans une fibre 
 slice_nb = 2
 
@@ -31,6 +23,13 @@ NUMORDER = 85
 
 data_format = "L2"#Can either be original or L2
 slices= [0,1]
+
+# Permet la convertion du fichier RAW
+extnames_raw = {
+    'Exp Meter bin table': {'name': 'EXPMETER', 'type': 'BinTableHDU'},
+    'FS1INT': {'name': 'PUPILIMAGE', 'type': 'ImageHDU'},
+    'PS1': {'name': 'GUIDINGIMAGE', 'type': 'ImageHDU'}
+}
 
 # Permet la convertion des fichiers S2D_BLAZE
 extnames = {
