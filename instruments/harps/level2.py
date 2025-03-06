@@ -23,72 +23,71 @@ internal libraries
 ---------------------
 '''
 from core.models.level2 import RV2
-# import RVdata.instruments.harps.pasutils as pasutils
 import instruments.harps.config.config as config
 from instruments.harps.utils import convert_S2D_BLAZE, convert_BLAZE, convert_DRIFT, get_files_names, create_PRIMARY, validate_fits_file
 
-# KPF Level2 Reader
+# HARPS Level2 Reader
 class HARPSRV2(RV2):
     """
-    Read a HARPS level 1 file and convert it to the EPRV standard format Python object.
+    Read HARPS Level 1 and Level 2 files and convert them into the EPRV standard format.
 
     This class extends the `RV2` base class to handle the reading of HARPS (High Accuracy 
-    Radial velocity Planet Searcher)
-    Level 1 files and converts them into a standardized EPRV
-    format. Each extension from the FITS file is read, and relevant data, including flux,
-    wavelength, variance, and metadata, are stored as attributes of the resulting Python object.
+    Radial velocity Planet Searcher) Level 1 and Level 2 files, combining information from 
+    both sources to produce a standardized EPRV output. It processes various FITS extensions 
+    and organizes flux, wavelength, variance, and metadata into a structured Python object.
 
     Methods
     -------
-    _read(hdul: fits.HDUList) -> None:
+    do_convertion(hdul: fits.HDUList) -> None:
         Reads the input FITS HDU list, extracts specific extensions related to the science
         data for different chips and fibers, and stores them in a standardized format.
 
-        - The method processes science data (`SCI_FLUX`, `SCI_WAVE`, `SCI_VAR`) from both
-            the GREEN and RED chips and different fibers (`SKY`, `CAL`).
-        - For each chip and fiber, the flux, wavelength, variance, and metadata are extracted
-            and stored as a `SpectrumCollection` object.
-        - Deletes unused extensions such as `RED_TELLURIC`, `GREEN_TELLURIC`, and `TELEMETRY`.
+        - The method validates the FITS file before conversion to ensure it meets the 
+          required criteria.
+        - Retrieves necessary file paths for additional files required in the processing.
+        - Converts the spectral blaze functions (`S2D_BLAZE_A`, `S2D_BLAZE_B`, `BLAZE_A`, `BLAZE_B`)
+          for the different fibers.
+        - Processes and converts the drift file for instrumental calibration.
+        - Creates the `PRIMARY` header and necessary metadata.
+        - For now : Removes unused or redundant extensions such as `RECEIPT` and `DRP_CONFIG`.
 
     Attributes
     ----------
     extensions : dict
-        A dictionary containing all the created extensions (e.g., `C1_SCI1`, `C1_SKY1`, `C2_CAL1`)
-        where the keys are the extension names and the values are `SpectrumCollection` objects
-        for each respective dataset.
+        A dictionary containing all the created extensions, where the keys are extension 
+        names, and the values are the respective data arrays.
 
     header : dict
-        A dictionary containing metadata headers from the FITS file, with each extension's
+        A dictionary containing metadata headers from the FITS files, with each extension's 
         metadata stored under its respective key.
 
     Notes
     -----
-    - The `do_convertion` method processes science and calibration data from the GREEN and RED chips,
-        and it extracts and organizes data for both the SCI, SKY, and CAL fibers.
-    - The method converts the flux, wavelength, and variance for each extension into
-        `SpectrumCollection` objects.
-    - Unused extensions (like `RED_TELLURIC`, `GREEN_TELLURIC`, and `TELEMETRY`) are removed
-        from the object.
+    - The `do_convertion` method processes and extracts science and calibration data.
+    - The method ensures the FITS file meets the required criteria before conversion.
+    - Blaze correction functions are processed and stored for each fiber.
+    - The drift file is processed separately for calibration.
+    - Unused extensions (like `RECEIPT` and `DRP_CONFIG`) are removed from the final output.
 
     Example
     -------
     >>> from core.models.level2 import RV2
-    >>> rv2_obj = RV2.from_fits("kpf_level1_file.fits")
+    >>> rv2_obj = HARPSRV2.from_fits("harps_level1_file.fits")
     >>> rv2_obj.to_fits("standard_level2.fits")
-		"""
+    """
     
 
     def do_convertion(self, hdul: fits.HDUList) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
 
-        This function performs the following tasks:
-        1. Validates the FITS file to ensure it meets the criteria for conversion.
-        2. Retrieves necessary file paths and names for further processing.
-        3. Converts S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files based on the given fibers.
-        4. Converts the Drift file.
-        5. Creates the PRIMARY header and adds necessary extensions.
-        6. Removes unnecessary extensions such as 'RECEIPT' and 'DRP_CONFIG'.
+        This method performs several processing steps:
+        1. Validates the FITS file structure before conversion.
+        2. Retrieves paths for required additional files (e.g., blaze functions, drift corrections).
+        3. Converts and stores spectral blaze functions for different fibers.
+        4. Converts the drift correction data.
+        5. Creates the `PRIMARY` header and integrates necessary metadata.
+        6. Cleans up unused extensions like `RECEIPT` and `DRP_CONFIG`.
 
         Args:
             hdul (fits.HDUList): The FITS HDU list to be processed.
