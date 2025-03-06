@@ -3,7 +3,7 @@ INSTRUME,INSTRUME,,PRIMARY,S2D_BLAZE_A,,False,Instrument name
 ORGANIZA,,ESO,PRIMARY,,,False,Organization the data belongs to
 ORIGIN,,ESO,PRIMARY,,,False,Institution that created this file
 DATALVL,,L2,PRIMARY,,,False,Data Product Base Level
-OBSERVER,OBSERVER,,PRIMARY,S2D_BLAZE_A,,False,Observer
+OBSERVER,,UNKNOWN,PRIMARY,,,False,Observer
 PROGRAM,HIERARCH ESO OBS PROG ID,,PRIMARY,S2D_BLAZE_A,,False,Observing program name
 PINAME,PI-COI,,PRIMARY,S2D_BLAZE_A,,False,Program PI Name
 OBSTYPE,HIERARCH ESO DPR CATG,,PRIMARY,RAW,,False,Observation type

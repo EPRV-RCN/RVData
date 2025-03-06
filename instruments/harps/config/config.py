@@ -15,19 +15,19 @@ fiber = {
 
 data_format = "L2"#Can either be original or L2
 
-# Nombre de slice dans une fibre 
+# Number of slices in a fiber
 slice_nb = 1
 
-# Nombre de pixels par ordre
+# Number of pixels per order
 num_pixel = 4096
 
-# Nombre d'ordre' dans une fibre 
+# Number of orders in a fiber
 NUMORDER = 71
 
-# order of the empty row in order to correct size (correspond to the first GAP)
+# Order of the empty row in order to correct size (correspond to the first GAP)
 empty_raw_order = 45
 
-# Permet la convertion des fichiers S2D_BLAZE
+# Allows the conversion of S2D_BLAZE files
 extnames = {
     'SCIDATA' : '_FLUX',
     'ERRDATA' : '_VAR',
@@ -36,12 +36,12 @@ extnames = {
     'DLLDATA_VAC_BARY' : '_DISP'
 }
 
-# Définir les plages temporelles des versions d'instruments
+# Define the time ranges of instrument versions
 INSTRUMENT_VERSIONS = [
     {"version": 'HARPS-3', "start_date": "2003-06-01", "end_date": "2015-05-25"},
-    {"version": 'HARPS-15', "start_date": "2015-06-26", "end_date": None}  # None = Jusqu'à maintenant
+    {"version": 'HARPS-15', "start_date": "2015-06-26", "end_date": None}  # None = Until now
 ]
 
-# Parametres des requetes Simbad
-# Permet de régler le temps avec lequel une requete est considérée comme échoué sans réponse.
+# Parameters for Simbad queries
+# Allows setting the timeout after which a query is considered failed without a response
 timeout = 30

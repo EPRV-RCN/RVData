@@ -40,7 +40,7 @@ class ESPRESSORV2(RV2):
 
     Methods
     -------
-    do_convertion(hdul: fits.HDUList) -> None:
+    do_conversion(hdul: fits.HDUList) -> None:
         Reads the input FITS HDU list, extracts specific extensions related to the science
         data for different chips and fibers, and stores them in a standardized format.
 
@@ -65,7 +65,7 @@ class ESPRESSORV2(RV2):
 
     Notes
     -----
-    - The `do_convertion` method processes and extracts science and calibration data.
+    - The `do_conversion` method processes and extracts science and calibration data.
     - The method ensures the FITS file meets the required criteria before conversion.
     - Blaze correction functions are processed and stored for each fiber.
     - The drift file is processed separately for calibration.
@@ -79,7 +79,7 @@ class ESPRESSORV2(RV2):
     """
     
 
-    def do_convertion(self, hdul: fits.HDUList) -> None:
+    def do_conversion(self, hdul: fits.HDUList) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
 
@@ -133,7 +133,7 @@ class ESPRESSORV2(RV2):
         nb_trace = nb_fiber * config.slice_nb
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
-        # Remove unnecessary extensions
+        # Remove empty extensions
         self.del_extension('DRIFT')
         self.del_extension('RECEIPT')
         self.del_extension('DRP_CONFIG')
