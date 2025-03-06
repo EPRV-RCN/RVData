@@ -75,10 +75,6 @@ class HARPSNRV2(RV2):
     >>> rv2_obj = RV2.from_fits("kpf_level1_file.fits")
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
-
-    def _read(self, hdul: fits.HDUList) -> None:
-        print(self.info())
-        return
     
 
     def do_convertion(self, hdul: fits.HDUList) -> None:
@@ -99,7 +95,7 @@ class HARPSNRV2(RV2):
         Raises:
             ValueError: If the FITS file is invalid and does not meet the required criteria for conversion.
         """
-        
+
         path = os.path.join(self.dirname, self.filename)
 
         # Validate the FITS file before conversion. If it does not meet the criteria, raise an error
@@ -130,7 +126,7 @@ class HARPSNRV2(RV2):
         # Create the PRIMARY heade
         nb_fiber = len(fibers)
         nb_trace = nb_fiber * config.slice_nb
-        create_PRIMARY(self, names, nb_trace, nb_fiber)
+        create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
         # Remove unnecessary extensions
         self.del_extension('RECEIPT')

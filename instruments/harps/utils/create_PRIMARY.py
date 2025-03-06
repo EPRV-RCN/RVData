@@ -37,7 +37,7 @@ import instruments.harps.config.config as config
 from core.models.level2 import RV2
 
 
-def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int):
+def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int):
     """Creates the L2 header by copying the information from the raw file and adding the necessary information for the L2 file.
     """
     #We create an empty HDU to store the L2 Primary header
@@ -144,24 +144,24 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int):
     with fits.open(names["raw_file"]) as hdu_raw:
         dpr_type = hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE'].split(",")
         for i in range(1, nb_trace+1):
-            if(dpr_type[math.ceil(i*nb_fiber/nb_trace)-1] == 'STAR'):
+            if(dpr_type[math.ceil(i/nb_slice)-1] == 'STAR'):
                 l2_hdu.header['TRACE'+str(i)] = (
                     'SCI',
                     header_map[header_map['Keyword'] == 'TRACE']['Description'].iloc[0]
                 )
-            elif(dpr_type[math.ceil(i*nb_fiber/nb_trace)-1] == 'WAVE'):
+            elif(dpr_type[math.ceil(i/nb_slice)-1] == 'WAVE'):
                 l2_hdu.header['TRACE'+str(i)] = (
                     'CAL',
                     header_map[header_map['Keyword'] == 'TRACE']['Description'].iloc[0]
                 )
-            elif(dpr_type[math.ceil(i*nb_fiber/nb_trace)-1] == 'DARK'):
+            elif(dpr_type[math.ceil(i/nb_slice)-1] == 'DARK'):
                 l2_hdu.header['TRACE'+str(i)] = (
                     'DARK',
                     header_map[header_map['Keyword'] == 'TRACE']['Description'].iloc[0]
                 )
-            elif(dpr_type[math.ceil(i*nb_fiber/nb_trace)-1] == 'SKY'):
+            elif(dpr_type[math.ceil(i/nb_slice)-1] == 'SKY'):
                 l2_hdu.header['TRACE'+str(i)] = (
-                    dpr_type[math.ceil(i*nb_fiber/nb_trace)-1],
+                    dpr_type[math.ceil(i/nb_slice)-1],
                     header_map[header_map['Keyword'] == 'TRACE']['Description'].iloc[0]
                 )
             else:
@@ -173,7 +173,7 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int):
             # CALIBRATION SOURCE KEYWORD
             if(l2_hdu.header['TRACE'+str(i)]=='CAL'):
                 l2_hdu.header['CLSRC'+str(i)] = (
-                    RV2.headers['INSTRUMENT_HEADER'][header_map[header_map['Keyword']=='CLSRC']['ESO_keyword'].iloc[0]].split('_')[i-1], 
+                    RV2.headers['INSTRUMENT_HEADER'][header_map[header_map['Keyword']=='CLSRC']['ESO_keyword'].iloc[0]].split('_')[math.ceil(i/nb_slice)-1], 
                     header_map[header_map['Keyword'] == 'CLSRC']['Description'].iloc[0]
                 )
             else:
@@ -289,10 +289,11 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_fiber: int):
 
     # EXSNRW-N KEYWORD
     for i in range(int(l2_hdu.header['NUMORDER'])):
-        l2_hdu.header[f'EXSNRW{str(i+1)}'] = (
-            round(RV2.data["TRACE1_WAVE"][i,0]+(RV2.data["TRACE1_WAVE"][i,-1] - RV2.data["TRACE1_WAVE"][i,0])/2), 
-            header_map[header_map['Keyword'] == 'EXSNRW']['Description'].iloc[0]
-        )
+        for j in range(nb_slice):
+            l2_hdu.header[f'EXSNRW{str(i*nb_slice+j)}'] = (
+                round(RV2.data["TRACE1_WAVE"][i,0]+(RV2.data["TRACE1_WAVE"][i,-1] - RV2.data["TRACE1_WAVE"][i,0])/2), 
+                header_map[header_map['Keyword'] == 'EXSNRW']['Description'].iloc[0]
+            )
 
     # COLOFLAG KEYWORD
     try:

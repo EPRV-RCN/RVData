@@ -79,7 +79,7 @@ def convert_S2D_BLAZE(RV2: RV2, file_path: str, trace_ind_start: int, slice_nb: 
                 hdu_l2.header['EXTNAME'] = 'TRACE'+str(trace_ind_start+slice-1)+config.extnames[field]
                 hdu_l2.header['CTYPE1'] = (config.extnames[field][1:], 'Name of axis 1')
                 hdu_l2.header['CTYPE2'] = ('Order-N', 'Name of axis 2')
-
+                
                 # Add or update the extension in RV2
                 if(hdu_l2.header['EXTNAME'] not in RV2.extensions):
                     RV2.create_extension(ext_name = hdu_l2.header['EXTNAME'], ext_type = 'ImageHDU', header = hdu_l2.header, data = hdu_l2.data)

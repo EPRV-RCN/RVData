@@ -25,7 +25,6 @@ internal libraries
 '''
 
 
-# TODO get the file adaptativ to every configuration of fibers number
 def get_files_names(full_path:str) -> dict:
     """
     This function retrieves the names of related FITS files based on a given file's path

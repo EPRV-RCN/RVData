@@ -22,7 +22,7 @@ LEVEL2_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L2-PRIMARY-keywords.csv")
 INSTRUMENT_READERS = {'KPF': 
                       {'module': 'instruments.kpf.level2', 'class': 'KPFRV2', 'method': '_read'},
                       'ESPRESSO':
-                      {'module': 'instruments.espresso.level2', 'class': 'ESPRESSORV2', 'method': '_read'},
+                      {'module': 'instruments.espresso.level2', 'class': 'ESPRESSORV2', 'method': 'do_convertion'},
                       'HARPS':
                       {'module': 'instruments.harps.level2', 'class': 'HARPSRV2', 'method': 'do_convertion'},
                       'HARPSN':
