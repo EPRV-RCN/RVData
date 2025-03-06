@@ -193,7 +193,7 @@ def convert_S2D(RV2):
                         single_slice_bary = values[slice::2,:].copy()
                         values = doppler_shift(values, prim_header['HIERARCH ESO QC BERV'])
                         bary_data = np.ones((1,1))*prim_header['HIERARCH ESO QC BERV']
-                        single_slice_berv = bary_data#[slice::2,:]
+                        single_slice_berv = bary_data#
                         berv_hdu = fits.ImageHDU(data = single_slice_berv.copy())
                         berv_hdu.header['EXTNAME'] = 'TRACE'+str(trace_number)  + '_BERV'
 
@@ -225,7 +225,7 @@ def convert_blaze(RV2):
         try:
             with fits.open(RV2.dirname +'/'+ RV2.blaze_file[it]) as hdul:
                 for slice in config.slices:
-                    blaze = hdul[1].data#[config.cam_range[camera][0]:config.cam_range[camera][1], :]
+                    blaze = hdul[1].data
                     single_slice_blaze = blaze[slice::2,:]
                     blaze_hdu_l2 = fits.ImageHDU(data = single_slice_blaze.copy(), header = hdul[1].header)
 
