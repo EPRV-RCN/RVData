@@ -22,6 +22,8 @@ Level 2 Header Keywords: [Google Doc Here](https://docs.google.com/spreadsheets/
 
 ## Repository structure and how to interact with it
 
+This repo follows the [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
+
 ### Branch Structure
 
 - *main* - Release branch from which tagged releases are generated.
@@ -59,4 +61,3 @@ git push origin feature_branch_name
 3) Setup a pull request from your feature branch into the project level develop branch. Use the *Pull requests* menu item on the top bar of github.com. Be sure that the pull request points into the **EPRV-RCN/RVdata _develop_** branch. This will trigger a review request. Two reviews from the core development team are required before merging.
 
 4) Iterate with reviewers as needed, using the pull request to capture discussion comments. Once the reviewers approve the pull request, the original author is responsible for merging. **If you encounter a merge conflict, ask for help. _Do not proceed!_**
- 
