@@ -2,7 +2,7 @@
 RVData/instruments/harpsn/utils/validate_fits_file.py
 
 UNIGE-ESO - EPRV
-Author: Loris JACQUES
+Author: Loris JACQUES & Emile FONTANET
 Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0

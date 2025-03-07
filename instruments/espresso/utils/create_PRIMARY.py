@@ -2,7 +2,7 @@
 RVData/instruments/espresso/utils/create_PRIMARY.py
 
 UNIGE-ESO - EPRV
-Author: Loris JACQUES
+Author: Loris JACQUES & Emile FONTANET
 Created: Mon Mar 03 2025
 Last Modified: Mon Mar 03 2025
 Version: 1.0.0
@@ -175,10 +175,17 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> 
             
             # CALIBRATION SOURCE KEYWORD
             if(l2_hdu.header['TRACE'+str(i)]=='CAL'):
-                l2_hdu.header['CLSRC'+str(i)] = (
-                    RV2.headers['INSTRUMENT_HEADER'][header_map[header_map['Keyword']=='CLSRC']['ESO_keyword'].iloc[0]].split('_')[math.ceil(i/nb_slice)-1], 
-                    header_map[header_map['Keyword'] == 'CLSRC']['Description'].iloc[0]
-                )
+                clsrc_value = RV2.headers['INSTRUMENT_HEADER'][header_map[header_map['Keyword']=='CLSRC']['ESO_keyword'].iloc[0]]
+                if clsrc_value == 'HEADER':
+                    l2_hdu.header['CLSRC'+str(i)] = (
+                        RV2.headers['INSTRUMENT_HEADER']['HIERARCH ESO PRO REC1 RAW2 CATG'].split('_')[math.ceil(i/nb_slice)-1], 
+                        header_map[header_map['Keyword'] == 'CLSRC']['Description'].iloc[0]
+                    )
+                else: 
+                    l2_hdu.header['CLSRC'+str(i)] = (
+                        RV2.headers['INSTRUMENT_HEADER'][header_map[header_map['Keyword']=='CLSRC']['ESO_keyword'].iloc[0]].split('_')[math.ceil(i/nb_slice)-1], 
+                        header_map[header_map['Keyword'] == 'CLSRC']['Description'].iloc[0]
+                    )
             else:
                 l2_hdu.header['CLSRC'+str(i)] = (
                     'Null', 
@@ -295,6 +302,19 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> 
         l2_hdu.header[f'EXSNRW{str(i+1)}'] = (
             round(RV2.data["TRACE1_WAVE"][i,0]+(RV2.data["TRACE1_WAVE"][i,-1] - RV2.data["TRACE1_WAVE"][i,0])/2), 
             header_map[header_map['Keyword'] == 'EXSNRW']['Description'].iloc[0]
+        )
+
+    # DRPFLAG KEYWORD
+    drp_flag = RV2.headers['INSTRUMENT_HEADER'][header_map[header_map['Keyword'] == 'DRPFLAG']['ESO_keyword'].iloc[0]]
+    if drp_flag == 1:
+        l2_hdu.header['DRPFLAG'] = (
+            'Pass', 
+            header_map[header_map['Keyword'] == 'DRPFLAG']['Description'].iloc[0]
+        )
+    else:
+        l2_hdu.header['DRPFLAG'] = (
+            'Fail', 
+            header_map[header_map['Keyword'] == 'DRPFLAG']['Description'].iloc[0]
         )
 
     # COLOFLAG KEYWORD
@@ -588,7 +608,7 @@ def get_moon_sun_info(target_ra :float, target_dec: float,
     # Calculate the Moon's illumination
     elongation = moon_coord.separation(sun)
     moon_phase_angle = np.arctan2(sun.distance*np.sin(elongation), moon_coord.distance - sun.distance*np.cos(elongation))
-    moon_illu = round((1 + np.cos(moon_phase_angle)) / 2 * 100, 4).value
+    moon_illu = round((1 + np.cos(moon_phase_angle).value) / 2 * 100, 4)
 
     # Calculate the RV of reflected sunlight off moon
     moon_rv = round(get_moon_velocity_in_target_direction(target_ra, target_dec, jd_utc), 4)
