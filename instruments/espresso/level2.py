@@ -138,4 +138,3 @@ class ESPRESSORV2(RV2):
         self.del_extension('RECEIPT')
         self.del_extension('DRP_CONFIG')
         # self.del_extension('Exp Meter bin table')
-        print('end')
