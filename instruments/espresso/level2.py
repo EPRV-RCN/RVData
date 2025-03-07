@@ -53,7 +53,6 @@ class ESPRESSORV2(RV2):
         - Creates the `PRIMARY` header and necessary metadata.
         - For now : Removes unused or redundant extensions such as `RECEIPT` and `DRP_CONFIG`.
 
->>>>>>> b8c57274100fa97082b56e33c61b6f789efc81f0
     Attributes
     ----------
     extensions : dict
