@@ -56,8 +56,7 @@ def get_files_names(full_path:str) -> dict:
                 print('DARK type doesn\'t have any DRIFT correction')
                 drift_file_B = None
             else:
-                print('ERROR: NO DRIFT FILE FOUND')
-                return
+                raise ValueError(f"Error: File DRIFT not found. Conversion not possible.")
 
     # Open the S2D BLAZE FITS file (A version) to retrieve the BLAZE file names
     # These names are stored in specific header fields: HIERARCH ESO PRO REC1 CALn NAME

@@ -27,8 +27,8 @@ slices= [0,1]
 # Allows the conversion of the RAW file
 extnames_raw = {
     'Exp Meter bin table': {'name': 'EXPMETER', 'type': 'BinTableHDU'},
-    'FS1INT': {'name': 'PUPILIMAGE', 'type': 'ImageHDU'},
-    'PS1': {'name': 'GUIDINGIMAGE', 'type': 'ImageHDU'}
+    'FS1INT': {'name': 'GUIDINGIMAGE', 'type': 'ImageHDU'},
+    'PS1': {'name': 'PUPILIMAGE', 'type': 'ImageHDU'}
 }
 
 # Allows the conversion of S2D_BLAZE files
