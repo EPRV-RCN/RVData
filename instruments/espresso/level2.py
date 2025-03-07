@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-from astropy.io import fits
-# import base class
-=======
 '''
 RVData/instruments/espresso/level2.py
 
@@ -27,7 +23,6 @@ import os
 internal libraries
 ---------------------
 '''
->>>>>>> b8c57274100fa97082b56e33c61b6f789efc81f0
 from core.models.level2 import RV2
 import instruments.espresso.config.config as config
 from instruments.espresso.utils import convert_S2D_BLAZE, convert_BLAZE, convert_DRIFT, get_files_names, create_PRIMARY, validate_fits_file, convert_RAW
@@ -35,20 +30,6 @@ from instruments.espresso.utils import convert_S2D_BLAZE, convert_BLAZE, convert
 # ESPRESSO Level2 Reader
 class ESPRESSORV2(RV2):
     """
-<<<<<<< HEAD
-    Read an ESPRESSO raw file and convert it to the EPRV standard format Python object. In order to run fully, this
-    translator also needs to open other data products from the ESPRESSO pipeline, that should be stored in the same
-    directory. The ESPRESSO pipeline products are: 2D spectrum on fiber A and B and blaze function for each fiber.
-    This translator assumes that the files are named according to the ESPRESSO pipeline convention, namely:
-    raw_file.fits, r.raw_file_S2D_BLAZE_A.fits, r.raw_file_S2D_BLAZE_B.fits. The names of the BLAZE files are
-    obtained from the primary header.
-
-
-    Methods
-    -------
-    _read(hdul: fits.HDUList) -> None:
-        This function calls the do_conversion method from the utils.py file, which handles the conversion
-=======
     Read ESPRESSO Level 1 and Level 2 files and convert them into the EPRV standard format.
 
     This class extends the `RV2` base class to handle the reading of ESPRESSO (Echelle 
@@ -59,7 +40,7 @@ class ESPRESSORV2(RV2):
 
     Methods
     -------
-    do_convertion(hdul: fits.HDUList) -> None:
+    do_conversion(hdul: fits.HDUList) -> None:
         Reads the input FITS HDU list, extracts specific extensions related to the science
         data for different chips and fibers, and stores them in a standardized format.
 
@@ -85,7 +66,7 @@ class ESPRESSORV2(RV2):
 
     Notes
     -----
-    - The `do_convertion` method processes and extracts science and calibration data.
+    - The `do_conversion` method processes and extracts science and calibration data.
     - The method ensures the FITS file meets the required criteria before conversion.
     - Blaze correction functions are processed and stored for each fiber.
     - The drift file is processed separately for calibration.
@@ -94,22 +75,12 @@ class ESPRESSORV2(RV2):
     Example
     -------
     >>> from core.models.level2 import RV2
-<<<<<<< HEAD
-    >>> rv2_obj = RV2.from_fits("ESPRE.2000-00-00T00:00:00.fits")
-=======
     >>> rv2_obj = ESPRESSORV2.from_fits("espresso_level1_file.fits")
->>>>>>> b8c57274100fa97082b56e33c61b6f789efc81f0
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
     
 
-<<<<<<< HEAD
-    def _read(self, hdul: fits.HDUList) -> None:
-        utils.do_conversion(self)
-        return
-        
-=======
-    def do_convertion(self, hdul: fits.HDUList) -> None:
+    def do_conversion(self, hdul: fits.HDUList) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
 
@@ -163,10 +134,9 @@ class ESPRESSORV2(RV2):
         nb_trace = nb_fiber * config.slice_nb
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
-        # Remove unnecessary extensions
+        # Remove empty extensions
         self.del_extension('DRIFT')
         self.del_extension('RECEIPT')
         self.del_extension('DRP_CONFIG')
         # self.del_extension('Exp Meter bin table')
         print('end')
->>>>>>> b8c57274100fa97082b56e33c61b6f789efc81f0

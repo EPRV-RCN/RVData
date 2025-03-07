@@ -12,26 +12,26 @@ fiber = {
     "SKY": {'A': 'SCI', 'B': 'SKY'}
 }
 
-# Nombre de slice dans une fibre 
+# Number of slices in a fiber
 slice_nb = 2
 
-# Nombre de pixels par ordre
+# Number of pixels per order
 num_pixel = 9211
 
-# Nombre d'ordre' dans une fibre 
+# Number of orders in a fiber 
 NUMORDER = 85
 
-data_format = "L2"#Can either be original or L2
+data_format = "L2" # Can either be original or L2
 slices= [0,1]
 
-# Permet la convertion du fichier RAW
+# Allows the conversion of the RAW file
 extnames_raw = {
     'Exp Meter bin table': {'name': 'EXPMETER', 'type': 'BinTableHDU'},
     'FS1INT': {'name': 'PUPILIMAGE', 'type': 'ImageHDU'},
     'PS1': {'name': 'GUIDINGIMAGE', 'type': 'ImageHDU'}
 }
 
-# Permet la convertion des fichiers S2D_BLAZE
+# Allows the conversion of S2D_BLAZE files
 extnames = {
     'SCIDATA' : '_FLUX',
     'ERRDATA' : '_VAR',
@@ -40,12 +40,12 @@ extnames = {
     'DLLDATA_VAC_BARY' : '_DISP'
 }
 
-# Définir les plages temporelles des versions d'instruments
+# Define the time ranges of instrument versions
 INSTRUMENT_VERSIONS = [
     {"version": 'ESPRESSO18', "start_date": "2017-11-27", "end_date": "2019-06-12"},
-    {"version": 'ESPRESSO19', "start_date": "2019-06-24", "end_date": None}  # None = Jusqu'à maintenant
+    {"version": 'ESPRESSO19', "start_date": "2019-06-24", "end_date": None}  # None = Until now
 ]
 
-# Parametres des requetes Simbad
-# Permet de régler le temps avec lequel une requete est considérée comme échoué sans réponse.
+# Parameters for Simbad queries
+# Allows setting the timeout after which a query is considered failed without a response
 timeout = 30
