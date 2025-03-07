@@ -2,7 +2,7 @@
 RVData/instruments/harpsn/level2.py
 
 UNIGE-ESO - EPRV
-Author: Loris JACQUES
+Author: Loris JACQUES & Emile FONTANET
 Created: Mon Jan 20 2025
 Last Modified: Mon Jan 20 2025
 Version: 1.0.0

@@ -74,13 +74,13 @@ INSTERA,,,PRIMARY,,,True,Tag to track permanent changes to instrument
 EXTRACT,HIERARCH ESO PRO REC1 PARAM12 VALUE,,PRIMARY,S2D_BLAZE_A,,False,Type of 1D extraction
 EXSNR,,,PRIMARY,,,True,Extracted signal-to-noise in the order
 EXSNRW,,,PRIMARY,,,True,[Angstroms] Central wavelength of EXTSNRN
-FULLCOMP,,Yes,,,,False,Fully compliant with the RVSTAND EPRV standard?
-TELFLAG,,Pass,,,,False,Issues with observatory or telescope?
-INSTFLAG,,Pass,,,,False,Issues with instrument?
-DRPFLAG,,Pass,,,,False,Issues with pipeline? 
-COLOFLAG,HIERARCH ESO QC SCIRED DRIFT FLUX_RATIO CHECK,,,,,True,Issues with color?
-OBSFLAG,,Pass,,,,False,Observer pass/fail for exposure
-SUMMFLAG,,,,,,True,Roll up of other flag keywords
+FULLCOMP,,Yes,PRIMARY,,,False,Fully compliant with the RVSTAND EPRV standard?
+TELFLAG,,Pass,PRIMARY,,,False,Issues with observatory or telescope?
+INSTFLAG,,Pass,PRIMARY,,,False,Issues with instrument?
+DRPFLAG,HIERARCH ESO QC SCIRED CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with pipeline?
+COLOFLAG,HIERARCH ESO QC SCIRED DRIFT FLUX_RATIO CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with color?
+OBSFLAG,,Pass,PRIMARY,,,False,Observer pass/fail for exposure
+SUMMFLAG,,,PRIMARY,,,True,Roll up of other flag keywords
 DQLVL0,,Null,PRIMARY,,,False,Quality check bitfield of N characters
 DQLVL1,,Null,PRIMARY,,,False,Quality check bitfield of N characters
 DQLVL2,,Null,PRIMARY,,,False,Quality check bitfield of N characters

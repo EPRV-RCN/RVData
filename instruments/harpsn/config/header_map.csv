@@ -77,8 +77,8 @@ EXSNRW,,,PRIMARY,,,True,[Angstroms] Central wavelength of EXTSNRN
 FULLCOMP,,Yes,PRIMARY,,,False,Fully compliant with the RVSTAND EPRV standard?
 TELFLAG,,Pass,PRIMARY,,,False,Issues with observatory or telescope?
 INSTFLAG,,Pass,PRIMARY,,,False,Issues with instrument?
-DRPFLAG,,Pass,PRIMARY,,,False,Issues with pipeline? 
-COLOFLAG,HIERARCH TNG QC SCIRED DRIFT FLUX_RATIO CHECK,,,,,True,Issues with color?
+DRPFLAG,HIERARCH ESO QC SCIRED CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with pipeline?
+COLOFLAG,HIERARCH TNG QC SCIRED DRIFT FLUX_RATIO CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with color?
 OBSFLAG,,Pass,PRIMARY,,,False,Observer pass/fail for exposure
 SUMMFLAG,,,PRIMARY,,,True,Roll up of other flag keywords
 DQLVL0,,Null,PRIMARY,,,False,Quality check bitfield of N characters

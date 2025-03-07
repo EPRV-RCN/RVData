@@ -2,7 +2,7 @@
 RVData/instruments/espresso/utils/create_PRIMARY.py
 
 UNIGE-ESO - EPRV
-Author: Loris JACQUES
+Author: Loris JACQUES & Emile FONTANET
 Created: Mon Mar 03 2025
 Last Modified: Mon Mar 03 2025
 Version: 1.0.0
@@ -295,6 +295,19 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> 
         l2_hdu.header[f'EXSNRW{str(i+1)}'] = (
             round(RV2.data["TRACE1_WAVE"][i,0]+(RV2.data["TRACE1_WAVE"][i,-1] - RV2.data["TRACE1_WAVE"][i,0])/2), 
             header_map[header_map['Keyword'] == 'EXSNRW']['Description'].iloc[0]
+        )
+
+    # DRPFLAG KEYWORD
+    drp_flag = RV2.headers['INSTRUMENT_HEADER'][header_map[header_map['Keyword'] == 'DRPFLAG']['ESO_keyword'].iloc[0]]
+    if drp_flag == 1:
+        l2_hdu.header['DRPFLAG'] = (
+            'Pass', 
+            header_map[header_map['Keyword'] == 'DRPFLAG']['Description'].iloc[0]
+        )
+    else:
+        l2_hdu.header['DRPFLAG'] = (
+            'Fail', 
+            header_map[header_map['Keyword'] == 'DRPFLAG']['Description'].iloc[0]
         )
 
     # COLOFLAG KEYWORD
