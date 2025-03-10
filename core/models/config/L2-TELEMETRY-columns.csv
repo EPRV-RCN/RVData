@@ -1,0 +1,5 @@
+Name,Description
+DATE,date-time in ISO
+SENSOR,name of sensor
+VALUE,value of sensor data
+UNITS,string of units for sensor data

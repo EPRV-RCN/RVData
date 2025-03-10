@@ -12,14 +12,18 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.8"
 
-# Optional dependencies
 dependencies = [
+    "astropy",
     "numpy",
     "pandas",
+    "GitPython",
+    "specutils",
     "sphinx",
     "sphinx-rtd-theme",  # ReadTheDocs theme for Sphinx
+    "sphinxcontrib-napoleon"
 ]
 
+# Optional dependencies
 [project.optional-dependencies]
 dev = [
     "black",       # Code formatting
@@ -32,11 +36,11 @@ dev = [
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py312']
 
 [tool.flake8]
 max-line-length = 88
-extend-ignore = ["E203", "W503"]
+extend-ignore = ["W503", "E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
