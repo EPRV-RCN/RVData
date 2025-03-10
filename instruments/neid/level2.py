@@ -1,4 +1,5 @@
 from astropy.io import fits
+import astropy.table
 import astropy.units as u
 from astropy.nddata import VarianceUncertainty
 import numpy as np
@@ -144,6 +145,17 @@ class NEIDRV2(RV2):
 
         ### Expmeter (316 time stamps, 122 wavelengths)
         expmeter_data = hdul['EXPMETER'].data[expmeter_index]
+
+        # The array of exposure meter time stamps and wavelengths
+        expmeter_times = hdul['EXPMETER'].data[0,0]
+        expmeter_wavelengths = hdul['EXPMETER'].data[1,:,0]
+
+        # Turn the exposure meter information into a dictionary, read in as a DataFrame
+        expmeter_extension_data = {'time': expmeter_times}
+        for i_wave, col_wavelength in enumerate(expmeter_wavelengths):
+            expmeter_extension_data[str(col_wavelength)] = expmeter_data[i_wave]
+
+        self.create_extension("EXPMETER", "BinTableHDU", data=expmeter_extension_data)
         
         ### Telemetry
 
