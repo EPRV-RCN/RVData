@@ -131,5 +131,4 @@ class HARPSRV2(RV2):
         # Remove empty extensions
         self.del_extension('RECEIPT')
         self.del_extension('DRP_CONFIG')
-        print('end')
 

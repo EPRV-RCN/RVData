@@ -25,7 +25,7 @@ num_pixel = 4096
 NUMORDER = 71
 
 # Order of the empty row in order to correct size (correspond to the first GAP)
-empty_raw_order = 45
+empty_raw_order = 44
 
 # Allows the conversion of S2D_BLAZE files
 extnames = {
