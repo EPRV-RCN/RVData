@@ -131,7 +131,7 @@ class RVDataModel(object):
 
         self.filename = os.path.basename(fn)
         self.dirname = os.path.dirname(fn)
-        
+
         with fits.open(fn) as hdu_list:
             # Handles the Receipt and the auxilary HDUs
             for hdu in hdu_list:
