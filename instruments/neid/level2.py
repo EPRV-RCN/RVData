@@ -160,8 +160,8 @@ class NEIDRV2(RV2):
         ### Telemetry
 
         ### Telluric model (from NEID L2 extension - use only line absorption model for now)
-        self.set_header("TRACE1_TELLURIC", OrderedDict(hdul['TELLURIC'].header))
-        self.set_data("TRACE1_TELLURIC", hdul['TELLURIC'].data[:,:,0])
+        self.create_extension("TRACE1_TELLURIC", "ImageHDU", header=hdul['TELLURIC'].header,
+                              data=hdul['TELLURIC'].data[:,:,0])
 
         ### Sky model
 
