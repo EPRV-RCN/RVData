@@ -54,7 +54,7 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int):
     header_map = pd.read_csv(header_map_path)
 
     for index, values in header_map.iterrows():
-        if (header_map['skip'].iloc[index] is True):
+        if (bool(header_map['skip'].iloc[index]) is True):
             continue
         # Add the HIERARCH keyword to the header if the keyword is longer than
         # 8 characters

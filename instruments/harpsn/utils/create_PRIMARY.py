@@ -57,7 +57,7 @@ def create_PRIMARY(
     header_map = pd.read_csv(header_map_path)
 
     for index, values in header_map.iterrows():
-        if (header_map['skip'].iloc[index] is True):
+        if (bool(header_map['skip'].iloc[index]) is True):
             continue
 
         # Add the HIERARCH keyword to the header if the keyword is longer
@@ -204,7 +204,7 @@ def create_PRIMARY(
                 clsrc_value = RV2.headers['INSTRUMENT_HEADER'][
                     header_map[
                         header_map['Keyword'] == 'CLSRC'
-                    ]['ESO_keyword'].iloc[0]
+                    ]['TNG_keyword'].iloc[0]
                 ]
                 if clsrc_value == 'HEADER':
                     l2_hdu.header['CLSRC'+str(i)] = (
@@ -220,7 +220,7 @@ def create_PRIMARY(
                         RV2.headers['INSTRUMENT_HEADER'][
                             header_map[
                                 header_map['Keyword'] == 'CLSRC'
-                            ]['ESO_keyword'].iloc[0]
+                            ]['TNG_keyword'].iloc[0]
                         ].split('_')[math.ceil(i/nb_slice)-1],
                         header_map[
                             header_map['Keyword'] == 'CLSRC'
@@ -233,7 +233,6 @@ def create_PRIMARY(
                         header_map['Keyword'] == 'CLSRC'
                     ]['Description'].iloc[0]
                 )
-
             # CATALOG KEYWORDS
             if (l2_hdu.header['TRACE'+str(i)] == 'SCI'):
                 for keyword in keyword_list:
@@ -396,7 +395,7 @@ def create_PRIMARY(
 
     # DRPFLAG KEYWORD
     drp_flag = RV2.headers['INSTRUMENT_HEADER'][
-        header_map[header_map['Keyword'] == 'DRPFLAG']['ESO_keyword'].iloc[0]
+        header_map[header_map['Keyword'] == 'DRPFLAG']['TNG_keyword'].iloc[0]
     ]
     if drp_flag == 1:
         l2_hdu.header['DRPFLAG'] = (

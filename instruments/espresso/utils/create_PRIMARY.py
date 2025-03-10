@@ -75,7 +75,7 @@ def create_PRIMARY(
     #       .str.replace('INS1', 'INS')
 
     for index, values in header_map.iterrows():
-        if (header_map['skip'].iloc[index] is True):
+        if (bool(header_map['skip'].iloc[index]) is True):
             continue
 
         # Add the HIERARCH keyword to the header if the keyword is longer
@@ -141,7 +141,7 @@ def create_PRIMARY(
             + '.fits',
             header_map[
                 header_map['Keyword'] == 'FILENAME'
-                ]['Description'].iloc[0]
+            ]['Description'].iloc[0]
         )
     else:
         l2_hdu.header['FILENAME'] = (
