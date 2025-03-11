@@ -131,6 +131,7 @@ class RVDataModel(object):
 
         self.filename = os.path.basename(fn)
         self.dirname = os.path.dirname(fn)
+
         with fits.open(fn) as hdu_list:
             # Handles the Receipt and the auxilary HDUs
             for hdu in hdu_list:
@@ -200,7 +201,6 @@ class RVDataModel(object):
             raise TypeError("Write method not found. Is this the base class?")
         else:
             hdu_list = gen_hdul()
-
         # finish up writing
         hdul = fits.HDUList(hdu_list)
         if not os.path.isdir(os.path.dirname(fn)):
