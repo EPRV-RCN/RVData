@@ -21,7 +21,7 @@ class KPFRV2(RV2):
 
     Methods
     -------
-    _read(hdul: fits.HDUList) -> None:
+    _read(hdul0: fits.HDUList, hdul1: fits.HDUlist) -> None:
         Reads the input FITS HDU list, extracts specific extensions related to the science
         data for different chips and fibers, and stores them in a standardized format.
 
@@ -54,11 +54,12 @@ class KPFRV2(RV2):
     Example
     -------
     >>> from core.models.level2 import RV2
-    >>> rv2_obj = RV2.from_fits("kpf_level1_file.fits")
+    >>> rv2_obj = RV2.from_fits("kpf_level0_file.fits", "kpf_level1_file.fits")
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
-    def _read(self, hdul: fits.HDUList) -> None:
+    def _read(self, hdul1: fits.HDUList, **kwargs) -> None:
+        hdul0 = fits.open(kwargs["l0file"])
 
         for i in range(1, 4):
             flux_array = None
@@ -72,26 +73,26 @@ class KPFRV2(RV2):
                 var_ext = f"{chip}_SCI_VAR{i}"
 
                 if flux_array is None:
-                    flux_array = hdul[flux_ext].data
-                    flux_meta = OrderedDict(hdul[flux_ext].header)
+                    flux_array = hdul1[flux_ext].data
+                    flux_meta = OrderedDict(hdul1[flux_ext].header)
                 else:
                     flux_array = np.concatenate(
-                        (flux_array, hdul[flux_ext].data), axis=0
+                        (flux_array, hdul1[flux_ext].data), axis=0
                     )
 
                 if wave_array is None:
-                    wave_array = hdul[wave_ext].data
-                    wave_meta = OrderedDict(hdul[wave_ext].header)
+                    wave_array = hdul1[wave_ext].data
+                    wave_meta = OrderedDict(hdul1[wave_ext].header)
                 else:
                     wave_array = np.concatenate(
-                        (wave_array, hdul[wave_ext].data), axis=0
+                        (wave_array, hdul1[wave_ext].data), axis=0
                     )
 
                 if var_array is None:
-                    var_array = hdul[var_ext].data
-                    var_meta = OrderedDict(hdul[var_ext].header)
+                    var_array = hdul1[var_ext].data
+                    var_meta = OrderedDict(hdul1[var_ext].header)
                 else:
-                    var_array = np.concatenate((var_array, hdul[var_ext].data), axis=0)
+                    var_array = np.concatenate((var_array, hdul1[var_ext].data), axis=0)
 
             self.create_extension(
                 out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
@@ -119,26 +120,26 @@ class KPFRV2(RV2):
                 var_ext = f"{chip}_{fiber}_VAR"
 
                 if flux_array is None:
-                    flux_array = hdul[flux_ext].data
-                    flux_meta = OrderedDict(hdul[flux_ext].header)
+                    flux_array = hdul1[flux_ext].data
+                    flux_meta = OrderedDict(hdul1[flux_ext].header)
                 else:
                     flux_array = np.concatenate(
-                        (flux_array, hdul[flux_ext].data), axis=0
+                        (flux_array, hdul1[flux_ext].data), axis=0
                     )
 
                 if wave_array is None:
-                    wave_array = hdul[wave_ext].data
-                    wave_meta = OrderedDict(hdul[wave_ext].header)
+                    wave_array = hdul1[wave_ext].data
+                    wave_meta = OrderedDict(hdul1[wave_ext].header)
                 else:
                     wave_array = np.concatenate(
-                        (wave_array, hdul[wave_ext].data), axis=0
+                        (wave_array, hdul1[wave_ext].data), axis=0
                     )
 
                 if var_array is None:
-                    var_array = hdul[var_ext].data
-                    var_meta = OrderedDict(hdul[var_ext].header)
+                    var_array = hdul1[var_ext].data
+                    var_meta = OrderedDict(hdul1[var_ext].header)
                 else:
-                    var_array = np.concatenate((var_array, hdul[var_ext].data), axis=0)
+                    var_array = np.concatenate((var_array, hdul1[var_ext].data), axis=0)
 
             if i == 1:
                 self.set_header(out_prefix + "FLUX", flux_meta)
@@ -167,27 +168,30 @@ class KPFRV2(RV2):
                     out_prefix + "BLAZE", "ImageHDU", data=blaze, header=flux_meta
                 )
 
-        bary = hdul["BARY_CORR"].data
+        bary = hdul1["BARY_CORR"].data
         bary_kms = bary["BARYVEL"] / 1000.0
 
         self.set_header("DRIFT", wave_meta)
         self.set_data("DRIFT", np.zeros_like(flux_array))
 
-        self.set_header("BARYCORR_KMS", OrderedDict(hdul["BARY_CORR"].header))
-        self.set_header("BARYCORR_Z", OrderedDict(hdul["BARY_CORR"].header))
+        self.set_header("BARYCORR_KMS", OrderedDict(hdul1["BARY_CORR"].header))
+        self.set_header("BARYCORR_Z", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_data("BARYCORR_KMS", bary_kms)
         self.set_data("BARYCORR_Z", bary_kms / 3e5)  # aproximate!!!
 
-        self.set_header("BJD_TDB", OrderedDict(hdul["BARY_CORR"].header))
+        self.create_extension('EXPMETER', "BinTableHDU", data=hdul0["EXPMETER_SCI"].data, header=OrderedDict(hdul0["EXPMETER_SCI"].header))
+        self.create_extension('TELEMETRY', "BinTableHDU", data=hdul1["TELEMETRY"].data, header=OrderedDict(hdul1["TELEMETRY"].header))
+
+        self.set_header("BJD_TDB", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_data("BJD_TDB", bary["PHOTON_BJD"])
 
-        self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
+        self.set_header("INSTRUMENT_HEADER", hdul1["PRIMARY"].header)
 
-        self.set_header("DRP_CONFIG", OrderedDict(hdul["CONFIG"].header))
-        self.set_data("DRP_CONFIG", Table(hdul["CONFIG"].data).to_pandas())
+        self.set_header("DRP_CONFIG", OrderedDict(hdul1["CONFIG"].header))
+        self.set_data("DRP_CONFIG", Table(hdul1["CONFIG"].data).to_pandas())
 
-        self.set_header("RECEIPT", OrderedDict(hdul["RECEIPT"].header))
-        self.set_data("RECEIPT", Table(hdul["RECEIPT"].data).to_pandas())
+        self.set_header("RECEIPT", OrderedDict(hdul1["RECEIPT"].header))
+        self.set_data("RECEIPT", Table(hdul1["RECEIPT"].data).to_pandas())
 
         hmap_path = os.path.join(os.path.dirname(__file__), 'config/header_map.csv')
         headmap = pd.read_csv(hmap_path, header=0)
@@ -205,5 +209,7 @@ class KPFRV2(RV2):
                 phead[skey] = kpfval
             else:
                 phead[skey] = None
+
+        print(self.extensions)
 
         self.set_header("PRIMARY", phead)

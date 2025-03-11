@@ -85,7 +85,7 @@ class RVDataModel(object):
     # =============================================================================
     # I/O related methods
     @classmethod
-    def from_fits(cls, fn, instrument=None):
+    def from_fits(cls, fn, instrument=None, **kwargs):
         """Create a data instance from a file
 
         This method implys the ``read`` method for reading the file. Refer to
@@ -104,11 +104,11 @@ class RVDataModel(object):
             raise IOError(f"{fn} does not exist.")
 
         # populate it with self.read()
-        this_data.read(fn, instrument)
+        this_data.read(fn, instrument, **kwargs)
         # Return this instance
         return this_data
 
-    def read(self, fn, instrument=None, overwrite=False):
+    def read(self, fn, instrument=None, overwrite=False, **kwargs):
         """Read the content of a RVData standard .fits file and populate this
         data structure.
 
@@ -164,7 +164,7 @@ class RVDataModel(object):
                 )
                 cls = getattr(module, self.read_methods[instrument]["class"])
                 method = getattr(cls, self.read_methods[instrument]["method"])
-                method(self, hdu_list)
+                method(self, hdu_list, **kwargs)
             else:
                 # the provided data_type is not recognized, ie.
                 # not in the self.read_methods list
