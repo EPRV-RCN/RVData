@@ -85,19 +85,19 @@ class NEIDRV2(RV2):
 
             # Flux
             flux_array = hdul[flux_ext].data
-            flux_meta = OrderedDict(hdul[flux_ext].header)
+            flux_meta = hdul[flux_ext].header
 
             # Wavelength
             wave_array = hdul[wave_ext].data
-            wave_meta = OrderedDict(hdul[wave_ext].header)
+            wave_meta = hdul[wave_ext].header
 
             # Variance
             var_array = hdul[var_ext].data
-            var_meta = OrderedDict(hdul[var_ext].header)
+            var_meta = hdul[var_ext].header
 
             # Blaze -- this will require NEID L2 rather than NEID L1 files
             blaze_array = hdul[blaze_ext].data
-            blaze_meta = OrderedDict(hdul[blaze_ext].header)
+            blaze_meta = hdul[blaze_ext].header
 
             ## Output extensions into base model
             if i_fiber == 0:
@@ -143,6 +143,12 @@ class NEIDRV2(RV2):
 
         ### Drift
 
+        # Just set the value of driftrv0 from the header in km/s
+        drift_data = np.array([hdul[0].header['driftrv0'] / 1e3])
+        drift_meta = fits.Header({"COMMENT": "NEID drift relative to start of observing session"})
+        self.set_header("DRIFT", drift_meta)
+        self.set_data("DRIFT", data=drift_data)
+
         ### Expmeter (316 time stamps, 122 wavelengths)
         expmeter_data = hdul['EXPMETER'].data[expmeter_index]
 
@@ -157,14 +163,14 @@ class NEIDRV2(RV2):
 
         self.create_extension("EXPMETER", "BinTableHDU", data=expmeter_extension_data)
         
-        ### Telemetry
+        ### Telemetry - Nothing for now
 
-        ### Telluric model (from NEID L2 extension - use only line absorption model for now)
+        ### Telluric model (from NEID L2 extension - combine line and continuum models)
         self.create_extension("TRACE1_TELLURIC", "ImageHDU", header=hdul['TELLURIC'].header,
-                              data=hdul['TELLURIC'].data[:,:,0])
+                              data=hdul['TELLURIC'].data[:,:,0] * hdul['TELLURIC'].data[:,:,1])
 
-        ### Sky model
+        ### Sky model - Nothing for now
 
-        ### Ancillary spectra
+        ### Ancillary spectra - Nothing for now
 
-        ### Images
+        ### Images - Nothing for now
