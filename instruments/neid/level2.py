@@ -1,9 +1,10 @@
+# Standard library imports
+import os
+
+# Third party library imports
 from astropy.io import fits
-import astropy.table
-import astropy.units as u
-from astropy.nddata import VarianceUncertainty
 import numpy as np
-from collections import OrderedDict
+import pandas as pd
 
 # import base class
 from core.models.level2 import RV2
