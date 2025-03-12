@@ -175,3 +175,24 @@ class NEIDRV2(RV2):
         ### Ancillary spectra - Nothing for now
 
         ### Images - Nothing for now
+
+        ### Standardized primary header
+
+        hmap_path = os.path.join(os.path.dirname(__file__), 'config/header_map.csv')
+        headmap = pd.read_csv(hmap_path, header=0)
+
+        phead = fits.PrimaryHDU().header
+        ihead = self.headers['INSTRUMENT_HEADER']
+        for i, row in headmap.iterrows():
+            skey = row['STANDARD']
+            instkey = row['INSTRUMENT']
+            if pd.notnull(instkey):
+                instval = ihead[instkey]
+            else:
+                instval = row['DEFAULT']
+            if pd.notnull(instval):
+                phead[skey] = instval
+            else:
+                phead[skey] = None
+
+        self.set_header("PRIMARY", phead)
