@@ -58,10 +58,10 @@ class NEIDRV2(RV2):
 
     def _read(self, hdul: fits.HDUList) -> None:
 
-        ## Output the original primary header to own extension for preservation
+        # Output the original primary header to own extension for preservation
         self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
 
-        ### Prepare fiber-related extensions
+        # Prepare fiber-related extensions
 
         # Check observation mode to set fiber list
         if hdul[0].header["OBS-MODE"] == "HR":
@@ -72,7 +72,7 @@ class NEIDRV2(RV2):
             expmeter_index = 3
 
         for i_fiber, fiber in enumerate(fiber_list):
-            ## Extension naming set up
+            # Extension naming set up
 
             # Set the input extension names for this fiber
             flux_ext = f"{fiber}FLUX"
@@ -83,7 +83,7 @@ class NEIDRV2(RV2):
             # Set the output extension name prefix for this fiber (1-indexed)
             out_prefix = f"TRACE{i_fiber+1}_"
 
-            ## Collect data and header information for each extension
+            # Collect data and header information for each extension
 
             # Flux
             flux_array = hdul[flux_ext].data
@@ -101,7 +101,7 @@ class NEIDRV2(RV2):
             blaze_array = hdul[blaze_ext].data
             blaze_meta = hdul[blaze_ext].header
 
-            ## Output extensions into base model
+            # Output extensions into base model
             if i_fiber == 0:
                 self.set_header(out_prefix + "FLUX", flux_meta)
                 self.set_data(out_prefix + "FLUX", flux_array)
@@ -134,7 +134,7 @@ class NEIDRV2(RV2):
                     header=blaze_meta,
                 )
 
-        ### Barycentric correction and timing related extensions
+        # Barycentric correction and timing related extensions
 
         # Extract barycentric velocities, redshifts, and JDs from NEID primary header
         bary_kms = np.array(
@@ -152,7 +152,7 @@ class NEIDRV2(RV2):
         self.set_data("BARYCORR_Z", bary_z)  # aproximate!!!
         self.set_data("BJD_TDB", bjd)
 
-        ### Drift
+        # Drift
 
         # Just set the value of driftrv0 from the header in km/s
         drift_data = np.array([hdul[0].header["driftrv0"] / 1e3])
@@ -162,7 +162,7 @@ class NEIDRV2(RV2):
         self.set_header("DRIFT", drift_meta)
         self.set_data("DRIFT", data=drift_data)
 
-        ### Expmeter (316 time stamps, 122 wavelengths)
+        # Expmeter (316 time stamps, 122 wavelengths)
         expmeter_data = hdul["EXPMETER"].data[expmeter_index]
 
         # The array of exposure meter time stamps and wavelengths
@@ -176,9 +176,9 @@ class NEIDRV2(RV2):
 
         self.create_extension("EXPMETER", "BinTableHDU", data=expmeter_extension_data)
 
-        ### Telemetry - Nothing for now
+        # Telemetry - Nothing for now
 
-        ### Telluric model (from NEID L2 extension - combine line and continuum models)
+        # Telluric model (from NEID L2 extension - combine line and continuum models)
         self.create_extension(
             "TRACE1_TELLURIC",
             "ImageHDU",
@@ -186,13 +186,13 @@ class NEIDRV2(RV2):
             data=hdul["TELLURIC"].data[:, :, 0] * hdul["TELLURIC"].data[:, :, 1],
         )
 
-        ### Sky model - Nothing for now
+        # Sky model - Nothing for now
 
-        ### Ancillary spectra - Nothing for now
+        # Ancillary spectra - Nothing for now
 
-        ### Images - Nothing for now
+        # Images - Nothing for now
 
-        ### Standardized primary header
+        # Standardized primary header
 
         hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
         headmap = pd.read_csv(hmap_path, header=0)
