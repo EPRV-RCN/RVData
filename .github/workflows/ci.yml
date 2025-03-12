@@ -30,7 +30,7 @@ jobs:
         matrix:
           os: [ubuntu-latest]
           python-ver: [12, 13]
-          tox-env: [test, test-oldestdeps, test-devdeps]
+          tox-env: [test, test-oldestdeps, test-devdeps, benchmark]
       steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.${{ matrix.python-ver }} with tox environment ${{ matrix.tox-env }} on ${{ matrix.os }}

@@ -18,9 +18,6 @@ dependencies = [
     "pandas",
     "GitPython",
     "specutils",
-    "sphinx",
-    "sphinx-rtd-theme",  # ReadTheDocs theme for Sphinx
-    "sphinxcontrib-napoleon"
 ]
 
 # Optional dependencies
@@ -30,9 +27,12 @@ dev = [
     "flake8",      # Code linting
     "pytest",      # Testing
     "tox",         # Testing
-    "sphinx",      # Documentation
+    "pytest-benchmark", # Benchmarking
+    "coverage",    # Code coverage
+    "sphinx",            # Documentation
+    "sphinx-rtd-theme",  # ReadTheDocs theme for Sphinx
+    "sphinxcontrib-napoleon",
     "sphinx-autodoc-typehints",
-    "sphinx-rtd-theme",
 ]
 
 [tool.black]
