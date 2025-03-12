@@ -46,10 +46,10 @@ meaningfully populated in the FITS file in order for the file to be compliant wi
 
 **INSTERA** : Tag for the "instrument era" used to track permanent changes to instrument (e.g., 1.1.2). Major changes 
 that result in RV offset are recorded in the first numeral space. Small but permanent changes, (changes in the calibration 
-light sources, etc) that don’t necessarily introduce RV offsets but do represent an ongoing status change in the instrument, 
+light sources, etc) that don't necessarily introduce RV offsets but do represent an ongoing status change in the instrument, 
 are recorded in the second numeral. Anything that could impact the calibration or science outputs goes here. Even smaller 
 changes, or things that you only recognize retrospectively, are recorded in the third numeral. 
 
 Note: Each team will place a csv file into the config directory with 1 line per era that has the start and end dates of 
 each timespan. If this file is already maintained elsewhere by the instrument team then link to that instead so the 
-file doesn’t need to be maintained in multiple places.
+file doesn't need to be maintained in multiple places.
