@@ -10,7 +10,7 @@ authors = [
     { name="BJ Fulton", email="bjfulton@ipac.caltech.edu" }
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 
 dependencies = [
     "astropy",
@@ -29,6 +29,7 @@ dev = [
     "black",       # Code formatting
     "flake8",      # Code linting
     "pytest",      # Testing
+    "tox",         # Testing
     "sphinx",      # Documentation
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
@@ -36,23 +37,57 @@ dev = [
 
 [tool.black]
 line-length = 88
-target-version = ['py312']
+target-version = ["py313"]
 
 [tool.flake8]
 max-line-length = 88
 extend-ignore = ["W503", "E501"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
 
 [tool.sphinx]
 source-dir = "docs/source"
 build-dir = "docs/_build"
 
 [tool.setuptools]
-packages = ["core", "core.models", "core.tools"]  # Include your package directories here
+include-package-data = true
+
+[tool.setuptools.packages]
+find = {}
 
 [tool.poe.tasks]
 # Task automation using poe the poet (Optional)
 docs = "sphinx-build -b html docs/source docs/_build/html"
 test = "pytest"
+
+[tool.pytest.ini_options]
+minversion = 7.0
+testpaths = [
+    "rvdata",
+]
+addopts = [
+    "--color=yes",
+]
+
+[tool.coverage]
+
+    [tool.coverage.run]
+        omit = [
+            "rvdata/core/models/config/*",
+            "rvdata/tests/*",
+        ]
+
+    [tool.coverage.report]
+        exclude_lines = [
+            # Have to re-enable the standard pragma
+            "pragma: no cover",
+            # Don't complain about packages we have installed
+            "except ImportError",
+            # Don't complain if tests don't hit defensive assertion code:
+            "raise AssertionError",
+            "raise NotImplementedError",
+            # Don't complain about script hooks
+            "'def main(.*):'",
+            # Ignore branches that don't pertain to this version of Python
+            "pragma: py{ignore_python_version}",
+            # Don't complain about IPython completion helper
+            "def _ipython_key_completions_",
+        ]
