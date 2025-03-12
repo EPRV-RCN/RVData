@@ -59,3 +59,22 @@ resolution visible / NIR spectra. Potential examples include science related to 
 .. csv-table::
     :header-rows: 1
     :file: ../../core/models/config/L3-extensions.csv
+
+
+Level 4 FITS Extensions
+========================
+A Level 4 file will contain derived data products such as RV measurements, cross correlation functions (CCFs), CCF metrics 
+(e.g., FWHM, BIS), and stellar activity indicators. Only the RV measurements are required, to support non-CCF RV reduction methods.
+
+L4 data products are expected to be derived from an L2 file, and inherit the PRIMARY, INSTRUMENT_HEADER, RECEIPT, and DRP_CONFIG 
+extensions from that L2.
+
+The RV extension is a Binary Table that contains the following columns: BJD_TDB, wave_start, wave_end, pixel_start, pixel_end, RV_Trace, RV_error, BC_vel, order index, echelle order 
+Optional, additional columns include: RV_weight
+The wave_start and wave_end values can be set to same number if reporting central wavelength of the segment.
+
+The header for this extension should contain RVMETHOD, RVSTART, RVSTEP, MASK keywords.
+
+.. csv-table::
+    :header-rows: 1
+    :file: ../../core/models/config/L4-extensions.csv
