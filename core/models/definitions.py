@@ -20,5 +20,6 @@ LEVEL2_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L2-PRIMARY-keywords.csv")
 
 # Dictionary of instrument readers
 INSTRUMENT_READERS = {
-    "KPF": {"module": "instruments.kpf.level2", "class": "KPFRV2", "method": "_read"}
+    "KPF": {"module": "instruments.kpf.level2", "class": "KPFRV2", "method": "_read"},
+    "NEID": {"module": "instruments.neid.level2", "class": "NEIDRV2", "method": "_read"}
 }
