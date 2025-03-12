@@ -14,9 +14,9 @@ import pandas as pd
 from astropy.io import fits
 from astropy.table import Table
 
-from core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
-from core.models.receipt_columns import RECEIPT_COL
-from core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
+from rvdata.core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
+from rvdata.core.models.receipt_columns import RECEIPT_COL
+from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 
 
 class RVDataModel(object):

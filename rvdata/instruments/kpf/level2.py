@@ -6,7 +6,7 @@ import os
 from collections import OrderedDict
 
 # import base class
-from core.models.level2 import RV2
+from rvdata.core.models.level2 import RV2
 
 
 # KPF Level2 Reader

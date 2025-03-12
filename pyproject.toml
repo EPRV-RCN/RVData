@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools", "wheel", "sphinx"]
+requires = ["setuptools", "wheel", "sphinx", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "RVdata"
-version = "0.0.2"
+dynamic = ["version"]
 description = "EPRV Data Standardization Project"
 authors = [
     { name="BJ Fulton", email="bjfulton@ipac.caltech.edu" }
@@ -53,6 +53,9 @@ include-package-data = true
 [tool.setuptools.packages]
 find = {}
 
+[tool.setuptools_scm]
+version_file = "rvdata/version.py"
+
 [tool.poe.tasks]
 # Task automation using poe the poet (Optional)
 docs = "sphinx-build -b html docs/source docs/_build/html"
@@ -73,6 +76,7 @@ addopts = [
         omit = [
             "rvdata/core/models/config/*",
             "rvdata/tests/*",
+            "rvdata/version.py",
         ]
 
     [tool.coverage.report]

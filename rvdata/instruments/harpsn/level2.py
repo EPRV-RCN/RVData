@@ -15,9 +15,9 @@ Libraries
 from astropy.io import fits
 import os
 
-from core.models.level2 import RV2
-import instruments.harpsn.config.config as config
-from instruments.harpsn.utils import (
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harpsn.config.config as config
+from rvdata.instruments.harpsn.utils import (
     convert_S2D_BLAZE, convert_BLAZE,
     convert_DRIFT, get_files_names,
     create_PRIMARY, validate_fits_file
