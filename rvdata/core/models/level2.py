@@ -8,11 +8,11 @@ from astropy.table import Table
 import numpy as np
 import pandas as pd
 
-import core.models.base
-from core.models.definitions import LEVEL2_EXTENSIONS
+import rvdata.core.models.base
+from rvdata.core.models.definitions import LEVEL2_EXTENSIONS
 
 
-class RV2(core.models.base.RVDataModel):
+class RV2(rvdata.core.models.base.RVDataModel):
     """
     The level 2 RV data. Initialized with empty fields.
     Attributes inherited from RVDataModel, additional attributes below.
