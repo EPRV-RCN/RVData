@@ -36,7 +36,7 @@ jobs:
       - name: Set up Python 3.${{ matrix.python-ver }} with tox environment ${{ matrix.tox-env }} on ${{ matrix.os }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.$${{ matrix.python-ver }}'
+          python-version: '3.${{ matrix.python-ver }}'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
