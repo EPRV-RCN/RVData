@@ -210,6 +210,4 @@ class KPFRV2(RV2):
             else:
                 phead[skey] = None
 
-        print(self.extensions)
-
         self.set_header("PRIMARY", phead)
