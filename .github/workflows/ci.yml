@@ -64,9 +64,9 @@ jobs:
           python -m pip install tox
       - name: Run benchmark tests with tox
         run: |
-          tox -e py3${{ matrix.python-ver }}-${{ matrix.tox-env }} -- --benchmark-json output.json
+          tox -e py3${{ matrix.python-ver }}-${{ matrix.tox-env }} -- --benchmark-json ${{ runner.temp }}/output.json
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: 'pytest'
-          output-file-path: output.json
+          output-file-path: ${{ runner.temp }}/output.json
