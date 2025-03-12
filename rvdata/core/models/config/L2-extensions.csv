@@ -17,3 +17,6 @@ HDU,Name,DataType,Multiplicity,Required,Description,Comments
 15,TRACE1_SKYMODEL,ImageHDU,True,False,Sky model for trace 1,Follows same format as TRACE1_FLUX HDU
 16,ANCILLARY_SPECTRUM,ImageHDU,True,False,Extension(s) that store ancillary spectra, Options include Ca II H&K if separate spectrograph used
 17,IMAGE,ImageHDU,True,False,Extension(s) that store useful support images, Options include guider cam or sky monitoring or pupil image
+18,CUSTOM1_TRACE1_FLUX,ImageHDU,True,False,Additionally corrected flux in trace 1,Modified flux extension that includes additional corrections such as telluric or sky corrections -- should have same format as TRACE1_FLUX above
+19,CUSTOM1_TRACE1_WAVE,ImageHDU,True,False,Additionally corrected wavelength solution for trace 1,Wavelength solution corresponding to USTOM1_TRACE1_FLUX -- should have same format as TRACE1_WAVE above
+20,CUSTOM1_TRACE1_VAR,ImageHDU,True,False,Additionally corrected variance for the flux in trace 1,Variance of the CUSTOM1_TRACE1_FLUX extension -- should have same format as TRACE1_VAR above
