@@ -10,6 +10,8 @@ Documentation for EPRV Data Standardization Project!
    :maxdepth: 2
    :caption: Contents:
 
+   interact.rst
+   notable.rst
    new.rst
    api.rst
    FITS-extensions.rst

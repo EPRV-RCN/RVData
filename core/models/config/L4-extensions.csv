@@ -1,0 +1,11 @@
+HDU,Name,DataType,Multiplicity,Required,Description,Comments
+0,PRIMARY,PrimaryHDU,FALSE,TRUE,EPRV Standard FITS HEADER (no data),"Carried forward from L2 FITS file. Append RVMETHOD, BJD_TDB, RV, RVERROR header keywords"
+1,INSTRUMENT_HEADER,ImageHDU,FALSE,TRUE,Inherited instrument header (no data),Carried forward from L2 FITS file
+2,RECEIPT,BinTableHDU,FALSE,TRUE,Table of operations that have been performed on this file,
+3,DRP_CONFIG,BinTableHDU,FALSE,TRUE,Pipeline details (settings etc) to go from native data to L2,
+4,RV1...N,BinTableHDU,TRUE,TRUE,Derived Radial Velocity Measurement,"Required Columns: BJD_TDB, wave_start, wave_end, pixel_start, pixel_end, RV_Trace1-N, RV_error, BC_vel, order index, echelle order 
+Optional Columns: RV weight. Header for this contains RVSTART and RVSTEP, MASK.  include RV derivation method in RVMETHOD header keyword. wave_start and wave_end can be set to same number if reporting central wavelength of the segment"
+5,CCF1...N,ImageHDU,TRUE,FALSE,"Array with same dimensionality of RV1...N, that contains the CCF that produced each RV1...N",
+6,DIAGNOSTICS1...J,BinTableHDU,TRUE,FALSE,"Activity indicators, CCF metrics, etc",Does not have same dimensions as RV1/CCF1
+7,CUSTOM_CCF1...N,ImageHDU,TRUE,FALSE,Additional CCFs from (e.g.) different masks,Additional CCF extensions could show results for different masks or different CCF calculation
+8,CUSTOM_RV1...N,BinTableHDU,TRUE,FALSE,Derived Radial Velocity Measurement from CUSTOM_CCF1...N,
