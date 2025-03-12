@@ -1,10 +1,10 @@
 '''
-RVData/instruments/harps/level2.py
+RVData/instruments/harpsn/level2.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
-Created: Tue Jan 07 2025
-Last Modified: Tue Jan 07 2025
+Created: Mon Jan 20 2025
+Last Modified: Mon Jan 20 2025
 Version: 1.0.0
 Description:
 
@@ -12,31 +12,29 @@ Description:
 Libraries
 ---------------------
 '''
-import instruments.harps.config.config as config
-from instruments.harps.utils import (
-    convert_S2D_BLAZE,
-    convert_BLAZE,
-    convert_DRIFT,
-    get_files_names,
-    create_PRIMARY,
-    validate_fits_file,
-)
-from core.models.level2 import RV2
-import os
 from astropy.io import fits
+import os
 
-# HARPS Level2 Reader
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harpsn.config.config as config
+from rvdata.instruments.harpsn.utils import (
+    convert_S2D_BLAZE, convert_BLAZE,
+    convert_DRIFT, get_files_names,
+    create_PRIMARY, validate_fits_file
+)
+
+# HARPS-N Level2 Reader
 
 
-class HARPSRV2(RV2):
+class HARPSNRV2(RV2):
     """
-    Read HARPS Level 1 and Level 2 files and convert them into the EPRV
+    Read HARPSN Level 1 and Level 2 files and convert them into the EPRV
     standard format.
 
-    This class extends the `RV2` base class to handle the reading of HARPS
-    (High Accuracy Radial velocity Planet Searcher) Level 1 and Level 2 files,
-    combining information from both sources to produce a standardized EPRV
-    output. It processes various FITS extensions and organizes flux,
+    This class extends the `RV2` base class to handle the reading of HARPSN
+    (High Accuracy Radial velocity Planet Searcher North) Level 1 and Level 2
+    files, combining information from both sources to produce a standardized
+    EPRV output. It processes various FITS extensions and organizes flux,
     wavelength, variance, and metadata into a structured Python object.
 
     Methods
@@ -82,7 +80,7 @@ class HARPSRV2(RV2):
     Example
     -------
     >>> from core.models.level2 import RV2
-    >>> rv2_obj = HARPSRV2.from_fits("harps_level1_file.fits")
+    >>> rv2_obj = HARPSNRV2.from_fits("harpn_level1_file.fits")
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
@@ -109,8 +107,8 @@ class HARPSRV2(RV2):
 
         path = os.path.join(self.dirname, self.filename)
 
-        # Validate the FITS file before conversion.
-        # If it does not meet the criteria, raise an error
+        # Validate the FITS file before conversion. If it does not meet the
+        # criteria, raise an error
         try:
             validate_fits_file(path)
             print("File is valid for conversion!")
@@ -125,7 +123,7 @@ class HARPSRV2(RV2):
 
         with fits.open(path) as hdu_raw:
             dpr_type = (
-                hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE']
+                hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE']
                 .split(",")[1]
             )
         fibers = config.fiber.get(dpr_type, {})
@@ -144,11 +142,11 @@ class HARPSRV2(RV2):
         # Convert the Drift file
         convert_DRIFT(self, names["drift_file_B"])
 
-        # Create the PRIMARY header
+        # Create the PRIMARY heade
         nb_fiber = len(fibers)
         nb_trace = nb_fiber * config.slice_nb
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
-        # Remove empty extensions
+        # Remove unnecessary extensions
         self.del_extension('RECEIPT')
         self.del_extension('DRP_CONFIG')

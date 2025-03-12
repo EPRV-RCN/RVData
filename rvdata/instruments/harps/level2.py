@@ -1,10 +1,10 @@
 '''
-RVData/instruments/espresso/level2.py
+RVData/instruments/harps/level2.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
-Created: Mon Mar 03 2025
-Last Modified: Mon Mar 03 2025
+Created: Tue Jan 07 2025
+Last Modified: Tue Jan 07 2025
 Version: 1.0.0
 Description:
 
@@ -12,35 +12,34 @@ Description:
 Libraries
 ---------------------
 '''
-from astropy.io import fits
 import os
+from astropy.io import fits
 
-from core.models.level2 import RV2
-import instruments.espresso.config.config as config
-from instruments.espresso.utils import (
+import rvdata.instruments.harps.config.config as config
+from rvdata.instruments.harps.utils import (
     convert_S2D_BLAZE,
     convert_BLAZE,
     convert_DRIFT,
     get_files_names,
     create_PRIMARY,
     validate_fits_file,
-    convert_RAW
 )
+from rvdata.core.models.level2 import RV2
 
-# ESPRESSO Level2 Reader
+
+# HARPS Level2 Reader
 
 
-class ESPRESSORV2(RV2):
+class HARPSRV2(RV2):
     """
-    Read ESPRESSO Level 1 and Level 2 files and convert them into the EPRV
+    Read HARPS Level 1 and Level 2 files and convert them into the EPRV
     standard format.
 
-    This class extends the `RV2` base class to handle the reading of ESPRESSO
-    (Echelle SPectrograph for Rocky Exoplanets and Stable Spectroscopic
-    Observations) Level 1 and Level 2 files, combining information from both
-    sources to produce a standardized EPRV output. It processes various FITS
-    extensions and organizes flux, wavelength, variance, and metadata into a
-    structured Python object.
+    This class extends the `RV2` base class to handle the reading of HARPS
+    (High Accuracy Radial velocity Planet Searcher) Level 1 and Level 2 files,
+    combining information from both sources to produce a standardized EPRV
+    output. It processes various FITS extensions and organizes flux,
+    wavelength, variance, and metadata into a structured Python object.
 
     Methods
     -------
@@ -85,7 +84,7 @@ class ESPRESSORV2(RV2):
     Example
     -------
     >>> from core.models.level2 import RV2
-    >>> rv2_obj = ESPRESSORV2.from_fits("espresso_level1_file.fits")
+    >>> rv2_obj = HARPSRV2.from_fits("harps_level1_file.fits")
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
@@ -104,6 +103,7 @@ class ESPRESSORV2(RV2):
 
         Args:
             hdul (fits.HDUList): The FITS HDU list to be processed.
+
         Raises:
             ValueError: If the FITS file is invalid and does not meet the
                 required criteria for conversion.
@@ -111,8 +111,8 @@ class ESPRESSORV2(RV2):
 
         path = os.path.join(self.dirname, self.filename)
 
-        # Validate the FITS file before conversion. If it does not meet the
-        # criteria, raise an error
+        # Validate the FITS file before conversion.
+        # If it does not meet the criteria, raise an error
         try:
             validate_fits_file(path)
             print("File is valid for conversion!")
@@ -122,7 +122,7 @@ class ESPRESSORV2(RV2):
         # Retrieve the paths for the necessary files
         names = get_files_names(path)
 
-        # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
+        # Convert S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
@@ -131,8 +131,6 @@ class ESPRESSORV2(RV2):
                 .split(",")[1]
             )
         fibers = config.fiber.get(dpr_type, {})
-
-        convert_RAW(self, path)
 
         for fiber in fibers:
             convert_S2D_BLAZE(
@@ -143,14 +141,10 @@ class ESPRESSORV2(RV2):
                 self, names["blaze_file_"+fiber],
                 trace_ind_start, config.slice_nb
             )
-
-            if fiber == 'B':
-                convert_DRIFT(
-                    self, names["drift_file_"+fiber],
-                    trace_ind_start, config.slice_nb
-                )
-
             trace_ind_start += config.slice_nb
+
+        # Convert the Drift file
+        convert_DRIFT(self, names["drift_file_B"])
 
         # Create the PRIMARY header
         nb_fiber = len(fibers)
@@ -158,7 +152,5 @@ class ESPRESSORV2(RV2):
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
         # Remove empty extensions
-        self.del_extension('DRIFT')
         self.del_extension('RECEIPT')
         self.del_extension('DRP_CONFIG')
-        # self.del_extension('Exp Meter bin table')

@@ -1,10 +1,10 @@
 '''
-RVData/instruments/harpsn/level2.py
+RVData/instruments/espresso/level2.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
-Created: Mon Jan 20 2025
-Last Modified: Mon Jan 20 2025
+Created: Mon Mar 03 2025
+Last Modified: Mon Mar 03 2025
 Version: 1.0.0
 Description:
 
@@ -15,27 +15,32 @@ Libraries
 from astropy.io import fits
 import os
 
-from core.models.level2 import RV2
-import instruments.harpsn.config.config as config
-from instruments.harpsn.utils import (
-    convert_S2D_BLAZE, convert_BLAZE,
-    convert_DRIFT, get_files_names,
-    create_PRIMARY, validate_fits_file
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.espresso.config.config as config
+from rvdata.instruments.espresso.utils import (
+    convert_S2D_BLAZE,
+    convert_BLAZE,
+    convert_DRIFT,
+    get_files_names,
+    create_PRIMARY,
+    validate_fits_file,
+    convert_RAW
 )
 
-# HARPS-N Level2 Reader
+# ESPRESSO Level2 Reader
 
 
-class HARPSNRV2(RV2):
+class ESPRESSORV2(RV2):
     """
-    Read HARPSN Level 1 and Level 2 files and convert them into the EPRV
+    Read ESPRESSO Level 1 and Level 2 files and convert them into the EPRV
     standard format.
 
-    This class extends the `RV2` base class to handle the reading of HARPSN
-    (High Accuracy Radial velocity Planet Searcher North) Level 1 and Level 2
-    files, combining information from both sources to produce a standardized
-    EPRV output. It processes various FITS extensions and organizes flux,
-    wavelength, variance, and metadata into a structured Python object.
+    This class extends the `RV2` base class to handle the reading of ESPRESSO
+    (Echelle SPectrograph for Rocky Exoplanets and Stable Spectroscopic
+    Observations) Level 1 and Level 2 files, combining information from both
+    sources to produce a standardized EPRV output. It processes various FITS
+    extensions and organizes flux, wavelength, variance, and metadata into a
+    structured Python object.
 
     Methods
     -------
@@ -80,7 +85,7 @@ class HARPSNRV2(RV2):
     Example
     -------
     >>> from core.models.level2 import RV2
-    >>> rv2_obj = HARPSNRV2.from_fits("harpn_level1_file.fits")
+    >>> rv2_obj = ESPRESSORV2.from_fits("espresso_level1_file.fits")
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
@@ -99,7 +104,6 @@ class HARPSNRV2(RV2):
 
         Args:
             hdul (fits.HDUList): The FITS HDU list to be processed.
-
         Raises:
             ValueError: If the FITS file is invalid and does not meet the
                 required criteria for conversion.
@@ -118,15 +122,17 @@ class HARPSNRV2(RV2):
         # Retrieve the paths for the necessary files
         names = get_files_names(path)
 
-        # Convert S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
+        # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
             dpr_type = (
-                hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE']
+                hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE']
                 .split(",")[1]
             )
         fibers = config.fiber.get(dpr_type, {})
+
+        convert_RAW(self, path)
 
         for fiber in fibers:
             convert_S2D_BLAZE(
@@ -137,16 +143,22 @@ class HARPSNRV2(RV2):
                 self, names["blaze_file_"+fiber],
                 trace_ind_start, config.slice_nb
             )
+
+            if fiber == 'B':
+                convert_DRIFT(
+                    self, names["drift_file_"+fiber],
+                    trace_ind_start, config.slice_nb
+                )
+
             trace_ind_start += config.slice_nb
 
-        # Convert the Drift file
-        convert_DRIFT(self, names["drift_file_B"])
-
-        # Create the PRIMARY heade
+        # Create the PRIMARY header
         nb_fiber = len(fibers)
         nb_trace = nb_fiber * config.slice_nb
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
-        # Remove unnecessary extensions
+        # Remove empty extensions
+        self.del_extension('DRIFT')
         self.del_extension('RECEIPT')
         self.del_extension('DRP_CONFIG')
+        # self.del_extension('Exp Meter bin table')
