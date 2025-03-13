@@ -64,9 +64,7 @@ jobs:
           python -m pip install tox
       - name: Run benchmark tests with tox
         run: |
+          # we're using a temporary file to store the benchmark results, but can't do anything with it until
+          # we set up gh-pages to store and display the results.
           tox -e py3${{ matrix.python-ver }}-${{ matrix.tox-env }} -- --benchmark-json ${{ runner.temp }}/output.json
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          tool: 'pytest'
-          output-file-path: ${{ runner.temp }}/output.json
+
