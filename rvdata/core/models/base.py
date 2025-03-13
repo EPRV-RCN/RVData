@@ -228,7 +228,7 @@ class RVDataModel(object):
             git_commit_hash = repo.head.object.hexsha
             git_branch = repo.active_branch.name
             git_tag = str(repo.tags[-1])
-        except TypeError:  # expected if running in testing env
+        except (TypeError, IndexError):  # expected if running in testing env
             git_commit_hash = ""
             git_branch = ""
             git_tag = ""
