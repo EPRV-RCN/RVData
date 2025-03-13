@@ -29,7 +29,7 @@ This data product is intended primarily for users who are interested in the impr
 
 .. csv-table::
     :header-rows: 1
-    :file: ../../core/models/config/L2-extensions.csv
+    :file: ../../rvdata/core/models/config/L2-extensions.csv
 
 
 Level 3 FITS Extensions
@@ -58,7 +58,7 @@ resolution visible / NIR spectra. Potential examples include science related to 
 
 .. csv-table::
     :header-rows: 1
-    :file: ../../core/models/config/L3-extensions.csv
+    :file: ../../rvdata/core/models/config/L3-extensions.csv
 
 
 Level 4 FITS Extensions
@@ -77,4 +77,4 @@ The header for this extension should contain RVMETHOD, RVSTART, RVSTEP, MASK key
 
 .. csv-table::
     :header-rows: 1
-    :file: ../../core/models/config/L4-extensions.csv
+    :file: ../../rvdata/core/models/config/L4-extensions.csv

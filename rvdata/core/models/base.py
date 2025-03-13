@@ -54,7 +54,7 @@ class RVDataModel(object):
 
             The receipt keeps track of the data process history, so that the information
             stored by this instance can be reproduced from the original data. It is
-            structured as a pandas.DataFrame table, with each row as an entry
+            structured as a pandas.DataFrame table, with each row as an entry.
 
             Anything that modifies the content of a data product are expected to also
             write to the receipt. Three string inputs from the primitive are required: name,
