@@ -78,7 +78,7 @@ class EXPRESRV2(RV2):
     def _read(self, hdul: fits.HDUList) -> None:
         data = hdul[1].data.copy()
         primary_header = hdul[0].header
-        fitspec_header = hdul[1].header
+#        fitspec_header = hdul[1].header
         expmeter_header = hdul[2].header
         expmeter_data = hdul[2].data.copy()
         itrace = 1
@@ -108,7 +108,7 @@ class EXPRESRV2(RV2):
 
         # # DRP Config?
 
-        itrace = 1 
+        itrace = 1
 
         # # BLAZE
         blaze = data["blaze"]
