@@ -33,6 +33,7 @@ obstype_map = {
 
 # EXPRES Level2 Reader
 class EXPRESRV2(RV2):
+
     """
     Read EXPRES extracted file and convert it to the EPRV standard format Python object.
 
@@ -78,15 +79,15 @@ class EXPRESRV2(RV2):
         primary_header = hdul[0].header
         fitspec_header = hdul[1].header
         expmeter_header = hdul[2].header
-        expmeter_data   = hdul[2].data.copy()
+        expmeter_data = hdul[2].data.copy()
         itrace = 1
 
 
         self.header_funcs = {
             'OBSTYPE': (lambda hdul: obstype_map[hdul[0].header['OBSTYPE']]),
-            'BINNING': (lambda hdul: hdul[0].header["CCDBIN"].replace(' ','')[1:-1].replace(",",'x')),
+            'BINNING': (lambda hdul: hdul[0].header["CCDBIN"].replace(' ', '')[1:-1].replace(",", 'x')),
             'NUMORDER': (lambda hdul: hdul[1].header['NAXIS2']),
-            'FILENAME': (lambda hdul: f"EXPRESL2_{hdul[0].header['MIDPOINT'][2:-1].replace('-','')}.fits"),
+            'FILENAME': (lambda hdul: f"EXPRESL2_{hdul[0].header['MIDPOINT'][2:-1].replace('-', '')}.fits"),
             'JD_UTC': (lambda hdul: Time(hdul[0].header['DATE-SHT']).jd),
             'INSTERA': (lambda hdul: expres_epochs[np.sum(Time(hdul[0].header['MIDPOINT']).mjd >= epoch_start_mjd) - 1]),
             'INSTFLAG': (lambda hdul: 'Pass' if (bool(hdul[0].header['EXPMTR']) & bool(hdul[0].header['EXPMTR'])) else 'Fail'),
@@ -95,7 +96,7 @@ class EXPRESRV2(RV2):
             "VERSION": (lambda hdul: hdul[1].header['VERSION']),
             'EXTRACT': (lambda hdul: hdul[1].header['EXTNAME']),
         }
-        
+
         # Primary with just EPRV Standard FITS Headers
         primary_header = self.standardizeExpresHeader(hdul)
         self.set_header("PRIMARY", primary_header)
@@ -107,15 +108,13 @@ class EXPRESRV2(RV2):
 
         # # DRP Config?
 
-        
         itrace = 1 
-        
-        
+
         # # BLAZE
         blaze = data["blaze"]
         self.set_data(f"TRACE{itrace}_BLAZE", blaze)
-        
-        # # SPECTRUM 
+
+        # # SPECTRUM
         spec = data["spectrum"] * blaze
         self.set_data(f"TRACE{itrace}_FLUX", spec)
 
@@ -124,24 +123,20 @@ class EXPRESRV2(RV2):
         self.set_data(f"TRACE{itrace}_WAVE", wave)
         # # cont = data['continuum']
 
- 
-        # # Variance
+         # # Variance
         variance = data['uncertainty'] ** 2.
         self.set_data(f"TRACE{itrace}_VAR", wavvariancee)
 
-
-
         # # Barycentric Correction
         bary_arr = data["bary_wavelength"]  # data['bary_wavelength']
-        berv_kms = ( 1 - bary_arr / wave )* c.to("km/s")
+        berv_kms = (1 - bary_arr / wave) * c.to("km/s")
         berv_z = 1 - bary_arr / wave
         self.set_data("BARYCORR_KMS", berv_kms)
         self.set_data("BARYCORR_Z", berv_z)
 
-
         # # Photon Weighted Midpoint
         # #   (FORMAT DOES NOT MATCH BARYCORR_KMS)
-        
+
         # self.set_data("BJD_TDB", expmeter_header["HIERARCH wtd_mdpt"])
 
         # # Instrument Drift Map (REQUIRED)
@@ -150,7 +145,7 @@ class EXPRESRV2(RV2):
         # self.create_extension("DRIFT", "ImageHDU", data=np.zeros_like(wave)) # setting to zero assuming shifts expected
 
         # # Exposure Meter
-        self.create_extension("EXPMETER", "ImageHDU", 
+        self.create_extension("EXPMETER", "ImageHDU",
                               header=expmeter_header, data=expmeter_data)
 
         # # Telemetry (Optional)
@@ -166,40 +161,38 @@ class EXPRESRV2(RV2):
     # =============================================================================
     # Methods for standardizing header keywords
 
-
-
-
     def standardizeExpresHeader(self, hdul):
         head0 = hdul[0].header
         standard_head = OrderedDict()
         for key in header_map.index:
             print(key)
-            if key in static_headers.keys(): # Keywords that never change
+            if key in static_headers.keys():  # Keywords that never change
                 standard_head[key] = static_headers[key]
-            elif key in self.header_funcs.keys(): # Keywords that require processing
+            elif key in self.header_funcs.keys():  # Keywords that require processing
                 standard_head[key] = self.header_funcs[key](hdul)
             else:
-                _ = header_map.loc[key,'expres']
+                _ = header_map.loc[key, 'expres']
                 if not _:
                     expres_val = ""
-                    
+
                 else:
                     expres_val = head0[_]
                 print(expres_val)
-                if header_map.loc[key,'required']=='N' and not expres_val:
+                if header_map.loc[key, 'required'] == 'N' and not expres_val:
                     continue
                 standard_head[key] = expres_val
             print(f"{key}: {standard_head[key]}")
         return standard_head
 
 def drpFlag(hdul):
-    extensions_to_check = ['spectrum','blaze',
-                            'wavelength','bary_wavelength',
-                            'excalibur','bary_excalibur',
-                            'continuum','tellurics']
+
+    extensions_to_check = ['spectrum', 'blaze',
+                            'wavelength', 'bary_wavelength',
+                            'excalibur', 'bary_excalibur',
+                            'continuum', 'tellurics']
     extension_list = hdul[1].data.dtype.names
     percent_there = np.sum([extn in extension_list for extn in extensions_to_check])/len(extensions_to_check)
-    if percent_there==1:
+    if percent_there == 1:
         return 'Pass'
     else:
-        return 'Fail' if percent_there==0 else 'Warn'
+        return 'Fail' if percent_there == 0 else 'Warn'
