@@ -11,7 +11,7 @@ def check_l2_extensions(inpfile):
     hdul = fits.open(inpfile)
     for i, row in extdf.iterrows():
         ext = row["Name"]
-        req = row["Required"]
+        req = row["Required"].lower() == 'true'
         if req:
             assert ext in hdul, f"Extension {ext} not found in {inpfile}"
 
