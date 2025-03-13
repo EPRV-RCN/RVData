@@ -37,5 +37,12 @@ def test_kpf():
     # check_l2_header(l2_standard.headers['PRIMARY'])
 
 
+def test_kpf_benchmark(benchmark):
+    # run test_kpf() once to download the files
+    test_kpf()
+    # now run it again with benchmark
+    benchmark(test_kpf)
+
+
 if __name__ == "__main__":
     test_kpf()
