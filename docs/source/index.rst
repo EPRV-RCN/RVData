@@ -13,8 +13,9 @@ Documentation for EPRV Data Standardization Project!
    interact.rst
    notable.rst
    new.rst
-   api.rst
    FITS-extensions.rst
+   primaryheader.rst
+   api.rst
 
 Indices and tables
 ==================
