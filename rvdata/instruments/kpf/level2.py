@@ -113,8 +113,9 @@ class KPFRV2(RV2):
                     blaze_array = blazeHDU[flux_ext].data
                     blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
                 else:
-                    blaze_array = np.concatenate((blaze_array, blazeHDU[flux_ext].data), axis=0)
-
+                    blaze_array = np.concatenate(
+                        (blaze_array, blazeHDU[flux_ext].data), axis=0
+                    )
 
             self.create_extension(
                 out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
@@ -128,7 +129,9 @@ class KPFRV2(RV2):
 
             # normalize blaze for each order
             for i in range(blaze_array.shape[0]):
-                blaze_array[i,:] = blaze_array[i,:] / np.nanpercentile(blaze_array[i,:], 99)
+                blaze_array[i, :] = blaze_array[i, :] / np.nanpercentile(
+                    blaze_array[i, :], 99
+                )
 
             self.create_extension(
                 out_prefix + "BLAZE", "ImageHDU", data=blaze_array, header=blaze_meta
@@ -167,13 +170,15 @@ class KPFRV2(RV2):
                     var_meta = OrderedDict(hdul1[var_ext].header)
                 else:
                     var_array = np.concatenate((var_array, hdul1[var_ext].data), axis=0)
-                
+
                 if blaze_array is None:
                     blaze_array = blazeHDU[flux_ext].data
                     blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
                 else:
-                    blaze_array = np.concatenate((blaze_array, blazeHDU[flux_ext].data), axis=0)
-            
+                    blaze_array = np.concatenate(
+                        (blaze_array, blazeHDU[flux_ext].data), axis=0
+                    )
+
             if i == 1:
                 self.set_header(out_prefix + "FLUX", flux_meta)
                 self.set_data(out_prefix + "FLUX", flux_array)
@@ -197,7 +202,10 @@ class KPFRV2(RV2):
                     out_prefix + "VAR", "ImageHDU", data=var_array, header=var_meta
                 )
                 self.create_extension(
-                    out_prefix + "BLAZE", "ImageHDU", data=blaze_array, header=blaze_meta
+                    out_prefix + "BLAZE",
+                    "ImageHDU",
+                    data=blaze_array,
+                    header=blaze_meta,
                 )
 
         bary = hdul1["BARY_CORR"].data
