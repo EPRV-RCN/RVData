@@ -31,6 +31,7 @@ obstype_map = {
     'LFC': "Cal",
 }
 
+
 # EXPRES Level2 Reader
 class EXPRESRV2(RV2):
 
@@ -82,7 +83,6 @@ class EXPRESRV2(RV2):
         expmeter_data = hdul[2].data.copy()
         itrace = 1
 
-
         self.header_funcs = {
             'OBSTYPE': (lambda hdul: obstype_map[hdul[0].header['OBSTYPE']]),
             'BINNING': (lambda hdul: hdul[0].header["CCDBIN"].replace(' ', '')[1:-1].replace(",", 'x')),
@@ -123,9 +123,9 @@ class EXPRESRV2(RV2):
         self.set_data(f"TRACE{itrace}_WAVE", wave)
         # # cont = data['continuum']
 
-         # # Variance
+        # # Variance
         variance = data['uncertainty'] ** 2.
-        self.set_data(f"TRACE{itrace}_VAR", wavvariancee)
+        self.set_data(f"TRACE{itrace}_VAR", variance)
 
         # # Barycentric Correction
         bary_arr = data["bary_wavelength"]  # data['bary_wavelength']
@@ -184,12 +184,13 @@ class EXPRESRV2(RV2):
             print(f"{key}: {standard_head[key]}")
         return standard_head
 
+
 def drpFlag(hdul):
 
     extensions_to_check = ['spectrum', 'blaze',
-                            'wavelength', 'bary_wavelength',
-                            'excalibur', 'bary_excalibur',
-                            'continuum', 'tellurics']
+                           'wavelength', 'bary_wavelength',
+                           'excalibur', 'bary_excalibur',
+                           'continuum', 'tellurics']
     extension_list = hdul[1].data.dtype.names
     percent_there = np.sum([extn in extension_list for extn in extensions_to_check])/len(extensions_to_check)
     if percent_there == 1:
