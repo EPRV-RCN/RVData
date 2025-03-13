@@ -60,6 +60,15 @@ class KPFRV2(RV2):
 
     def _read(self, hdul1: fits.HDUList, **kwargs) -> None:
         hdul0 = fits.open(kwargs["l0file"])
+        dateobs = hdul0["PRIMARY"].header["DATE-OBS"]
+
+        blazedf = pd.read_csv(os.path.join(os.path.dirname(__file__), 'config/smooth_lamp_pattern.csv'), header=0)
+        for i, row in blazedf.iterrows():
+            if dateobs >= row['UT_start_date'] and dateobs <= row['UT_end_date']:
+                blazefile = row['CALPATH']
+                blazepath = os.path.join(os.path.dirname(__file__), 'reference_fits', blazefile)
+                blazeHDU = fits.open(blazepath)
+                break
 
         for i in range(1, 4):
             flux_array = None
@@ -103,7 +112,12 @@ class KPFRV2(RV2):
             self.create_extension(
                 out_prefix + "VAR", "ImageHDU", data=var_array, header=var_meta
             )
-            blaze = flux_array * 0.0 + 1.0
+
+            # normalize blaze for each order
+            blaze = blazeHDU[flux_ext].data
+            for i in range(blaze.shape[0]):
+                blaze[i] = blaze[i] / np.nanpercentile(blaze[i], 99)
+
             self.create_extension(
                 out_prefix + "BLAZE", "ImageHDU", data=blaze, header=flux_meta
             )
