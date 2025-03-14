@@ -138,10 +138,7 @@ class NIRPSRV2(RV2):
             )
 
             if fiber == 'B':
-                convert_DRIFT(
-                    self, names["drift_file_"+fiber],
-                    trace_ind_start, config.slice_nb
-                )
+                convert_DRIFT(self, names["drift_file_"+fiber])
 
             trace_ind_start += config.slice_nb
 
@@ -152,8 +149,6 @@ class NIRPSRV2(RV2):
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
         # Remove empty extensions
-        self.del_extension('DRIFT')
         self.del_extension('RECEIPT')
         self.del_extension('DRP_CONFIG')
-        # self.del_extension('Exp Meter bin table')
         print('end')

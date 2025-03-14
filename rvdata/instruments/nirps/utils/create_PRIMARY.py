@@ -738,7 +738,7 @@ def get_moon_sun_info(
     sun = get_body("sun", time, location=location)
 
     sun_altaz = sun.transform_to(AltAz(obstime=time, location=location))
-    sun_el = sun_altaz.alt.deg
+    sun_el = round(sun_altaz.alt.deg, 4)
 
     # Calculate the Moon's illumination
     elongation = moon_coord.separation(sun)
