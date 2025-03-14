@@ -1,5 +1,5 @@
 '''
-RVData/instruments/nirps/level2.py
+RVData/rvdata/instruments/nirps/level2.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -15,9 +15,9 @@ Libraries
 from astropy.io import fits
 import os
 
-from core.models.level2 import RV2
-import instruments.nirps.config.config as config
-from instruments.nirps.utils import (
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.nirps.config.config as config
+from rvdata.instruments.nirps.utils import (
     convert_S2D_BLAZE,
     convert_BLAZE,
     convert_DRIFT,

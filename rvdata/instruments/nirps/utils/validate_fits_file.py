@@ -1,5 +1,5 @@
 '''
-RVData/instruments/nirps/utils/validate_fits_file.py
+RVData/rvdata/instruments/nirps/utils/validate_fits_file.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -14,7 +14,7 @@ Libraries
 '''
 from astropy.io import fits
 
-import instruments.nirps.config.config as config
+import rvdata.instruments.nirps.config.config as config
 
 
 def validate_fits_file(path: str) -> None:

@@ -1,5 +1,5 @@
 '''
-RVData/instruments/nirps/utils/create_PRIMARY.py
+RVData/rvdata/instruments/nirps/utils/create_PRIMARY.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -32,8 +32,8 @@ import pandas as pd
 import math
 import numpy as np
 
-import instruments.nirps.config.config as config
-from core.models.level2 import RV2
+import rvdata.instruments.nirps.config.config as config
+from rvdata.core.models.level2 import RV2
 
 
 def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int):

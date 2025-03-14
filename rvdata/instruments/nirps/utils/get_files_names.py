@@ -1,5 +1,5 @@
 '''
-RVData/instruments/nirps/utils/get_files_names.py
+RVData/rvdata/instruments/nirps/utils/get_files_names.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
