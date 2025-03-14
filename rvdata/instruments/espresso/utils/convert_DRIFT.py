@@ -1,5 +1,5 @@
 '''
-RVData/instruments/espresso/utils/convert_DRIFT.py
+RVData/rvdata/instruments/espresso/utils/convert_DRIFT.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -15,8 +15,8 @@ Libraries
 from astropy.io import fits
 import numpy as np
 
-from core.models.level2 import RV2
-import instruments.espresso.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.espresso.config.config as config
 
 
 def convert_DRIFT(

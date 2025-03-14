@@ -1,5 +1,5 @@
 '''
-RVData/instruments/espresso/utils/convert_S2D_BLAZE.py
+RVData/rvdata/instruments/espresso/utils/convert_S2D_BLAZE.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -17,8 +17,8 @@ from astropy.constants import c
 import numpy as np
 
 
-from core.models.level2 import RV2
-import instruments.espresso.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.espresso.config.config as config
 
 
 def convert_S2D_BLAZE(

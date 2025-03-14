@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harps/level2.py
+RVData/rvdata/instruments/harps/level2.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET

@@ -1,5 +1,5 @@
 '''
-RVData/instruments/espresso/utils/create_PRIMARY.py
+RVData/rvdata/instruments/espresso/utils/create_PRIMARY.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -31,8 +31,8 @@ import pandas as pd
 import math
 import numpy as np
 
-import instruments.espresso.config.config as config
-from core.models.level2 import RV2
+import rvdata.instruments.espresso.config.config as config
+from rvdata.core.models.level2 import RV2
 
 
 def create_PRIMARY(

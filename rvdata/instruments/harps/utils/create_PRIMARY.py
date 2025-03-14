@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harpsn/utils/create_PRIMARY.py
+RVData/rvdata/instruments/harpsn/utils/create_PRIMARY.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -32,8 +32,8 @@ import pandas as pd
 import math
 import numpy as np
 
-import instruments.harps.config.config as config
-from core.models.level2 import RV2
+import rvdata.instruments.harps.config.config as config
+from rvdata.core.models.level2 import RV2
 
 
 def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int):
@@ -354,19 +354,18 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int):
 
     # EXSNRW-N KEYWORD
     for i in range(int(l2_hdu.header['NUMORDER'])):
-        for j in range(nb_slice):
-            l2_hdu.header[f'EXSNRW{str(i*nb_slice+j)}'] = (
-                round(
-                    RV2.data["TRACE1_WAVE"][i, 0]
-                    + (
-                        RV2.data["TRACE1_WAVE"][i, -1]
-                        - RV2.data["TRACE1_WAVE"][i, 0]
-                    )/2
-                ),
-                header_map[
-                    header_map['Keyword'] == 'EXSNRW'
-                ]['Description'].iloc[0]
-            )
+        l2_hdu.header[f'EXSNRW{str(i+1)}'] = (
+            round(
+                RV2.data["TRACE1_WAVE"][i, 0]
+                + (
+                    RV2.data["TRACE1_WAVE"][i, -1]
+                    - RV2.data["TRACE1_WAVE"][i, 0]
+                )/2
+            ),
+            header_map[
+                header_map['Keyword'] == 'EXSNRW'
+            ]['Description'].iloc[0]
+        )
 
     # DRPFLAG KEYWORD
     drp_flag = RV2.headers['INSTRUMENT_HEADER'][

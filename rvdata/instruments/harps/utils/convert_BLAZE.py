@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harps/utils/convert_S2D_BLAZE.py
+RVData/rvdata/instruments/harps/utils/convert_S2D_BLAZE.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -15,8 +15,8 @@ Libraries
 from astropy.io import fits
 import numpy as np
 
-from core.models.level2 import RV2
-import instruments.harps.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harps.config.config as config
 
 
 def convert_BLAZE(

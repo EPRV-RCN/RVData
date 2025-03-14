@@ -1,5 +1,5 @@
 '''
-RVData/instruments/espresso/utils/convert_RAW.py
+RVData/rvdata/instruments/espresso/utils/convert_RAW.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -14,8 +14,8 @@ Libraries
 '''
 from astropy.io import fits
 
-from core.models.level2 import RV2
-import instruments.espresso.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.espresso.config.config as config
 
 
 def convert_RAW(RV2: RV2, file_path: str) -> None:

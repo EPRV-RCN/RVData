@@ -1,5 +1,5 @@
 '''
-RVData/instruments/espresso/utils/validate_fits_file.py
+RVData/rvdata/instruments/espresso/utils/validate_fits_file.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -14,7 +14,7 @@ Libraries
 '''
 from astropy.io import fits
 
-import instruments.espresso.config.config as config
+import rvdata.instruments.espresso.config.config as config
 
 
 def validate_fits_file(path: str) -> None:

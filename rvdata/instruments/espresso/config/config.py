@@ -22,7 +22,6 @@ num_pixel = 9211
 NUMORDER = 85
 
 data_format = "L2"  # Can either be original or L2
-slices = [0, 1]
 
 # Allows the conversion of the RAW file
 extnames_raw = {

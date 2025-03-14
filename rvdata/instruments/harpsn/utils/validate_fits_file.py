@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harpsn/utils/validate_fits_file.py
+RVData/rvdata/instruments/harpsn/utils/validate_fits_file.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -14,7 +14,7 @@ Libraries
 '''
 from astropy.io import fits
 
-import instruments.harpsn.config.config as config
+import rvdata.instruments.harpsn.config.config as config
 
 
 def validate_fits_file(path: str) -> None:

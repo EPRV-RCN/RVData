@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harps/utils/convert_DRIFT.py
+RVData/rvdata/instruments/harps/utils/convert_DRIFT.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -15,8 +15,8 @@ Libraries
 from astropy.io import fits
 import numpy as np
 
-from core.models.level2 import RV2
-import instruments.harps.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harps.config.config as config
 
 
 def convert_DRIFT(RV2: RV2, file_path: str) -> None:
