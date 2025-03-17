@@ -63,16 +63,18 @@ class NEIDRV2(RV2):
 
         # Set up for obs-mode dependent primary header entries
         mode_dep_phead = {}
-        catalogue_map = {'CID': 'QOBJECT',
-                         'CRA': 'QRA',
-                         'CDEC': 'QDEC',
-                         'CEQNX': 'QEQNX',
-                         'CEPCH': 'QEPOCH',
-                         'CPLX': 'QPLX',
-                         'CPMR': 'QPMRA',
-                         'CPMD': 'QPMDEC',
-                         'CRV': 'QRV',
-                         'CZ': 'QZ'}
+        catalogue_map = {
+            "CID": "QOBJECT",
+            "CRA": "QRA",
+            "CDEC": "QDEC",
+            "CEQNX": "QEQNX",
+            "CEPCH": "QEPOCH",
+            "CPLX": "QPLX",
+            "CPMR": "QPMRA",
+            "CPMD": "QPMDEC",
+            "CRV": "QRV",
+            "CZ": "QZ",
+        }
 
         # Prepare fiber-related extensions
 
@@ -176,15 +178,14 @@ class NEIDRV2(RV2):
         self.set_data("BARYCORR_Z", bary_z)  # aproximate!!!
         self.set_data("BJD_TDB", bjd)
 
-        # # Drift
+        # Drift
 
-        # # Just set the value of driftrv0 from the header in km/s
-        # drift_data = np.array([hdul[0].header["driftrv0"] / 1e3])
-        # drift_meta = fits.Header(
-        #     {"COMMENT": "NEID drift relative to start of observing session"}
-        # )
-        # self.set_header("DRIFT", drift_meta)
-        # self.set_data("DRIFT", data=drift_data)
+        # Just set the value of driftrv0 from the header in km/s
+        drift_data = np.array([hdul[0].header["driftrv0"] / 1e3])
+        drift_meta = fits.Header(
+            {"COMMENT": "NEID drift relative to start of observing session"}
+        )
+        self.create_extension("DRIFT", "ImageHDU", header=drift_meta, data=drift_data)
 
         # Expmeter (316 time stamps, 122 wavelengths)
         expmeter_data = hdul["EXPMETER"].data[expmeter_index]
