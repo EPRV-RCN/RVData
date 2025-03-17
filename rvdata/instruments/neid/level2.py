@@ -97,6 +97,7 @@ class NEIDRV2(RV2):
             if hdul[0].header[f"{fiber}-OBJ"] == hdul[0].header["QOBJECT"]:
                 for pkey, ikey in catalogue_map.items():
                     mode_dep_phead[f"{pkey}{i_fiber+1}"] = hdul[0].header[ikey]
+                mode_dep_phead[f"CSRC{i_fiber+1}"] = 'GAIADR2'
 
             # Extension naming set up
 
@@ -227,19 +228,23 @@ class NEIDRV2(RV2):
         for i, row in headmap.iterrows():
             skey = row["STANDARD"]
             instkey = row["INSTRUMENT"]
-            if pd.notnull(instkey):
-                instval = ihead[instkey]
+            if row["MODE_DEP"] != "Y":
+                if pd.notnull(instkey):
+                    instval = ihead[instkey]
+                else:
+                    instval = row["DEFAULT"]
+                if pd.notnull(instval):
+                    phead[skey] = instval
+                else:
+                    phead[skey] = None
             else:
-                instval = row["DEFAULT"]
-            if pd.notnull(instval):
-                phead[skey] = instval
-            else:
-                phead[skey] = None
-            if skey in mode_dep_phead.keys():
-                phead[skey] = mode_dep_phead[skey]
+                if skey in mode_dep_phead.keys():
+                    phead[skey] = mode_dep_phead[skey]
+                else:
+                    continue
 
-        for phead_key, phead_val in mode_dep_phead.items():
-            if phead_key not in phead:
-                phead[phead_key] = phead_val
+        # for phead_key, phead_val in mode_dep_phead.items():
+        #     if phead_key not in phead:
+        #         phead[phead_key] = phead_val
 
         self.set_header("PRIMARY", phead)
