@@ -84,6 +84,7 @@ class NEIDRV2(RV2):
         elif hdul[0].header["OBS-MODE"] == "HE":
             fiber_list = ["SCI", "SKY"]
             expmeter_index = 3
+        mode_dep_phead["NUMTRACE"] = len(fiber_list)
 
         for i_fiber, fiber in enumerate(fiber_list):
             mode_dep_phead[f"TRACE{i_fiber+1}"] = hdul[0].header[f"{fiber}-OBJ"]
@@ -175,15 +176,15 @@ class NEIDRV2(RV2):
         self.set_data("BARYCORR_Z", bary_z)  # aproximate!!!
         self.set_data("BJD_TDB", bjd)
 
-        # Drift
+        # # Drift
 
-        # Just set the value of driftrv0 from the header in km/s
-        drift_data = np.array([hdul[0].header["driftrv0"] / 1e3])
-        drift_meta = fits.Header(
-            {"COMMENT": "NEID drift relative to start of observing session"}
-        )
-        self.set_header("DRIFT", drift_meta)
-        self.set_data("DRIFT", data=drift_data)
+        # # Just set the value of driftrv0 from the header in km/s
+        # drift_data = np.array([hdul[0].header["driftrv0"] / 1e3])
+        # drift_meta = fits.Header(
+        #     {"COMMENT": "NEID drift relative to start of observing session"}
+        # )
+        # self.set_header("DRIFT", drift_meta)
+        # self.set_data("DRIFT", data=drift_data)
 
         # Expmeter (316 time stamps, 122 wavelengths)
         expmeter_data = hdul["EXPMETER"].data[expmeter_index]
@@ -233,12 +234,11 @@ class NEIDRV2(RV2):
                 phead[skey] = instval
             else:
                 phead[skey] = None
-
-        # Primary header clean-up
-        # numtrace, catalogue values, cal sources
-        phead["NUMTRACE"] = len(fiber_list)
+            if skey in mode_dep_phead.keys():
+                phead[skey] = mode_dep_phead[skey]
 
         for phead_key, phead_val in mode_dep_phead.items():
-            phead[phead_key] = phead_val
+            if phead_key not in phead:
+                phead[phead_key] = phead_val
 
         self.set_header("PRIMARY", phead)
