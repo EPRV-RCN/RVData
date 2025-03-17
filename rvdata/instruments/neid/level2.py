@@ -97,7 +97,7 @@ class NEIDRV2(RV2):
             if hdul[0].header[f"{fiber}-OBJ"] == hdul[0].header["QOBJECT"]:
                 for pkey, ikey in catalogue_map.items():
                     mode_dep_phead[f"{pkey}{i_fiber+1}"] = hdul[0].header[ikey]
-                mode_dep_phead[f"CSRC{i_fiber+1}"] = 'GAIADR2'
+                mode_dep_phead[f"CSRC{i_fiber+1}"] = "GAIADR2"
 
             # Extension naming set up
 
