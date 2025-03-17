@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 # import base class
-from core.models.level2 import RV2
+from rvdata.core.models.level2 import RV2
 
 
 # NEID Level2 Reader

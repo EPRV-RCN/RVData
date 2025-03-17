@@ -15,9 +15,9 @@ Libraries
 from astropy.io import fits
 import os
 
-from core.models.level2 import RV2
-import instruments.espresso.config.config as config
-from instruments.espresso.utils import (
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.espresso.config.config as config
+from rvdata.instruments.espresso.utils import (
     convert_S2D_BLAZE,
     convert_BLAZE,
     convert_DRIFT,

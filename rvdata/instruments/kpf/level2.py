@@ -6,7 +6,7 @@ import os
 from collections import OrderedDict
 
 # import base class
-from core.models.level2 import RV2
+from rvdata.core.models.level2 import RV2
 
 
 # KPF Level2 Reader
@@ -60,11 +60,26 @@ class KPFRV2(RV2):
 
     def _read(self, hdul1: fits.HDUList, **kwargs) -> None:
         hdul0 = fits.open(kwargs["l0file"])
+        dateobs = hdul0["PRIMARY"].header["DATE-OBS"]
+
+        blazedf = pd.read_csv(
+            os.path.join(os.path.dirname(__file__), "config/smooth_lamp_pattern.csv"),
+            header=0,
+        )
+        for i, row in blazedf.iterrows():
+            if dateobs >= row["UT_start_date"] and dateobs <= row["UT_end_date"]:
+                blazefile = row["CALPATH"]
+                blazepath = os.path.join(
+                    os.path.dirname(__file__), "reference_fits", blazefile
+                )
+                blazeHDU = fits.open(blazepath)
+                break
 
         for i in range(1, 4):
             flux_array = None
             wave_array = None
             var_array = None
+            blaze_array = None
             out_prefix = f"TRACE{i+1}_"
 
             for c, chip in enumerate(["GREEN", "RED"]):
@@ -94,6 +109,14 @@ class KPFRV2(RV2):
                 else:
                     var_array = np.concatenate((var_array, hdul1[var_ext].data), axis=0)
 
+                if blaze_array is None:
+                    blaze_array = blazeHDU[flux_ext].data
+                    blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
+                else:
+                    blaze_array = np.concatenate(
+                        (blaze_array, blazeHDU[flux_ext].data), axis=0
+                    )
+
             self.create_extension(
                 out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
             )
@@ -103,15 +126,22 @@ class KPFRV2(RV2):
             self.create_extension(
                 out_prefix + "VAR", "ImageHDU", data=var_array, header=var_meta
             )
-            blaze = flux_array * 0.0 + 1.0
+
+            # normalize blaze for each order
+            for i in range(blaze_array.shape[0]):
+                blaze_array[i, :] = blaze_array[i, :] / np.nanpercentile(
+                    blaze_array[i, :], 99
+                )
+
             self.create_extension(
-                out_prefix + "BLAZE", "ImageHDU", data=blaze, header=flux_meta
+                out_prefix + "BLAZE", "ImageHDU", data=blaze_array, header=blaze_meta
             )
 
         for i, fiber in zip([1, 5], ["CAL", "SKY"]):
             flux_array = None
             wave_array = None
             var_array = None
+            blaze_array = None
             out_prefix = f"TRACE{i}_"
 
             for c, chip in enumerate(["GREEN", "RED"]):
@@ -141,6 +171,14 @@ class KPFRV2(RV2):
                 else:
                     var_array = np.concatenate((var_array, hdul1[var_ext].data), axis=0)
 
+                if blaze_array is None:
+                    blaze_array = blazeHDU[flux_ext].data
+                    blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
+                else:
+                    blaze_array = np.concatenate(
+                        (blaze_array, blazeHDU[flux_ext].data), axis=0
+                    )
+
             if i == 1:
                 self.set_header(out_prefix + "FLUX", flux_meta)
                 self.set_data(out_prefix + "FLUX", flux_array)
@@ -152,7 +190,7 @@ class KPFRV2(RV2):
                 self.set_data(out_prefix + "VAR", var_array)
 
                 self.set_header(out_prefix + "BLAZE", flux_meta)
-                self.set_data(out_prefix + "BLAZE", flux_array * 0.0 + 1.0)
+                self.set_data(out_prefix + "BLAZE", blaze_array)
             else:
                 self.create_extension(
                     out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
@@ -163,24 +201,33 @@ class KPFRV2(RV2):
                 self.create_extension(
                     out_prefix + "VAR", "ImageHDU", data=var_array, header=var_meta
                 )
-                blaze = flux_array * 0.0 + 1.0
                 self.create_extension(
-                    out_prefix + "BLAZE", "ImageHDU", data=blaze, header=flux_meta
+                    out_prefix + "BLAZE",
+                    "ImageHDU",
+                    data=blaze_array,
+                    header=blaze_meta,
                 )
 
         bary = hdul1["BARY_CORR"].data
         bary_kms = bary["BARYVEL"] / 1000.0
-
-        self.set_header("DRIFT", wave_meta)
-        self.set_data("DRIFT", np.zeros_like(flux_array))
 
         self.set_header("BARYCORR_KMS", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_header("BARYCORR_Z", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_data("BARYCORR_KMS", bary_kms)
         self.set_data("BARYCORR_Z", bary_kms / 3e5)  # aproximate!!!
 
-        self.create_extension('EXPMETER', "BinTableHDU", data=hdul0["EXPMETER_SCI"].data, header=OrderedDict(hdul0["EXPMETER_SCI"].header))
-        self.create_extension('TELEMETRY', "BinTableHDU", data=hdul1["TELEMETRY"].data, header=OrderedDict(hdul1["TELEMETRY"].header))
+        self.create_extension(
+            "EXPMETER",
+            "BinTableHDU",
+            data=hdul0["EXPMETER_SCI"].data,
+            header=OrderedDict(hdul0["EXPMETER_SCI"].header),
+        )
+        self.create_extension(
+            "TELEMETRY",
+            "BinTableHDU",
+            data=hdul1["TELEMETRY"].data,
+            header=OrderedDict(hdul1["TELEMETRY"].header),
+        )
 
         self.set_header("BJD_TDB", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_data("BJD_TDB", bary["PHOTON_BJD"])
@@ -193,18 +240,18 @@ class KPFRV2(RV2):
         self.set_header("RECEIPT", OrderedDict(hdul1["RECEIPT"].header))
         self.set_data("RECEIPT", Table(hdul1["RECEIPT"].data).to_pandas())
 
-        hmap_path = os.path.join(os.path.dirname(__file__), 'config/header_map.csv')
+        hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
         headmap = pd.read_csv(hmap_path, header=0)
 
         phead = fits.PrimaryHDU().header
-        ihead = self.headers['INSTRUMENT_HEADER']
+        ihead = self.headers["INSTRUMENT_HEADER"]
         for i, row in headmap.iterrows():
-            skey = row['STANDARD']
-            kpfkey = row['INSTRUMENT']
+            skey = row["STANDARD"]
+            kpfkey = row["INSTRUMENT"]
             if pd.notnull(kpfkey):
                 kpfval = ihead[kpfkey]
             else:
-                kpfval = row['DEFAULT']
+                kpfval = row["DEFAULT"]
             if pd.notnull(kpfval):
                 phead[skey] = kpfval
             else:

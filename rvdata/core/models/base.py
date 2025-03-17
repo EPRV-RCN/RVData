@@ -14,9 +14,9 @@ import pandas as pd
 from astropy.io import fits
 from astropy.table import Table
 
-from core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
-from core.models.receipt_columns import RECEIPT_COL
-from core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
+from rvdata.core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
+from rvdata.core.models.receipt_columns import RECEIPT_COL
+from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 
 
 class RVDataModel(object):
@@ -54,7 +54,7 @@ class RVDataModel(object):
 
             The receipt keeps track of the data process history, so that the information
             stored by this instance can be reproduced from the original data. It is
-            structured as a pandas.DataFrame table, with each row as an entry
+            structured as a pandas.DataFrame table, with each row as an entry.
 
             Anything that modifies the content of a data product are expected to also
             write to the receipt. Three string inputs from the primitive are required: name,
@@ -228,7 +228,7 @@ class RVDataModel(object):
             git_commit_hash = repo.head.object.hexsha
             git_branch = repo.active_branch.name
             git_tag = str(repo.tags[-1])
-        except TypeError:  # expected if running in testing env
+        except (TypeError, IndexError):  # expected if running in testing env
             git_commit_hash = ""
             git_branch = ""
             git_tag = ""

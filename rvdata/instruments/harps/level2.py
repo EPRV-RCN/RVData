@@ -12,8 +12,11 @@ Description:
 Libraries
 ---------------------
 '''
-import instruments.harps.config.config as config
-from instruments.harps.utils import (
+import os
+from astropy.io import fits
+
+import rvdata.instruments.harps.config.config as config
+from rvdata.instruments.harps.utils import (
     convert_S2D_BLAZE,
     convert_BLAZE,
     convert_DRIFT,
@@ -21,9 +24,8 @@ from instruments.harps.utils import (
     create_PRIMARY,
     validate_fits_file,
 )
-from core.models.level2 import RV2
-import os
-from astropy.io import fits
+from rvdata.core.models.level2 import RV2
+
 
 # HARPS Level2 Reader
 
