@@ -76,6 +76,17 @@ class NEIDRV2(RV2):
             "CZ": "QZ",
         }
 
+        # Order Table
+        order_table_data = {
+            "echelle_order": 173 - np.arange(hdul["SCIWAVE"].data.shape[0]),
+            "order_index": np.arange(hdul["SCIWAVE"].data.shape[0]),
+            "wave_start": np.nanmin(hdul["SCIWAVE"].data, axis=1),
+            "wave_end": np.nanmax(hdul["SCIWAVE"].data, axis=1),
+        }
+        for i_order, order_wavelengths in enumerate(hdul["SCIWAVE"].data):
+            order_table_data["wave_start"].append(np.nanmin(order_wavelengths))
+            order_table_data["wave_end"].append(np.nanmax(order_wavelengths))
+
         # Prepare fiber-related extensions
 
         # Check observation mode to set fiber list
