@@ -53,7 +53,7 @@ def convert_DRIFT(RV2: RV2, file_path: str) -> None:
         # If no file is provided, create an empty ImageHDU with default
         # dimensions. This case occurs when Fiber B is SKY or DARK.
         drift_hdu = fits.ImageHDU(
-            data=np.zeros((config.NUMORDER, config.num_pixel))
+            data=np.zeros((config.NUMORDER, config.num_pixel), dtype=np.float32)
         )
 
     # Update the header with relevant metadata
@@ -88,11 +88,11 @@ def add_nan_row(matrix: np.ndarray, row_index: int) -> np.ndarray:
         matrix_updated (np.ndarray): A new array with the NaN row inserted.
     """
 
-    # Force the array to be of type float to avoid insertion issues
-    matrix = matrix.astype(np.float64)
+    # Get the original dtype
+    dtype = matrix.dtype
 
     # Create a row filled with NaN values
-    nan_row = np.full((1, matrix.shape[1]), np.nan)
+    nan_row = np.full((1, matrix.shape[1]), np.nan, dtype=dtype)
 
     # Insert the NaN row into the array
     matrix_updated = np.insert(matrix, row_index, nan_row, axis=0)

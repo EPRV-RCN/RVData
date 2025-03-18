@@ -168,11 +168,24 @@ def add_nan_row(matrix: np.ndarray, row_index: int) -> np.ndarray:
         matrix_updated (np.ndarray): A new array with the NaN row inserted.
     """
 
-    # Force the array to be of type float to avoid insertion issues
-    matrix = matrix.astype(np.float64)
+    # Get the original dtype
+    dtype = matrix.dtype
 
-    # Create a row filled with NaN values
-    nan_row = np.full((1, matrix.shape[1]), np.nan)
+    if (dtype.itemsize <= np.dtype(np.int16).itemsize):
+        if dtype == np.uint16:
+            # Create a row filled with '16384' values (same as bad pixel)
+            nan_row = np.full((1, matrix.shape[1]), 16384, dtype=dtype)
+        else:
+            raise ValueError(
+                "The extension data type does not support the addition of a row"
+                " for the missing order. The current data type of the extension "
+                "is '{0}', which is incompatible with the intended operation. "
+                "Please ensure the extension's data type allows insertion of NaN"
+                " values or consider using a compatible type.".format(dtype)
+            )
+    else:
+        # Create a row filled with NaN values
+        nan_row = np.full((1, matrix.shape[1]), np.nan, dtype=dtype)
 
     # Insert the NaN row into the array
     matrix_updated = np.insert(matrix, row_index, nan_row, axis=0)
