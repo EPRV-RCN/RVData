@@ -7,6 +7,10 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+Extracts and processes data from an S2D_BLAZE FITS file. Stores key
+calibration values in an `RV2` object, applies a Doppler shift correction
+if needed, and organizes data into FITS extensions. Inserts a NaN row at
+a specified index and updates existing data if necessary.
 
 ---------------------
 Libraries

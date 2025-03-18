@@ -7,6 +7,8 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+Retrieves related FITS file names based on a given raw file path.
+Handles DRIFT file validation and adjusts BLAZE file paths based on timestamps.
 
 ---------------------
 Libraries

@@ -6,7 +6,6 @@ Author: Loris JACQUES & Emile FONTANET
 Created: Mon Mar 03 2025
 Last Modified: Mon Mar 03 2025
 Version: 1.0.0
-Description:
 
 ---------------------
 Libraries
@@ -158,7 +157,10 @@ class ESPRESSORV2(RV2):
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
         # Remove empty extensions
-        self.del_extension('DRIFT')
-        self.del_extension('RECEIPT')
-        self.del_extension('DRP_CONFIG')
-        # self.del_extension('Exp Meter bin table')
+        rm_list = []
+        for key, value in self.headers.items():
+            if len(value) == 0:
+                rm_list.append(key)
+
+        for key in rm_list:
+            self.del_extension(key)

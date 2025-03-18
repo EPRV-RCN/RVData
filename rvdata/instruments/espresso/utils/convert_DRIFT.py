@@ -7,6 +7,8 @@ Created: Mon Mar 03 2025
 Last Modified: Mon Mar 03 2025
 Version: 1.0.0
 Description:
+Extracts 'DRIFT' calibration data from a FITS file and stores it in an `RV2`
+object. If no file is provided, an empty DRIFT extension is created.
 
 ---------------------
 Libraries
@@ -75,26 +77,3 @@ def convert_DRIFT(
             # If the extension exists, update its data and header
             RV2.set_header(drift_hdu.header['EXTNAME'], drift_hdu.header)
             RV2.set_data(drift_hdu.header['EXTNAME'], drift_hdu.data)
-
-
-def add_nan_row(matrix: np.ndarray, row_index: int) -> np.ndarray:
-    """
-    Inserts a row of NaN values at a specified index in a 2D NumPy array.
-
-    Parameters:
-        matrix (np.ndarray): The original 2D array.
-        row_index (int): The index at which the NaN row should be inserted.
-
-    Returns:
-        matrix_updated (np.ndarray): A new array with the NaN row inserted.
-    """
-
-    # Force the array to be of type float to avoid insertion issues
-    matrix = matrix.astype(np.float64)
-
-    # Create a row filled with NaN values
-    nan_row = np.full((1, matrix.shape[1]), np.nan)
-
-    # Insert the NaN row into the array
-    matrix_updated = np.insert(matrix, row_index, nan_row, axis=0)
-    return matrix_updated

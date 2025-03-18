@@ -7,6 +7,9 @@ EXCLUDE_OBJECTS = {"SUN", "solar_spectrum", "Sun"}
 # DPR types that should be excluded from conversion
 EXCLUDE_DPR_TYPES = {"CIRPOL"}
 
+# PROGRAM that should be excluded from conversion
+EXCLUDE_PROGRAMS = {"60.A-9036"}
+
 fiber = {
     "WAVE": {'A': 'SCI', 'B': 'FP'},
     "SKY": {'A': 'SCI', 'B': 'SKY'},

@@ -7,6 +7,9 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+Extracts 'DRIFT' calibration data from a FITS file and stores it in an `RV2`
+object. Inserts a NaN row at a specified index and updates existing data if
+necessary. If no file is provided, an empty DRIFT extension is created.
 
 ---------------------
 Libraries

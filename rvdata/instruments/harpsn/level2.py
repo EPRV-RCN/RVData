@@ -6,7 +6,6 @@ Author: Loris JACQUES & Emile FONTANET
 Created: Mon Jan 20 2025
 Last Modified: Mon Jan 20 2025
 Version: 1.0.0
-Description:
 
 ---------------------
 Libraries
@@ -147,6 +146,11 @@ class HARPSNRV2(RV2):
         nb_trace = nb_fiber * config.slice_nb
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
-        # Remove unnecessary extensions
-        self.del_extension('RECEIPT')
-        self.del_extension('DRP_CONFIG')
+        # Remove empty extensions
+        rm_list = []
+        for key, value in self.headers.items():
+            if len(value) == 0:
+                rm_list.append(key)
+
+        for key in rm_list:
+            self.del_extension(key)
