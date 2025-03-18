@@ -7,6 +7,9 @@ Created: Wen Mar 07 2025
 Last Modified: Wen Mar 07 2025
 Version: 1.0.0
 Description:
+Converts raw FITS data into an RV2 object, extracting relevant data
+from specified extensions (image and binary tables, etc) and updating
+the object with the necessary metadata for the EPRV project.
 
 ---------------------
 Libraries

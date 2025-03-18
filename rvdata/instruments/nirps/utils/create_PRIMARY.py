@@ -7,6 +7,11 @@ Created: Wen Mar 07 2025
 Last Modified: Wen Mar 07 2025
 Version: 1.0.0
 Description:
+Extracts and processes the necessary data to create the PRIMARY header. It uses
+the header_map.csv file to match ESO keywords with those of the new format.
+The process works in two phases: first, automatically retrieving keywords that
+are already in the correct format, and then modifying the remaining ones on a
+case-by-case basis. Stores all the keywords in an `RV2` PRIMARY object.
 
 ---------------------
 Libraries

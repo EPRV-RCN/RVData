@@ -7,6 +7,7 @@ Created: Wen Mar 07 2025
 Last Modified: Wen Mar 07 2025
 Version: 1.0.0
 Description:
+Validates a FITS file to ensure it meets the necessary criteria for conversion.
 
 ---------------------
 Libraries
@@ -54,6 +55,15 @@ def validate_fits_file(path: str) -> None:
             raise ValueError(
                 f"Error: File {path} corresponds to a '{dpr_type}' observation."
                 " Conversion not possible."
+            )
+
+        # Check excluded PROGRAM
+        program = hdu_raw['PRIMARY'].header['HIERARCH ESO OBS PROG ID']
+        if program in config.EXCLUDE_PROGRAMS:
+            print("Not translatable")
+            raise ValueError(
+                f"Error: File {path} corresponds to a specific program'{program}'"
+                ". Conversion not possible."
             )
 
         print(dpr_catg, dpr_type, object_name)

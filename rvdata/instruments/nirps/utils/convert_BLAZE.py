@@ -7,6 +7,9 @@ Created: Wen Mar 07 2025
 Last Modified: Wen Mar 07 2025
 Version: 1.0.0
 Description:
+This script extracts 'BLAZE' calibration data from a FITS file and stores it in
+an `RV2` object as extensions (e.g., 'TRACE<X>_BLAZE'). It ensures proper
+naming, metadata handling, and updates existing extensions if necessary.
 
 ---------------------
 Libraries

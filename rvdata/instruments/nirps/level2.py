@@ -6,7 +6,6 @@ Author: Loris JACQUES & Emile FONTANET
 Created: Wen Mar 07 2025
 Last Modified: Wen Mar 07 2025
 Version: 1.0.0
-Description:
 
 ---------------------
 Libraries
@@ -117,7 +116,7 @@ class NIRPSRV2(RV2):
 
         # Retrieve the paths for the necessary files
         names = get_files_names(path)
-        print('yeh')
+
         # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
         trace_ind_start = 1
 
@@ -149,6 +148,10 @@ class NIRPSRV2(RV2):
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
         # Remove empty extensions
-        self.del_extension('RECEIPT')
-        self.del_extension('DRP_CONFIG')
-        print('end')
+        rm_list = []
+        for key, value in self.headers.items():
+            if len(value) == 0:
+                rm_list.append(key)
+
+        for key in rm_list:
+            self.del_extension(key)
