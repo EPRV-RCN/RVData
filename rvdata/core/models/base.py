@@ -10,6 +10,8 @@ import warnings
 from collections import OrderedDict
 
 import git
+from git.exc import InvalidGitRepositoryError
+
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table
@@ -20,7 +22,8 @@ from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git
 
 
 class RVDataModel(object):
-    """The base class for all RV data models.
+    """
+    The base class for all RV data models.
 
     Warning:
         This class (RVDataModel) should not be used directly.
@@ -67,7 +70,7 @@ class RVDataModel(object):
                 >>> from core.models.level1 import RV1
                 >>> data = RV1()
                 >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
-    """
+        """
 
     def __init__(self):
         """
@@ -75,6 +78,7 @@ class RVDataModel(object):
         """
         self.filename: str = None
         self.level = None  # level of data model is set in each derived class
+
         self.read_methods = INSTRUMENT_READERS
 
         self.extensions = OrderedDict()  # map name to FITS type
@@ -228,7 +232,11 @@ class RVDataModel(object):
             git_commit_hash = repo.head.object.hexsha
             git_branch = repo.active_branch.name
             git_tag = str(repo.tags[-1])
-        except (TypeError, IndexError):  # expected if running in testing env
+        except (
+            TypeError,
+            IndexError,
+            InvalidGitRepositoryError,
+        ):  # expected if running in testing env
             git_commit_hash = ""
             git_branch = ""
             git_tag = ""
