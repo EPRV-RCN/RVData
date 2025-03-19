@@ -155,9 +155,9 @@ class RVDataModel(object):
 
             # Leave the rest of HDUs to level specific readers
             if instrument is None:
-                import core.models.level2
+                import rvdata.core.models.level2
 
-                method = core.models.level2.RV2._read
+                method = rvdata.core.models.level2.RV2._read
                 method(self, hdu_list)
             elif instrument in self.read_methods.keys():
                 module = importlib.import_module(
