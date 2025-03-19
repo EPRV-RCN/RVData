@@ -42,6 +42,14 @@ extnames = {
     'DLLDATA_VAC_BARY': '_DISP'
 }
 
+# Allows the correction of TUNIT Keyword
+TUNIT_FIXES = {
+    "sec": "s",
+    "counts": "count",
+    "days": "d",
+    "ADU": "adu"
+}
+
 # Define the time ranges of instrument versions
 INSTRUMENT_VERSIONS = [
     {"version": 'NIRPS',

@@ -48,7 +48,7 @@ def convert_DRIFT(RV2: RV2, file_path: str) -> None:
         # If no file is provided, create an empty ImageHDU with default dimensions
         # This case occurs when Fiber B is SKY.
         drift_hdu = fits.ImageHDU(
-            data=np.zeros((config.NUMORDER, config.num_pixel))
+            data=np.zeros((config.NUMORDER, config.num_pixel), dtype=np.float32)
         )
 
     # Update the header with relevant metadata
