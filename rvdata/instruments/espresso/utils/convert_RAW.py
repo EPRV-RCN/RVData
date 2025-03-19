@@ -64,6 +64,9 @@ def convert_RAW(RV2: RV2, file_path: str) -> None:
                     # Skip unknown types
                     continue
 
+                if field_info.get('name') == 'EXPMETER':
+                    fix_tunit_keywords(raw_hdu)
+
                 # Update the header with relevant metadata
                 raw_hdu.header['EXTNAME'] = field_info.get('name')
 
@@ -84,3 +87,23 @@ def convert_RAW(RV2: RV2, file_path: str) -> None:
                 print('No PUPIL IMAGE and GUIDING IMAGE extensions')
                 # Skip if the extension is not find
                 continue
+
+
+def fix_tunit_keywords(hdu):
+    """
+    Corrects non-standard TUNIT keywords in a FITS HDU header using values
+    from config.py.
+
+    Parameters:
+        hdu (fits.BinTableHDU or fits.ImageHDU): The FITS HDU to process.
+
+    Returns:
+        None: The function modifies the HDU header in place.
+    """
+    for key in hdu.header.keys():
+        if key.startswith("TUNIT"):
+            value = hdu.header[key]
+
+            # Apply the correction if it exists
+            if value in config.TUNIT_FIXES:
+                hdu.header[key] = config.TUNIT_FIXES[value]
