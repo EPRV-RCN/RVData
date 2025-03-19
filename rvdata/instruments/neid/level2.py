@@ -58,8 +58,16 @@ class NEIDRV2(RV2):
 
     def _read(self, hdul: fits.HDUList) -> None:
 
+        # Set up extension description table
+        ext_table = {
+            "extension_name": [],
+            "description": [],
+        }
+
         # Instrument header
         self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
+        ext_table["extension_name"].append("INSTRUMENT_HEADER")
+        ext_table["description"].append("Primary header of native instrument file")
 
         # Set up for obs-mode dependent primary header entries
         mode_dep_phead = {}
@@ -77,15 +85,17 @@ class NEIDRV2(RV2):
         }
 
         # Order Table
-        order_table_data = {
-            "echelle_order": 173 - np.arange(hdul["SCIWAVE"].data.shape[0]),
-            "order_index": np.arange(hdul["SCIWAVE"].data.shape[0]),
-            "wave_start": np.nanmin(hdul["SCIWAVE"].data, axis=1),
-            "wave_end": np.nanmax(hdul["SCIWAVE"].data, axis=1),
-        }
-        for i_order, order_wavelengths in enumerate(hdul["SCIWAVE"].data):
-            order_table_data["wave_start"].append(np.nanmin(order_wavelengths))
-            order_table_data["wave_end"].append(np.nanmax(order_wavelengths))
+        order_table_data = pd.DataFrame(
+            {
+                "echelle_order": 173 - np.arange(hdul["SCIWAVE"].data.shape[0]),
+                "order_index": np.arange(hdul["SCIWAVE"].data.shape[0]),
+                "wave_start": np.nanmin(hdul["SCIWAVE"].data, axis=1),
+                "wave_end": np.nanmax(hdul["SCIWAVE"].data, axis=1),
+            }
+        )
+        self.set_data("ORDER_TABLE", order_table_data)
+        ext_table["extension_name"].append("ORDER_TABLE")
+        ext_table["description"].append("Table of echelle order information")
 
         # Prepare fiber-related extensions
 
@@ -171,6 +181,25 @@ class NEIDRV2(RV2):
                     data=blaze_array,
                     header=blaze_meta,
                 )
+            ext_table["extension_name"].append(out_prefix + "FLUX")
+            ext_table["description"].append(
+                f"Flux in NEID {hdul[0].header["OBS-MODE"]} {fiber} fiber"
+            )
+
+            ext_table["extension_name"].append(out_prefix + "WAVE")
+            ext_table["description"].append(
+                f"Wavelength solution for NEID {hdul[0].header["OBS-MODE"]} {fiber} fiber"
+            )
+
+            ext_table["extension_name"].append(out_prefix + "VAR")
+            ext_table["description"].append(
+                f"Flux variance in NEID {hdul[0].header["OBS-MODE"]} {fiber} fiber"
+            )
+
+            ext_table["extension_name"].append(out_prefix + "BLAZE")
+            ext_table["description"].append(
+                f"Blaze for NEID {hdul[0].header["OBS-MODE"]} {fiber} fiber"
+            )
 
         # Barycentric correction and timing related extensions
 
@@ -187,8 +216,22 @@ class NEIDRV2(RV2):
 
         # Output (these currently do not have headers to inherit from the NEID data format)
         self.set_data("BARYCORR_KMS", bary_kms)
-        self.set_data("BARYCORR_Z", bary_z)  # aproximate!!!
+        ext_table["extension_name"].append("BARYCORR_KMS")
+        ext_table["description"].append(
+            "Barycentric correction velocity per order in km/s"
+        )
+
+        self.set_data("BARYCORR_Z", bary_z)
+        ext_table["extension_name"].append("BARYCORR_Z")
+        ext_table["description"].append(
+            "Barycentric correction velocity per order in redshift (z)"
+        )
+
         self.set_data("BJD_TDB", bjd)
+        ext_table["extension_name"].append("BJD_TDB")
+        ext_table["description"].append(
+            "Photon weighted midpoint per order, barycentric dynamical time (JD)"
+        )
 
         # Drift
 
@@ -198,20 +241,25 @@ class NEIDRV2(RV2):
             {"COMMENT": "NEID drift relative to start of observing session"}
         )
         self.create_extension("DRIFT", "ImageHDU", header=drift_meta, data=drift_data)
+        ext_table["extension_name"].append("DRIFT")
+        ext_table["description"].append("Instrument drift velocity in km/s")
 
         # Expmeter (316 time stamps, 122 wavelengths)
-        expmeter_data = hdul["EXPMETER"].data[expmeter_index]
+        expmeter_data = hdul["EXPMETER"].data[expmeter_index].astype(np.float64)
 
         # The array of exposure meter time stamps and wavelengths
-        expmeter_times = hdul["EXPMETER"].data[0, 0]
-        expmeter_wavelengths = hdul["EXPMETER"].data[1, :, 0]
+        expmeter_times = hdul["EXPMETER"].data[0, 0].astype(np.float64)
+        expmeter_wavelengths = hdul["EXPMETER"].data[1, :, 0].astype(np.float64)
 
         # Turn the exposure meter information into a dictionary, read in as a DataFrame
         expmeter_extension_data = {"time": expmeter_times}
         for i_wave, col_wavelength in enumerate(expmeter_wavelengths):
             expmeter_extension_data[str(col_wavelength)] = expmeter_data[i_wave]
+        expmeter_extension_data = pd.DataFrame(expmeter_extension_data)
 
         self.create_extension("EXPMETER", "BinTableHDU", data=expmeter_extension_data)
+        ext_table["extension_name"].append("EXPMETER")
+        ext_table["description"].append("Chromatic exposure meter for science fiber")
 
         # Telemetry - Nothing for now
 
@@ -221,6 +269,10 @@ class NEIDRV2(RV2):
             "ImageHDU",
             header=hdul["TELLURIC"].header,
             data=hdul["TELLURIC"].data[:, :, 0] * hdul["TELLURIC"].data[:, :, 1],
+        )
+        ext_table["extension_name"].append("TRACE1_TELLURIC")
+        ext_table["description"].append(
+            "Telluric line and continuum absorption model for science fiber"
         )
 
         # Sky model - Nothing for now
@@ -253,6 +305,9 @@ class NEIDRV2(RV2):
                     phead[skey] = mode_dep_phead[skey]
                 else:
                     continue
+
+        # Set extension description table
+        self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))
 
         # for phead_key, phead_val in mode_dep_phead.items():
         #     if phead_key not in phead:
