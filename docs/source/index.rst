@@ -11,10 +11,10 @@ Documentation for EPRV Data Standardization Project!
    :caption: Contents:
 
    interact.rst
-   notable.rst
    new.rst
    FITS-extensions.rst
    primaryheader.rst
+   units.rst
    api.rst
 
 Indices and tables
