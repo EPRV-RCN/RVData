@@ -4,7 +4,7 @@ RVData/rvdata/instruments/nirps/utils/get_files_names.py
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
 Created: Wen Mar 07 2025
-Last Modified: Wen Mar 07 2025
+Last Modified: Fri Mar 21 2025
 Version: 1.0.0
 Description:
 Retrieves related FITS file names based on a given raw file path.
@@ -45,6 +45,12 @@ def get_files_names(full_path: str) -> dict:
     )
     drift_file_B = os.path.join(
         repo_path, 'r.'+base_file_name[:-5]+'_DRIFT_MATRIX_B.fits'
+    )
+    telluric_file_A = os.path.join(
+        repo_path, 'r.'+base_file_name[:-5]+'_S2D_BLAZE_TELL_CORR_A.fits'
+    )
+    skysub_file_A = os.path.join(
+        repo_path, 'r.'+base_file_name[:-5]+'_S2D_BLAZE_SKYSUB_A.fits'
     )
 
     if not os.path.isfile(drift_file_B):
@@ -100,7 +106,9 @@ def get_files_names(full_path: str) -> dict:
         "s2d_blaze_file_B": s2d_blaze_file_B,
         "blaze_file_A": blaze_file_A,
         "blaze_file_B": blaze_file_B,
-        "drift_file_B": drift_file_B
+        "drift_file_B": drift_file_B,
+        "telluric_file_A": telluric_file_A,
+        "skysub_file_A": skysub_file_A
     }
     return names
 

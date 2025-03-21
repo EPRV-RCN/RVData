@@ -30,7 +30,18 @@ data_format = "L2"  # Can either be original or L2
 extnames_raw = {
     'posemeter': {'name': 'EXPMETER', 'type': 'BinTableHDU'},
     'GUIDING': {'name': 'GUIDINGIMAGE', 'type': 'ImageHDU'}
-    # 'PS1': {'name': 'PUPILIMAGE', 'type': 'ImageHDU'}
+}
+
+extnames_telluric = {
+    'SCIDATA': '_TELLURIC_FLUX',
+    'ERRDATA': '_TELLURIC_VAR',
+    'QUALDATA': '_TELLURIC_QUALDATA'
+}
+
+extnames_skysub = {
+    'SCIDATA': '_SKYSUB_FLUX',
+    'ERRDATA': '_SKYSUB_VAR',
+    'QUALDATA': '_SKYSUB_QUALDATA'
 }
 
 # Allows the conversion of S2D_BLAZE files

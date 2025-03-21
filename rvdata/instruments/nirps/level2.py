@@ -23,7 +23,9 @@ from rvdata.instruments.nirps.utils import (
     get_files_names,
     create_PRIMARY,
     validate_fits_file,
-    convert_RAW
+    convert_RAW,
+    convert_TELLURIC,
+    convert_SKYSUB
 )
 
 # NIRPS Level2 Reader
@@ -117,7 +119,8 @@ class NIRPSRV2(RV2):
         # Retrieve the paths for the necessary files
         names = get_files_names(path)
 
-        # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
+        # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, BLAZE_B, DRIFT_B, TELLURIC
+        # and SKYSUB files
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
@@ -135,6 +138,28 @@ class NIRPSRV2(RV2):
                 self, names["blaze_file_"+fiber],
                 trace_ind_start, config.slice_nb
             )
+            if fiber == 'A':
+                try:
+                    convert_TELLURIC(
+                        self, names["telluric_file_"+fiber],
+                        trace_ind_start, config.slice_nb
+                    )
+                except Exception:
+                    print(
+                        'No TELLURIC file found, TRACEi_TELLURIC_x extensions '
+                        'will not be generated.'
+                    )
+
+                try:
+                    convert_SKYSUB(
+                        self, names["skysub_file_"+fiber],
+                        trace_ind_start, config.slice_nb
+                    )
+                except Exception:
+                    print(
+                        'No SKYSUB file found, TRACEi_SKYSUB_x extensions '
+                        'will not be generated.'
+                    )
 
             if fiber == 'B':
                 convert_DRIFT(self, names["drift_file_"+fiber])
