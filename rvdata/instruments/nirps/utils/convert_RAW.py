@@ -54,20 +54,19 @@ def convert_RAW(RV2: RV2, file_path: str) -> None:
                         header=hdul[field].header
                     )
                 elif field_type == 'BinTableHDU':
-                    raw_hdu = fits.BinTableHDU(
-                        data=raw_data,
-                        header=hdul[field].header
-                    )
+                    if field_info.get('name') == 'EXPMETER':
+                        raw_hdu = fix_tunit_keywords(hdul[field])
+                    else:
+                        raw_hdu = fits.BinTableHDU(
+                            data=raw_data,
+                            header=hdul[field].header
+                        )
                 else:
                     # Skip unknown types
                     continue
 
-                if field_info.get('name') == 'EXPMETER':
-                    fix_tunit_keywords(raw_hdu)
-
                 # Update the header with relevant metadata
                 raw_hdu.header['EXTNAME'] = field_info.get('name')
-
                 # Check if the extension already exists in the RV2 object
                 if (raw_hdu.header['EXTNAME'] not in RV2.extensions):
                     # If the extension does not exist, create it
@@ -83,10 +82,11 @@ def convert_RAW(RV2: RV2, file_path: str) -> None:
                     RV2.set_data(raw_hdu.header['EXTNAME'], raw_hdu.data)
             except Exception:
                 # Skip if the extension is not find
+                raise Exception
                 continue
 
 
-def fix_tunit_keywords(hdu: fits.FitsHDU) -> None:
+def fix_tunit_keywords(hdu) -> None:
     """
     Corrects non-standard TUNIT keywords in a FITS HDU header using values
     from config.py.
@@ -97,10 +97,19 @@ def fix_tunit_keywords(hdu: fits.FitsHDU) -> None:
     Returns:
         None: The function modifies the HDU header in place.
     """
-    for key in hdu.header.keys():
-        if key.startswith("TUNIT"):
-            value = hdu.header[key]
+    # Retrieve the existing columns as ColDefs
+    col_defs = hdu.columns
 
-            # Apply the correction if it exists
-            if value in config.TUNIT_FIXES:
-                hdu.header[key] = config.TUNIT_FIXES[value]
+    # Create a list of new columns with corrected units
+    new_cols = []
+    for col in col_defs:
+        new_unit = config.TUNIT_FIXES.get(col.unit, col.unit)
+        new_col = fits.Column(
+            name=col.name, format=col.format,
+            unit=new_unit, array=hdu.data[col.name]
+        )
+        new_cols.append(new_col)
+
+    # Recreate a BinTableHDU with the corrected columns
+    new_hdu = fits.BinTableHDU.from_columns(new_cols, header=hdu.header)
+    return new_hdu
