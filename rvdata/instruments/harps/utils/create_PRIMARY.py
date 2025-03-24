@@ -150,7 +150,17 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int):
         except Exception:
             print('Gaia request failed.')
 
-    add_keyword_cat = ['CRA', 'CDEC', 'CEQNX', 'CEPCH', 'CPMR', 'CPMD', 'CRV']
+    # Conversion coord format CRA and CDEC
+    cra_raw = RV2.headers['INSTRUMENT_HEADER'][
+        header_map[header_map['Keyword'] == 'CRA']['ESO_keyword'].iloc[0]
+    ]
+    cdec_raw = RV2.headers['INSTRUMENT_HEADER'][
+        header_map[header_map['Keyword'] == 'CDEC']['ESO_keyword'].iloc[0]
+    ]
+    catalog_data['CRA'] = convert_to_sexagesimal(cra_raw)
+    catalog_data['CDEC'] = convert_to_sexagesimal(cdec_raw)
+
+    add_keyword_cat = ['CEQNX', 'CEPCH', 'CPMR', 'CPMD', 'CRV']
     for keyword in add_keyword_cat:
         catalog_data[keyword] = (
             RV2.headers['INSTRUMENT_HEADER']
@@ -560,6 +570,32 @@ def get_gaia_data(gaia_name: str) -> float:
     # Compute and return the color index (BP - RP)
     color_br = result["phot_bp_mean_mag"][0] - result["phot_rp_mean_mag"][0]
     return color_br
+
+
+def convert_to_sexagesimal(value: float) -> str:
+    """
+    Converts a numerical value in HHMMSS.SSS or DDMMSS.SSS format
+    into a properly formatted sexagesimal string (HH:MM:SS.SSS or DD:MM:SS.SSS).
+
+    Args:
+        value (float): The numerical value to convert, where
+            HHMMSS.SSS represents hours, minutes, and seconds
+            or DDMMSS.SSS represents degrees, minutes, and seconds.
+
+    Returns:
+        str: The formatted sexagesimal string in HH:MM:SS.SSS or DD:MM:SS.SSS format.
+    """
+
+    # Preserve the negative sign if present
+    sign = "-" if value < 0 else ""
+    value = abs(value)
+
+    hours_or_degrees = int(value // 10000)  # Extract HH or DD
+    minutes = int((value % 10000) // 100)   # Extract MM
+    seconds = (value % 100)                 # Extract SS.SSS
+
+    # Return formatted string with leading zeros and three decimal places for seconds
+    return f"{sign}{hours_or_degrees:02}:{minutes:02}:{seconds:06.3f}"
 
 
 def convert_lst(lst: float) -> str:
