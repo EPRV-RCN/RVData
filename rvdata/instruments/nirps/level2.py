@@ -144,6 +144,10 @@ class NIRPSRV2(RV2):
                         self, names["telluric_file_"+fiber],
                         trace_ind_start, config.slice_nb
                     )
+                    print(
+                        'TRACEi_TELLURIC_x extensions '
+                        'have been generated.'
+                    )
                 except Exception:
                     print(
                         'No TELLURIC file found, TRACEi_TELLURIC_x extensions '
@@ -154,6 +158,10 @@ class NIRPSRV2(RV2):
                     convert_SKYSUB(
                         self, names["skysub_file_"+fiber],
                         trace_ind_start, config.slice_nb
+                    )
+                    print(
+                        'TRACEi_SKYSUB_x extensions '
+                        'have been generated.'
                     )
                 except Exception:
                     print(

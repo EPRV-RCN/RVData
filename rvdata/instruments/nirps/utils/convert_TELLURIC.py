@@ -63,7 +63,7 @@ def convert_TELLURIC(
                 )
                 telluric_hdu.header['CTYPE1'] = ('Pixels', 'Name of axis 1')
                 telluric_hdu.header['CTYPE2'] = ('Order-N', 'Name of axis 2')
-                print(telluric_hdu.header['EXTNAME'])
+
                 # Check if the extension already exists in the RV2 object
                 if (telluric_hdu.header['EXTNAME'] not in RV2.extensions):
                     # If the extension does not exist, create it
