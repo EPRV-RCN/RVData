@@ -23,7 +23,9 @@ from rvdata.instruments.espresso.utils import (
     get_files_names,
     create_PRIMARY,
     validate_fits_file,
-    convert_RAW
+    convert_RAW,
+    convert_TELLURIC,
+    convert_SKYSUB
 )
 
 # ESPRESSO Level2 Reader
@@ -121,7 +123,8 @@ class ESPRESSORV2(RV2):
         # Retrieve the paths for the necessary files
         names = get_files_names(path)
 
-        # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
+        # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, BLAZE_B, DRIFT_B, TELLURIC
+        # and SKYSUB files
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
@@ -142,6 +145,36 @@ class ESPRESSORV2(RV2):
                 self, names["blaze_file_"+fiber],
                 trace_ind_start, config.slice_nb
             )
+            if fiber == 'A':
+                try:
+                    convert_TELLURIC(
+                        self, names["telluric_file_"+fiber],
+                        trace_ind_start, config.slice_nb
+                    )
+                    print(
+                        'TRACEi_TELLURIC_x extensions '
+                        'have been generated.'
+                    )
+                except Exception:
+                    print(
+                        'No TELLURIC file found, TRACEi_TELLURIC_x extensions '
+                        'will not be generated.'
+                    )
+
+                try:
+                    convert_SKYSUB(
+                        self, names["skysub_file_"+fiber],
+                        trace_ind_start, config.slice_nb
+                    )
+                    print(
+                        'TRACEi_SKYSUB_x extensions '
+                        'have been generated.'
+                    )
+                except Exception:
+                    print(
+                        'No SKYSUB file found, TRACEi_SKYSUB_x extensions '
+                        'will not be generated.'
+                    )
 
             if fiber == 'B':
                 convert_DRIFT(

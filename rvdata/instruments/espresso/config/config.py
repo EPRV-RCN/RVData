@@ -33,6 +33,20 @@ extnames_raw = {
     'PS1': {'name': 'PUPILIMAGE', 'type': 'ImageHDU'}
 }
 
+# Allows the conversion of TELLURIC files
+extnames_telluric = {
+    'SCIDATA': '_TELLURIC_FLUX',
+    'ERRDATA': '_TELLURIC_VAR',
+    'QUALDATA': '_TELLURIC_QUALDATA'
+}
+
+# Allows the conversion of SKYSUB files
+extnames_skysub = {
+    'SCIDATA': '_SKYSUB_FLUX',
+    'ERRDATA': '_SKYSUB_VAR',
+    'QUALDATA': '_SKYSUB_QUALDATA'
+}
+
 # Allows the conversion of S2D_BLAZE files
 extnames = {
     'SCIDATA': '_FLUX',
@@ -45,7 +59,9 @@ extnames = {
 # Allows the correction of TUNIT Keyword
 TUNIT_FIXES = {
     "sec": "s",
-    "counts": "count"
+    "counts": "count",
+    "ADU": "adu",
+    "days": "d"
 }
 
 # Define the time ranges of instrument versions
