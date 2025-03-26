@@ -81,8 +81,10 @@ def convert_RAW(RV2: RV2, file_path: str) -> None:
                     RV2.set_header(raw_hdu.header['EXTNAME'], raw_hdu.header)
                     RV2.set_data(raw_hdu.header['EXTNAME'], raw_hdu.data)
             except Exception:
-                # Skip if the extension is not find
-                raise Exception
+                print(
+                    f'No {field} data found, '
+                    f"{field_info.get('name')} extension will not be generated"
+                )
                 continue
 
 
