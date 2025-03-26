@@ -45,9 +45,33 @@ def create_PRIMARY(
         RV2: RV2, names: list[str],
         nb_trace: int, nb_slice: int
 ) -> None:
-    """Creates the L2 header by copying the information from the raw file and
-    adding the necessary information for the L2 file.
     """
+    Create the PRIMARY HDU for the L2 FITS file by copying relevant metadata
+    from different files and applying necessary transformations.
+
+    This function reads a mapping file (`header_map.csv`) that specifies how
+    to translate, copy, or compute header keywords for the L2 file. It then
+    constructs a `PrimaryHDU` with the appropriate metadata.
+
+    Parameters:
+        RV2 (RV2): An instance of the RV2 class containing metadata and headers
+            required for processing.
+        names (list[str]): A dictionary mapping different file types (e.g., raw file)
+            to their corresponding file paths.
+        nb_trace (int): Number of traces in the dataset.
+        nb_slice (int): Number of slices in the dataset.
+
+    Returns:
+        None : The function modifies the RV2 object in place by adding or
+            updating the extnames_raw extensions.
+
+    Notes:
+    - If a keyword has `skip = True` in `header_map.csv`, it is not copied
+      automatically but requires a specific computation.
+    - If a keyword value is missing in the source file, it is set to `Null`.
+    - Special handling is applied for some keyword.
+    """
+
     # We create an empty HDU to store the L2 Primary header
     l2_hdu = fits.PrimaryHDU(data=None)
     l2_hdu.header['EXTNAME'] = 'PRIMARY'
@@ -61,7 +85,10 @@ def create_PRIMARY(
     # Load the CSV file
     header_map = pd.read_csv(header_map_path)
 
+    # We iterate through the header_map file to translate each keyword.
     for index, values in header_map.iterrows():
+        # If the keyword has its skip value set to True, it is not copied
+        # automatically but requires a specific calculation or conversion.
         if (bool(header_map['skip'].iloc[index]) is True):
             continue
 
@@ -111,6 +138,8 @@ def create_PRIMARY(
                     header_map['Description'].iloc[index]
                 )
 
+        # If an error occurs (mostly due to the absence of the keyword in the
+        # specified file), the value is set to null.
         except Exception as e:
             l2_hdu.header[values.iloc[0]] = (
                 'Null',
@@ -118,6 +147,9 @@ def create_PRIMARY(
             )
             key = header_map['Keyword'].iloc[index]
             print(f'{e} Also named {key}.')
+
+    # Here, we handle each skipped keyword by applying specific
+    # translations/conversions.
 
     # FILENAME KEYWORD
     l2_hdu.header['FILENAME'] = (
@@ -157,7 +189,7 @@ def create_PRIMARY(
     rv_z = round(rv/(c/1e3).value, 8)
     catalog_data['CZ'] = rv_z
 
-    # Keywords qui dependent du numéro de la TRACE
+    # Keywords that depend on the TRACE number.
     keyword_list = [
         'CSRC', 'CID', 'CRA', 'CDEC', 'CEQNX',
         'CEPCH', 'CPLX', 'CPMR', 'CPMD', 'CRV', 'CZ', 'CCLR'
@@ -402,19 +434,16 @@ def create_PRIMARY(
         header_map[header_map['Keyword'] == 'DRPFLAG']['TNG_keyword'].iloc[0]
     ]
     if drp_flag == 1:
-        l2_hdu.header['DRPFLAG'] = (
-            'Pass',
-            header_map[header_map['Keyword'] == 'DRPFLAG'][
-                'Description'
-            ].iloc[0]
-        )
+        drpflag = 'Pass'
     else:
-        l2_hdu.header['DRPFLAG'] = (
-            'Fail',
-            header_map[
-                header_map['Keyword'] == 'DRPFLAG'
-            ]['Description'].iloc[0]
-        )
+        drpflag = 'Fail'
+
+    l2_hdu.header['DRPFLAG'] = (
+        drpflag,
+        header_map[
+            header_map['Keyword'] == 'DRPFLAG'
+        ]['Description'].iloc[0]
+    )
 
     # COLOFLAG KEYWORD
     try:
@@ -424,26 +453,18 @@ def create_PRIMARY(
             ]['TNG_keyword'].iloc[0]
         ]
         if (color_flag == 1):
-            l2_hdu.header['COLOFLAG'] = (
-                'Pass',
-                header_map[
-                    header_map['Keyword'] == 'COLOFLAG'
-                ]['Description'].iloc[0]
-            )
+            coloflag = 'Pass'
         else:
-            l2_hdu.header['COLOFLAG'] = (
-                'Fail',
-                header_map[header_map['Keyword'] == 'COLOFLAG'][
-                    'Description'
-                ].iloc[0]
-            )
+            coloflag = 'Fail'
     except Exception:
-        l2_hdu.header['COLOFLAG'] = (
-            'Fail',
-            header_map[header_map['Keyword'] == 'COLOFLAG'][
-                'Description'
-            ].iloc[0]
-        )
+        coloflag = 'Fail'
+
+    l2_hdu.header['COLOFLAG'] = (
+        coloflag,
+        header_map[header_map['Keyword'] == 'COLOFLAG'][
+            'Description'
+        ].iloc[0]
+    )
 
     # SUMMFLAG KEYWORD
     flags = ["COLOFLAG", "TELFLAG", "INSTFLAG", "DRPFLAG", "OBSFLAG"]
@@ -454,33 +475,20 @@ def create_PRIMARY(
     # State priority : Fail > Warn > Pass
     if "Fail" in flag_values:
         if "Fail" == flag_values[0] and "Fail" not in flag_values[1:]:
-            l2_hdu.header['SUMMFLAG'] = (
-                "Warn",
-                header_map[
-                    header_map['Keyword'] == 'SUMMFLAG'
-                ]['Description'].iloc[0]
-            )
+            summflag = 'Warn'
         else:
-            l2_hdu.header['SUMMFLAG'] = (
-                "Fail",
-                header_map[
-                    header_map['Keyword'] == 'SUMMFLAG'
-                ]['Description'].iloc[0]
-            )
+            summflag = 'Fail'
     elif "Warn" in flag_values:
-        l2_hdu.header['SUMMFLAG'] = (
-            "Warn",
-            header_map[
-                header_map['Keyword'] == 'SUMMFLAG'
-            ]['Description'].iloc[0]
-        )
+        summflag = 'Warn'
     else:
-        l2_hdu.header['SUMMFLAG'] = (
-            "Pass",
-            header_map[
-                header_map['Keyword'] == 'SUMMFLAG'
-            ]['Description'].iloc[0]
-        )
+        summflag = 'Pass'
+
+    l2_hdu.header['SUMMFLAG'] = (
+        summflag,
+        header_map[
+            header_map['Keyword'] == 'SUMMFLAG'
+        ]['Description'].iloc[0]
+    )
 
     if ('PRIMARY' not in RV2.extensions):
         RV2.create_extension(
