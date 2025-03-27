@@ -842,21 +842,17 @@ def get_moon_velocity_in_target_direction(
     )
 
     # Extract velocity components (AU/day)
-    x_vel, y_vel, z_vel = moon_vel.xyz.to_value(u.AU/u.day)
+    x_vel, y_vel, z_vel = moon_vel.xyz.to_value(u.km/u.s)
 
     # Convert target coordinates (RA, Dec) to radians
     alpha_rad = np.deg2rad(alpha_deg)
     delta_rad = np.deg2rad(delta_deg)
 
     # Compute projected radial velocity
-    projected_velocity_au_per_day = (
+    projected_velocity_km_s = (
         x_vel * np.cos(alpha_rad) * np.cos(delta_rad) +
         y_vel * np.sin(alpha_rad) * np.cos(delta_rad) +
         z_vel * np.sin(delta_rad)
     )
-
-    # Convert AU/day to km/s
-    au_per_day_to_km_s = 149597870.691 / 86400.0
-    projected_velocity_km_s = projected_velocity_au_per_day*au_per_day_to_km_s
 
     return projected_velocity_km_s
