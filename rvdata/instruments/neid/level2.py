@@ -120,8 +120,6 @@ class NEIDRV2(RV2):
                     mode_dep_phead[f"{pkey}{i_fiber+1}"] = hdul[0].header[ikey]
                 mode_dep_phead[f"CSRC{i_fiber+1}"] = "GAIADR2"
 
-            # Extension naming set up
-
             # Set the input extension names for this fiber
             flux_ext = f"{fiber}FLUX"
             wave_ext = f"{fiber}WAVE"
@@ -130,8 +128,6 @@ class NEIDRV2(RV2):
 
             # Set the output extension name prefix for this fiber (1-indexed)
             out_prefix = f"TRACE{i_fiber+1}_"
-
-            # Collect data and header information for each extension
 
             # Flux
             flux_array = hdul[flux_ext].data
@@ -181,6 +177,8 @@ class NEIDRV2(RV2):
                     data=blaze_array,
                     header=blaze_meta,
                 )
+
+            # Extension description table entries
             ext_table["extension_name"].append(out_prefix + "FLUX")
             ext_table["description"].append(
                 f"Flux in NEID {hdul[0].header["OBS-MODE"]} {fiber} fiber"
@@ -306,11 +304,7 @@ class NEIDRV2(RV2):
                 else:
                     continue
 
+        self.set_header("PRIMARY", phead)
+
         # Set extension description table
         self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))
-
-        # for phead_key, phead_val in mode_dep_phead.items():
-        #     if phead_key not in phead:
-        #         phead[phead_key] = phead_val
-
-        self.set_header("PRIMARY", phead)
