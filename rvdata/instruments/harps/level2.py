@@ -87,7 +87,9 @@ class HARPSRV2(RV2):
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
-    def do_conversion(self, hdul: fits.HDUList) -> None:
+    def do_conversion(
+            self, hdul: fits.HDUList, directory_structure: str = 'standard'
+    ) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
 
@@ -121,7 +123,7 @@ class HARPSRV2(RV2):
             raise ValueError(e)
 
         # Retrieve the paths for the necessary files
-        names = get_files_names(path)
+        names = get_files_names(path, directory_structure)
 
         # Convert S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
         trace_ind_start = 1

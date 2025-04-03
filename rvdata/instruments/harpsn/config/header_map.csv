@@ -1,4 +1,4 @@
-Keyword,TNG_keyword,value,Extension,from,comment,skip,Description
+Keyword,TNG_keyword,value,Extension,from,comment,skip,Description,default_value
 INSTRUME,INSTRUME,,PRIMARY,S2D_BLAZE_A,,False,Instrument name,UNKNOWN
 ORGANIZA,,TNG,PRIMARY,,,False,Organization the data belongs to,Null
 ORIGIN,,TNG,PRIMARY,,,False,Institution that created this file,Null

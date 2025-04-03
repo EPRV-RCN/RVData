@@ -60,13 +60,13 @@ def get_files_names(full_path: str, directory_structure: str) -> dict:
             dpr_type = hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE']
             if dpr_type.split(",")[1] == 'SKY':
                 print(
-                    'SKY type doesn\'t have any DRIFT correction'
+                    'SKY type doesn\'t have any DRIFT correction. '
                     'DRIFT extension will be generated with zeros'
                 )
                 drift_file_B = None
             elif dpr_type.split(",")[1] == 'DARK':
                 print(
-                    'DARK type doesn\'t have any DRIFT correction'
+                    'DARK type doesn\'t have any DRIFT correction. '
                     'DRIFT extension will be generated with zeros'
                 )
                 drift_file_B = None
