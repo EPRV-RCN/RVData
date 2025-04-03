@@ -6,14 +6,14 @@ from collections import OrderedDict
 import pandas as pd
 
 # import base class
-from core.models.level2 import RV2
+from rvdata.core.models.level2 import RV2
 
 expres_epochs, epoch_start_isot = np.loadtxt(
-    "./config/expres_epochs.csv", delimiter=",", skiprows=1, dtype="str"
+    "/Users/joellama/Dropbox/RVData-expres-translator2/rvdata/instruments/expres/config/expres_epochs.csv", delimiter=",", skiprows=1, dtype="str"
 ).T
 epoch_start_mjd = Time(epoch_start_isot).mjd
 
-header_map = pd.read_csv("./config/expres_header_map.csv").set_index("standard")
+header_map = pd.read_csv("/Users/joellama/Dropbox/RVData-expres-translator2/rvdata/instruments/expres/config/expres_header_map.csv").set_index("standard")
 header_map.fillna("", inplace=True)
 
 static_headers = {

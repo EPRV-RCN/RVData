@@ -13,7 +13,7 @@ FITS_TYPE_MAP = {
 
 # Header keywords required by all levels of data are defined in a series
 # of CSV files in this directory.
-config_path = importlib.resources.files(__name__) / "config"
+config_path = importlib.resources.files(__package__) / "config"
 
 LEVEL2_EXTENSIONS = pd.read_csv(config_path / "L2-extensions.csv")
 LEVEL2_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L2-PRIMARY-keywords.csv")
