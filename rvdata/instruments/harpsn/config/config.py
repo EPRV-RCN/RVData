@@ -27,6 +27,9 @@ num_pixel = 4096
 # Number of orders in a fiber
 NUMORDER = 69
 
+# DRS version for proper file search functionality.
+DRS_VERSION = "DRS-3.0.1"
+
 # Allows the conversion of the S2D_BLAZE files
 extnames = {
     'SCIDATA': '_FLUX',

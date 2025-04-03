@@ -83,12 +83,8 @@ def convert_RAW(RV2: RV2, file_path: str) -> None:
                     RV2.set_data(raw_hdu.header['EXTNAME'], raw_hdu.data)
             except Exception:
                 print(
-                    'No PUPIL IMAGE data found, '
-                    'PUPILIMAGE extension will not be generated'
-                )
-                print(
-                    'No GUIDING IMAGE data found, '
-                    'GUIDINGIMAGE extension will not be generated'
+                    f'No {field} data found, '
+                    f'{field_info.get("name")} extension will not be generated'
                 )
                 # Skip if the extension is not find
                 continue

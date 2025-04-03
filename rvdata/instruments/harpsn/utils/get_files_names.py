@@ -18,14 +18,18 @@ from astropy.io import fits
 from datetime import datetime, timedelta
 import os
 
+import rvdata.instruments.harpsn.config.config as config
 
-def get_files_names(full_path: str) -> dict:
+
+def get_files_names(full_path: str, directory_structure: str) -> dict:
     """
     This function retrieves the names of related FITS files based on a given
     file's path and constructs a dictionary containing paths to these files.
 
     Args:
         full_path (str): The full path to the raw file.
+        directory_structure (str): Type of database architecture that stores
+            resources. Must be either 'dace' or 'standard'.
 
     Returns:
         dict: A dictionary with keys representing the file types and values
@@ -34,6 +38,11 @@ def get_files_names(full_path: str) -> dict:
     # Get the directory path and base file name from the full path
     repo_path = os.path.dirname(full_path)
     base_file_name = os.path.basename(full_path)
+
+    if directory_structure == 'dace':
+        repo_path = repo_path.replace(
+            "HARPNRAW/raw", f"HARPNDRS/{config.DRS_VERSION}/reduced"
+        )
 
     # Construct paths for the S2D and BLAZE FITS files (both A and B versions)
     s2d_blaze_file_A = os.path.join(
@@ -50,14 +59,22 @@ def get_files_names(full_path: str) -> dict:
         with fits.open(full_path) as hdu_raw:
             dpr_type = hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE']
             if dpr_type.split(",")[1] == 'SKY':
-                print('SKY type doesn\'t have any DRIFT correction')
+                print(
+                    'SKY type doesn\'t have any DRIFT correction'
+                    'DRIFT extension will be generated with zeros'
+                )
                 drift_file_B = None
             elif dpr_type.split(",")[1] == 'DARK':
-                print('DARK type doesn\'t have any DRIFT correction')
+                print(
+                    'DARK type doesn\'t have any DRIFT correction'
+                    'DRIFT extension will be generated with zeros'
+                )
                 drift_file_B = None
             else:
-                raise ValueError(
-                    "Error: File DRIFT not found. Conversion not possible."
+                drift_file_B = None
+                print(
+                    'No DRIFT_MATRIX_B file found, '
+                    'DRIFT extension will be generated with zeros'
                 )
 
     # Open the S2D BLAZE FITS file (A version) to retrieve the BLAZE file names
@@ -67,12 +84,14 @@ def get_files_names(full_path: str) -> dict:
             if 'BLAZE_A' == hdul['PRIMARY'].header[i]:
                 blaze_file_A = adjust_repo_path(
                     repo_path,
-                    hdul["PRIMARY"].header[i[:-4]+'NAME']
+                    hdul["PRIMARY"].header[i[:-4]+'NAME'],
+                    directory_structure
                 )
             if 'BLAZE_B' == hdul['PRIMARY'].header[i]:
                 blaze_file_B = adjust_repo_path(
                     repo_path,
-                    hdul["PRIMARY"].header[i[:-4]+'NAME']
+                    hdul["PRIMARY"].header[i[:-4]+'NAME'],
+                    directory_structure
                 )
 
     # Construct a dictionary of all the file paths
@@ -88,7 +107,9 @@ def get_files_names(full_path: str) -> dict:
     return names
 
 
-def adjust_repo_path(repo_path: str, blaze_filename: str) -> str:
+def adjust_repo_path(
+        repo_path: str, blaze_filename: str, directory_structure: str
+) -> str:
     """
     Adjusts the repository path based on the timestamp in the BLAZE file name.
     If the file's timestamp is before noon, it should be placed in the
@@ -97,32 +118,39 @@ def adjust_repo_path(repo_path: str, blaze_filename: str) -> str:
     Args:
         repo_path (str): The original repository path.
         blaze_filename (str): The BLAZE file name containing the timestamp.
+        directory_structure (str): Type of database architecture that stores
+            resources. Must be either 'dace' or 'standard'.
 
     Returns:
         str: The corrected file path.
     """
     try:
-        # Extract the date and time from the filename
-        filename_parts = blaze_filename.split("_BLAZE")[0]
+        if (directory_structure == 'dace'):
+            # Extract the date and time from the filename
+            filename_parts = blaze_filename.split("_BLAZE")[0]
 
-        timestamp_str = filename_parts.split("r.HARPN.")[1]
+            timestamp_str = filename_parts.split("r.HARPN.")[1]
 
-        # Convert timestamp to datetime object
-        file_datetime = datetime.strptime(
-            timestamp_str, "%Y-%m-%dT%H-%M-%S.%f"
-        )
-
-        # Extract the current repo date
-        repo_date = file_datetime.date()
-
-        # If file's time is before noon, shift repo_path to the previous day
-        if file_datetime.hour < 12:
-            new_repo_date = repo_date - timedelta(days=1)
-            new_repo_path = os.path.join(
-                os.path.dirname(repo_path), new_repo_date.strftime("%Y-%m-%d")
+            # Convert timestamp to datetime object
+            file_datetime = datetime.strptime(
+                timestamp_str, "%Y-%m-%dT%H-%M-%S.%f"
             )
+
+            # Extract the current repo date
+            repo_date = file_datetime.date()
+
+            # If file's time is before noon, shift repo_path to the previous day
+            if file_datetime.hour < 12:
+                new_repo_date = repo_date - timedelta(days=1)
+                new_repo_path = os.path.join(
+                    os.path.dirname(repo_path), new_repo_date.strftime("%Y-%m-%d")
+                )
+            else:
+                # No change if file was created after noon
+                new_repo_path = os.path.join(
+                    os.path.dirname(repo_path), repo_date.strftime("%Y-%m-%d")
+                )
             return os.path.join(new_repo_path, blaze_filename)
-        # No change if file was created after noon
         return os.path.join(repo_path, blaze_filename)
 
     except Exception as e:

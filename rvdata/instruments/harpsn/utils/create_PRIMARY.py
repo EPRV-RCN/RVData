@@ -131,18 +131,20 @@ def create_PRIMARY(
                         header_map['Description'].iloc[index]
                     )
 
-            # If the value is not present in the raw file, we set it to Null
+            # If the value is not present in the raw file, we set it to the
+            # default value define in the header map
             else:
                 l2_hdu.header[values.iloc[0]] = (
-                    'Null',
+                    header_map['default_value'].iloc[index],
                     header_map['Description'].iloc[index]
                 )
 
         # If an error occurs (mostly due to the absence of the keyword in the
-        # specified file), the value is set to null.
+        # specified file), the value is set to the default value define in the
+        # header map.
         except Exception as e:
             l2_hdu.header[values.iloc[0]] = (
-                'Null',
+                header_map['default_value'].iloc[index],
                 header_map['Description'].iloc[index]
             )
             key = header_map['Keyword'].iloc[index]
@@ -230,7 +232,9 @@ def create_PRIMARY(
                 )
             else:
                 l2_hdu.header['TRACE'+str(i)] = (
-                    'UNKNOWN',
+                    header_map[
+                        header_map['Keyword'] == 'TRACE'
+                    ]['default_value'].iloc[0],
                     header_map[
                         header_map['Keyword'] == 'TRACE'
                     ]['Description'].iloc[0]
@@ -265,7 +269,9 @@ def create_PRIMARY(
                     )
             else:
                 l2_hdu.header['CLSRC'+str(i)] = (
-                    'Null',
+                    header_map[
+                        header_map['Keyword'] == 'CLSRC'
+                    ]['default_value'].iloc[0],
                     header_map[
                         header_map['Keyword'] == 'CLSRC'
                     ]['Description'].iloc[0]
@@ -282,7 +288,9 @@ def create_PRIMARY(
             else:
                 for keyword in keyword_list:
                     l2_hdu.header[keyword+str(i)] = (
-                        'Null',
+                        header_map[
+                            header_map['Keyword'] == keyword
+                        ]['default_value'].iloc[0],
                         header_map[
                             header_map['Keyword'] == keyword
                         ]['Description'].iloc[0]
@@ -558,8 +566,15 @@ def get_simbad_data(obj: str) -> dict:
 
         # Return default values if the object is not found
         cat_list = ['CSRC', 'CID', 'CPLX', 'CCLR']
+
+        base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        header_map_path = os.path.join(base_dir, "config", "header_map.csv")
+        header_map = pd.read_csv(header_map_path)
+
         for key in cat_list:
-            data[key] = 'Null'
+            data[key] = header_map[
+                header_map['Keyword'] == key
+            ]['default_value'].iloc[0]
         return data
 
 

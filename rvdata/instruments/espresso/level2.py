@@ -90,7 +90,9 @@ class ESPRESSORV2(RV2):
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
-    def do_conversion(self, hdul: fits.HDUList) -> None:
+    def do_conversion(
+            self, hdul: fits.HDUList, directory_structure: str = 'standard'
+    ) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
 
@@ -105,6 +107,8 @@ class ESPRESSORV2(RV2):
 
         Args:
             hdul (fits.HDUList): The FITS HDU list to be processed.
+            directory_structure (str): Type of database architecture that stores
+                resources. Must be either 'dace' or 'standard'.
         Raises:
             ValueError: If the FITS file is invalid and does not meet the
                 required criteria for conversion.
@@ -121,7 +125,7 @@ class ESPRESSORV2(RV2):
             raise ValueError(e)
 
         # Retrieve the paths for the necessary files
-        names = get_files_names(path)
+        names = get_files_names(path, directory_structure)
 
         # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, BLAZE_B, DRIFT_B, TELLURIC
         # and SKYSUB files

@@ -102,6 +102,8 @@ class HARPSRV2(RV2):
 
         Args:
             hdul (fits.HDUList): The FITS HDU list to be processed.
+            directory_structure (str): Type of database architecture that stores
+                resources. Must be either 'dace' or 'standard'.
 
         Raises:
             ValueError: If the FITS file is invalid and does not meet the

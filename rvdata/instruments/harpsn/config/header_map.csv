@@ -1,86 +1,86 @@
 Keyword,TNG_keyword,value,Extension,from,comment,skip,Description
-INSTRUME,INSTRUME,,PRIMARY,S2D_BLAZE_A,,False,Instrument name
-ORGANIZA,,TNG,PRIMARY,,,False,Organization the data belongs to
-ORIGIN,,TNG,PRIMARY,,,False,Institution that created this file
-DATALVL,,L2,PRIMARY,,,False,Data Product Base Level
-OBSERVER,,UNKNOWN,PRIMARY,,,False,Observer
-PROGRAM,HIERARCH TNG OBS PROG ID,,PRIMARY,S2D_BLAZE_A,,False,Observing program name
-PINAME,HIERARCH TNG OBS PI-COI NAME,,PRIMARY,S2D_BLAZE_A,,False,Program PI Name
-OBSTYPE,HIERARCH TNG DPR CATG,,PRIMARY,RAW,,False,Observation type
-OBSMODE,HIERARCH TNG INS MODE,,PRIMARY,S2D_BLAZE_A,,False,Observing mode
-READMODE,HIERARCH TNG DET READ MODE,,PRIMARY,S2D_BLAZE_A,,False,Readout method
-BINNING,,,PRIMARY,S2D_BLAZE_A,,True,Binning Mode
-NUMTRACE,,,PRIMARY,,,True,Iterator for Number of Object related keywords
-NUMORDER,NUMORDER,,PRIMARY,CONFIG,,false,Number of Orders
-OBJECT,HIERARCH TNG OBS TARG NAME,,PRIMARY,S2D_BLAZE_A,,False,Original target
-ALIASES,HIERARCH TNG OBS TARG NAME,,PRIMARY,S2D_BLAZE_A,,False,OB name 
-FILENAME,,,PRIMARY,,,True,Name of the FITS file
-DATE,DATE,,PRIMARY,,,True,[UTC] Last modification date of this file
-DATE-OBS,DATE-OBS,,PRIMARY,S2D_BLAZE_A,,False,[UTC] Date at start of exposure
-JD_UTC,MJD-OBS,,PRIMARY,S2D_BLAZE_A,,True,[day] Julian date of DATE-OBS
-EXPTIME,EXPTIME,,PRIMARY,S2D_BLAZE_A,,False,[s] Exposure time
-TRACE,,,PRIMARY,,,True,Type of object in trace
-CLSRC,HIERARCH ESO PRO REC1 RAW1 CATG,,PRIMARY,RAW,,True,Name of calibration source in trace
-CSRC,gaia_source,,PRIMARY,Simbad,,True,Catalog source for obj in trace
-CID,gaia_name,,PRIMARY,Simbad,,True,Catalog DR2/3 name for obj in trace
-CRA,HIERARCH TNG TEL TARG ALPHA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] Catalog right ascension for obj in trace
-CDEC,HIERARCH TNG TEL TARG DELTA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] Catalog declination for obj in trace
-CEQNX,HIERARCH TNG TEL TARG EQUINOX,,PRIMARY,S2D_BLAZE_A,,True,[yr] Catalog equinox for obj in trace
-CEPCH,HIERARCH TNG TEL TARG EPOCH,,PRIMARY,S2D_BLAZE_A,,True,[yr] Catalog epoch for obj in trace
-CPLX,PLX_VALUE,,PRIMARY,Simbad,,True,[mas] Catalog parallax for obj in trace
-CPMR,HIERARCH TNG TEL TARG PMA,,PRIMARY,S2D_BLAZE_A,,True,["/yr] Catalog proper motion RA (obj) in trace
-CPMD,HIERARCH TNG TEL TARG PMD,,PRIMARY,S2D_BLAZE_A,,True,["/yr] Catalog proper motion DEC (obj) in trace
-CRV,HIERARCH TNG TEL TARG RADVEL,,PRIMARY,S2D_BLAZE_A,,True,[km/s] Catalog Systemic RV for for obj in trace
-CZ,CZ,,PRIMARY,CRV,,True,Catalog Z for for obj in trace
-CCLR,CCLR,,PRIMARY,Gaia,,True,[mag] Catalog Gaia B-R for obj in trace
-OBSERVAT,,ORM,PRIMARY,,,False,Observatory name
-TELESCOP,TELESCOP,,PRIMARY,S2D_BLAZE_A,,False,Telescope name
-OBSLON,HIERARCH TNG TEL GEOLON,,PRIMARY,S2D_BLAZE_A,,True,[deg] Observatory longitude
-OBSLAT,HIERARCH TNG TEL GEOLAT,,PRIMARY,S2D_BLAZE_A,,True,[deg] Observatory latitude
-OBSALT,GEOELEV,,PRIMARY,S2D_BLAZE_A,,False,[m] Observatory altitude
-SEEING,,Null,PRIMARY,S2D_BLAZE_A,,False,[arcsec] Seeing at beginning of exposure
-AIRMASS,AIRMASS,,PRIMARY,S2D_BLAZE_A,,False,[secZ] Airmass at center field (beginning)
-TTIME,DATE-OBS,,PRIMARY,S2D_BLAZE_A,,False,[UTC] TCS-data date/time 
-TEQNX,HIERARCH TNG TEL TARG EQUINOX,,PRIMARY,S2D_BLAZE_A,,False,[yr] TCS equinox
-TEPCH,HIERARCH TNG TEL TARG EPOCH,,PRIMARY,S2D_BLAZE_A,,False,[yr] TCS epoch
-TLST,LST,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS local sidereal time
-TRA,RA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS RA
-TDEC,DEC,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS DEC
-TEL,,,PRIMARY,,,True,[deg] TCS elevation angle
-TZA,,,PRIMARY,,,True,[deg] Zenith angle
-TAZ,,,PRIMARY,,,True,[deg] TCS azimuth angle
-THA,,,PRIMARY,,,True,[sexa] TCS hour angle
-PARANG,HIERARCH TNG TEL PARANG START,Null,PRIMARY,S2D_BLAZE_A,,False,[deg] Parallactic angle at exposure start
-PARANG2,HIERARCH TNG TEL PARANG END,Null,PRIMARY,S2D_BLAZE_A,,False,[deg] Parallactic angle at exposure end
-ROTANG,HIERARCH TNG ADA ABSROT END,,PRIMARY,S2D_BLAZE_A,,True,[deg] Rotator angle
-SUNEL,,,PRIMARY,,,True,[deg] Sun Elevation Angle
-MOONANG,,,PRIMARY,,,True,[deg] Target-Moon Angle
-MOONEL,,,PRIMARY,,,True,[deg] Moon Elevation Angle
-MOONILLU,,,PRIMARY,,,True,[%] Moon illumination
-MOONRV,,,PRIMARY,,,True,[km/s] RV of reflected sunlight off moon
-INHUM,,Null,,,,False,[%] Relative humidity inside dome
-INHUMT,,Null,PRIMARY,,,False,INHUM timestamp
-OUTTMP,HIERARCH TNG METEO TEMP10M,,PRIMARY,S2D_BLAZE_A,,False,[C] Outside temperature
-OUTTMPT,,Null,PRIMARY,,,False,OUTTMP timestamp
-OUTHUM,HIERARCH TNG METEO HUMIDITY,,PRIMARY,S2D_BLAZE_A,?,False,[%] Outiside relative humidity
-OUTHUMT,,Null,PRIMARY,,,False,OUTHUM timestamp
-ENVWINDS,HIERARCH TNG METEO WINDSPEED,,PRIMARY,S2D_BLAZE_A,,False,[m/s] Wind speed
-ENVWINDD,HIERARCH TNG METEO WINDDIR,,PRIMARY,S2D_BLAZE_A,,False,[angle] Wind direction
-DRPTAG,HIERARCH ESO PRO REC1 PIPE ID,,PRIMARY,S2D_BLAZE_A,,False,RV DRP version
-EPRVTAG,,v1.1.0,PRIMARY,,,False,Version of EPRV standard applied
-VOCLASS,,EPRVSTANDARDv1.1.0,PRIMARY,,,False,Version of EPRV standard applied
-DRPHASH,,Null,PRIMARY,,,False,Git commit hash
-INSTERA,,,PRIMARY,,,True,Tag to track permanent changes to instrument
-EXTRACT,HIERARCH ESO PRO REC1 PARAM12 VALUE,,PRIMARY,S2D_BLAZE_A,,False,Type of 1D extraction
-EXSNR,,,PRIMARY,,,True,Extracted signal-to-noise in the order
-EXSNRW,,,PRIMARY,,,True,[Angstroms] Central wavelength of EXTSNRN
-FULLCOMP,,Yes,PRIMARY,,,False,Fully compliant with the RVSTAND EPRV standard?
-TELFLAG,,Pass,PRIMARY,,,False,Issues with observatory or telescope?
-INSTFLAG,,Pass,PRIMARY,,,False,Issues with instrument?
-DRPFLAG,HIERARCH TNG QC SCIRED CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with pipeline?
-COLOFLAG,HIERARCH TNG QC SCIRED FLUX CORR CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with color?
-OBSFLAG,,Pass,PRIMARY,,,False,Observer pass/fail for exposure
-SUMMFLAG,,,PRIMARY,,,True,Roll up of other flag keywords
-DQLVL0,,Null,PRIMARY,,,False,Quality check bitfield of N characters
-DQLVL1,,Null,PRIMARY,,,False,Quality check bitfield of N characters
-DQLVL2,,Null,PRIMARY,,,False,Quality check bitfield of N characters
+INSTRUME,INSTRUME,,PRIMARY,S2D_BLAZE_A,,False,Instrument name,UNKNOWN
+ORGANIZA,,TNG,PRIMARY,,,False,Organization the data belongs to,Null
+ORIGIN,,TNG,PRIMARY,,,False,Institution that created this file,Null
+DATALVL,,L2,PRIMARY,,,False,Data Product Base Level,UNKNOWN
+OBSERVER,,UNKNOWN,PRIMARY,,,False,Observer,UNKNOWN
+PROGRAM,HIERARCH TNG OBS PROG ID,,PRIMARY,S2D_BLAZE_A,,False,Observing program name,Null
+PINAME,HIERARCH TNG OBS PI-COI NAME,,PRIMARY,S2D_BLAZE_A,,False,Program PI Name,Null
+OBSTYPE,HIERARCH TNG DPR CATG,,PRIMARY,RAW,,False,Observation type,UNKNOWN
+OBSMODE,HIERARCH TNG INS MODE,,PRIMARY,S2D_BLAZE_A,,False,Observing mode,Null
+READMODE,HIERARCH TNG DET READ MODE,,PRIMARY,S2D_BLAZE_A,,False,Readout method,Null
+BINNING,,,PRIMARY,S2D_BLAZE_A,,True,Binning Mode,UNKNOWN
+NUMTRACE,,,PRIMARY,,,True,Iterator for Number of Object related keywords,UNDEFINED
+NUMORDER,NUMORDER,,PRIMARY,CONFIG,,false,Number of Orders,UNDEFINED
+OBJECT,HIERARCH TNG OBS TARG NAME,,PRIMARY,S2D_BLAZE_A,,False,Original target,UNKNOWN
+ALIASES,HIERARCH TNG OBS TARG NAME,,PRIMARY,S2D_BLAZE_A,,False,OB name,Null
+FILENAME,,,PRIMARY,,,True,Name of the FITS file,UNKNOWN
+DATE,DATE,,PRIMARY,,,True,[UTC] Last modification date of this file,UNKNOWN
+DATE-OBS,DATE-OBS,,PRIMARY,S2D_BLAZE_A,,False,[UTC] Date at start of exposure,UNKNOWN
+JD_UTC,MJD-OBS,,PRIMARY,S2D_BLAZE_A,,True,[day] Julian date of DATE-OBS,UNDEFINED
+EXPTIME,EXPTIME,,PRIMARY,S2D_BLAZE_A,,False,[s] Exposure time,UNDEFINED
+TRACE,,,PRIMARY,,,True,Type of object in trace,UNKNOWN
+CLSRC,HIERARCH ESO PRO REC1 RAW1 CATG,,PRIMARY,RAW,,True,Name of calibration source in trace,UNKNOWN
+CSRC,gaia_source,,PRIMARY,Simbad,,True,Catalog source for obj in trace,UNKNOWN
+CID,gaia_name,,PRIMARY,Simbad,,True,Catalog DR2/3 name for obj in trace,UNKNOWN
+CRA,HIERARCH TNG TEL TARG ALPHA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] Catalog right ascension for obj in trace,UNKNOWN
+CDEC,HIERARCH TNG TEL TARG DELTA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] Catalog declination for obj in trace,UNKNOWN
+CEQNX,HIERARCH TNG TEL TARG EQUINOX,,PRIMARY,S2D_BLAZE_A,,True,[yr] Catalog equinox for obj in trace,UNDEFINED
+CEPCH,HIERARCH TNG TEL TARG EPOCH,,PRIMARY,S2D_BLAZE_A,,True,[yr] Catalog epoch for obj in trace,UNDEFINED
+CPLX,PLX_VALUE,,PRIMARY,Simbad,,True,[mas] Catalog parallax for obj in trace,Null
+CPMR,HIERARCH TNG TEL TARG PMA,,PRIMARY,S2D_BLAZE_A,,True,["/yr] Catalog proper motion RA (obj) in trace,Null
+CPMD,HIERARCH TNG TEL TARG PMD,,PRIMARY,S2D_BLAZE_A,,True,["/yr] Catalog proper motion DEC (obj) in trace,Null
+CRV,HIERARCH TNG TEL TARG RADVEL,,PRIMARY,S2D_BLAZE_A,,True,[km/s] Catalog Systemic RV for for obj in trace,UNDEFINED
+CZ,CZ,,PRIMARY,CRV,,True,Catalog Z for for obj in trace,Null
+CCLR,CCLR,,PRIMARY,Gaia,,True,[mag] Catalog Gaia B-R for obj in trace,Null
+OBSERVAT,,ORM,PRIMARY,,,False,Observatory name,UNKNOWN
+TELESCOP,TELESCOP,,PRIMARY,S2D_BLAZE_A,,False,Telescope name,UNKNOWN
+OBSLON,HIERARCH TNG TEL GEOLON,,PRIMARY,S2D_BLAZE_A,,True,[deg] Observatory longitude,UNDEFINED
+OBSLAT,HIERARCH TNG TEL GEOLAT,,PRIMARY,S2D_BLAZE_A,,True,[deg] Observatory latitude,UNDEFINED
+OBSALT,GEOELEV,,PRIMARY,S2D_BLAZE_A,,False,[m] Observatory altitude,UNDEFINED
+SEEING,,Null,PRIMARY,S2D_BLAZE_A,,False,[arcsec] Seeing at beginning of exposure,Null
+AIRMASS,AIRMASS,,PRIMARY,S2D_BLAZE_A,,False,[secZ] Airmass at center field (beginning),Null
+TTIME,DATE-OBS,,PRIMARY,S2D_BLAZE_A,,False,[UTC] TCS-data date/time,Null
+TEQNX,HIERARCH TNG TEL TARG EQUINOX,,PRIMARY,S2D_BLAZE_A,,False,[yr] TCS equinox,Null
+TEPCH,HIERARCH TNG TEL TARG EPOCH,,PRIMARY,S2D_BLAZE_A,,False,[yr] TCS epoch,Null
+TLST,LST,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS local sidereal time,Null
+TRA,RA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS RA,Null
+TDEC,DEC,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS DEC,Null
+TEL,,,PRIMARY,,,True,[deg] TCS elevation angle,Null
+TZA,,,PRIMARY,,,True,[deg] Zenith angle,Null
+TAZ,,,PRIMARY,,,True,[deg] TCS azimuth angle,Null
+THA,,,PRIMARY,,,True,[sexa] TCS hour angle,Null
+PARANG,HIERARCH TNG TEL PARANG START,Null,PRIMARY,S2D_BLAZE_A,,False,[deg] Parallactic angle at exposure start,Null
+PARANG2,HIERARCH TNG TEL PARANG END,Null,PRIMARY,S2D_BLAZE_A,,False,[deg] Parallactic angle at exposure end,Null
+ROTANG,HIERARCH TNG ADA ABSROT END,,PRIMARY,S2D_BLAZE_A,,True,[deg] Rotator angle,Null
+SUNEL,,,PRIMARY,,,True,[deg] Sun Elevation Angle,Null
+MOONANG,,,PRIMARY,,,True,[deg] Target-Moon Angle,Null
+MOONEL,,,PRIMARY,,,True,[deg] Moon Elevation Angle,Null
+MOONILLU,,,PRIMARY,,,True,[%] Moon illumination,Null
+MOONRV,,,PRIMARY,,,True,[km/s] RV of reflected sunlight off moon,Null
+INHUM,,Null,,,,False,[%] Relative humidity inside dome,Null
+INHUMT,,Null,PRIMARY,,,False,INHUM timestamp,Null
+OUTTMP,HIERARCH TNG METEO TEMP10M,,PRIMARY,S2D_BLAZE_A,,False,[C] Outside temperature,Null
+OUTTMPT,,Null,PRIMARY,,,False,OUTTMP timestamp,Null
+OUTHUM,HIERARCH TNG METEO HUMIDITY,,PRIMARY,S2D_BLAZE_A,?,False,[%] Outiside relative humidity,Null
+OUTHUMT,,Null,PRIMARY,,,False,OUTHUM timestamp,Null
+ENVWINDS,HIERARCH TNG METEO WINDSPEED,,PRIMARY,S2D_BLAZE_A,,False,[m/s] Wind speed,Null
+ENVWINDD,HIERARCH TNG METEO WINDDIR,,PRIMARY,S2D_BLAZE_A,,False,[angle] Wind direction,Null
+DRPTAG,HIERARCH ESO PRO REC1 PIPE ID,,PRIMARY,S2D_BLAZE_A,,False,RV DRP version,UNKNOWN
+EPRVTAG,,v1.1.0,PRIMARY,,,False,Version of EPRV standard applied,UNKNOWN
+VOCLASS,,EPRVSTANDARDv1.1.0,PRIMARY,,,False,Version of EPRV standard applied,UNKNOWN
+DRPHASH,,Null,PRIMARY,,,False,Git commit hash,Null
+INSTERA,,,PRIMARY,,,True,Tag to track permanent changes to instrument,UNKNOWN
+EXTRACT,HIERARCH ESO PRO REC1 PARAM12 VALUE,,PRIMARY,S2D_BLAZE_A,,False,Type of 1D extraction,Null
+EXSNR,,,PRIMARY,,,True,Extracted signal-to-noise in the order,Null
+EXSNRW,,,PRIMARY,,,True,[Angstroms] Central wavelength of EXTSNRN,Null
+FULLCOMP,,Yes,PRIMARY,,,False,Fully compliant with the RVSTAND EPRV standard?,UNKNOWN
+TELFLAG,,Pass,PRIMARY,,,False,Issues with observatory or telescope?,Null
+INSTFLAG,,Pass,PRIMARY,,,False,Issues with instrument?,Null
+DRPFLAG,HIERARCH TNG QC SCIRED CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with pipeline?,Null
+COLOFLAG,HIERARCH TNG QC SCIRED FLUX CORR CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with color?,Null
+OBSFLAG,,Pass,PRIMARY,,,False,Observer pass/fail for exposure,Null
+SUMMFLAG,,,PRIMARY,,,True,Roll up of other flag keywords,UNKNOWN
+DQLVL0,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
+DQLVL1,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
+DQLVL2,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
