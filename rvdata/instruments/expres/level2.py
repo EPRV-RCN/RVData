@@ -178,7 +178,8 @@ class EXPRESRV2(RV2):
         for i_wave, col_wavelength in enumerate(expmeter_wavelengths):
             expmeter_extension_data[str(col_wavelength)] = expmeter_array[i_wave]
 
-        self.create_extension("EXPMETER", "BinTableHDU", data=expmeter_extension_data)
+        self.create_extension("EXPMETER", "BinTableHDU",header=expmeter_header,
+                    data=expmeter_extension_data)
         # ext_table["extension_name"].append("EXPMETER")
         # ext_table["description"].append("Chromatic exposure meter")
 
