@@ -142,7 +142,6 @@ class RVDataModel(object):
                     self.headers[hdu.name] = hdu.header
                 elif isinstance(hdu, fits.BinTableHDU):
                     t = Table.read(hdu)
-                    print(t)                    
                     if "RECEIPT" in hdu.name:
                         # Table contains the RECEIPT
                         df: pd.DataFrame = t.to_pandas()
@@ -154,8 +153,8 @@ class RVDataModel(object):
                         )
                         setattr(self, hdu.name, df)
                         setattr(self, hdu.name.lower(), getattr(self, hdu.name))
-                    self.headers[hdu.name] = hdu.header
-                    setattr(self, hdu.name, t.to_pandas())
+                        self.headers[hdu.name] = hdu.header
+                        setattr(self, hdu.name, t.to_pandas())
 
             # Leave the rest of HDUs to level specific readers
             
@@ -168,7 +167,7 @@ class RVDataModel(object):
                 module = importlib.import_module(
                     self.read_methods[instrument]["module"]
                 )
-                print('here2')
+
                 cls = getattr(module, self.read_methods[instrument]["class"])
                 method = getattr(cls, self.read_methods[instrument]["method"])
                 method(self, hdu_list, **kwargs)
