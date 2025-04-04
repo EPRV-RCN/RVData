@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from astropy.io import fits
 from astropy.time import Time
 from astropy.constants import c
@@ -9,11 +10,11 @@ import pandas as pd
 from rvdata.core.models.level2 import RV2
 
 expres_epochs, epoch_start_isot = np.loadtxt(
-    "/Users/joellama/Dropbox/RVData-expres-translator2/rvdata/instruments/expres/config/expres_epochs.csv", delimiter=",", skiprows=1, dtype="str"
+    os.path.join(os.path.join(os.path.dirname(__file__), "config/expres_epochs.csv")), delimiter=",", skiprows=1, dtype="str"
 ).T
 epoch_start_mjd = Time(epoch_start_isot).mjd
 
-header_map = pd.read_csv("/Users/joellama/Dropbox/RVData-expres-translator2/rvdata/instruments/expres/config/expres_header_map.csv").set_index("standard")
+header_map = pd.read_csv(os.path.join(os.path.dirname(__file__), "config/expres_header_map.csv")).set_index("standard")
 header_map.fillna("", inplace=True)
 
 static_headers = {
