@@ -99,7 +99,30 @@ class EXPRESRV2(RV2):
         }
 
         # Primary with just EPRV Standard FITS Headers
-        primary_header = self.standardizeExpresHeader(hdul)
+        # primary_header = self.standardizeExpresHeader(hdul)
+
+        head0 = hdul[0].header
+        standard_head = OrderedDict()
+        for key in header_map.index:
+            print(key)
+            if key in static_headers.keys():  # Keywords that never change
+                standard_head[key] = static_headers[key]
+            elif key in self.header_funcs.keys():  # Keywords that require processing
+                standard_head[key] = self.header_funcs[key](hdul)
+            else:
+                _ = header_map.loc[key, 'expres']
+                if not _:
+                    expres_val = ""
+
+                else:
+                    expres_val = head0[_]
+                print(expres_val)
+                if header_map.loc[key, 'required'] == 'N' and not expres_val:
+                    continue
+                standard_head[key] = expres_val
+            print(f"{key}: {standard_head[key]}")
+        primary_header = standard_head
+
         self.set_header("PRIMARY", primary_header)
 
         # # Original Instrument Header
