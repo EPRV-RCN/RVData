@@ -104,6 +104,7 @@ class RVDataModel(object):
             raise IOError(f"{fn} does not exist.")
 
         # populate it with self.read()
+        print('here')
         this_data.read(fn, instrument, **kwargs)
         # Return this instance
         return this_data
@@ -125,6 +126,7 @@ class RVDataModel(object):
             required before calling this function
 
         """
+        
         if not fn.endswith(".fits"):
             # Can only read .fits files
             raise IOError("input files must be FITS files")
@@ -133,12 +135,14 @@ class RVDataModel(object):
         self.dirname = os.path.dirname(fn)
 
         with fits.open(fn) as hdu_list:
+            
             # Handles the Receipt and the auxilary HDUs
             for hdu in hdu_list:
                 if isinstance(hdu, fits.PrimaryHDU):
                     self.headers[hdu.name] = hdu.header
                 elif isinstance(hdu, fits.BinTableHDU):
                     t = Table.read(hdu)
+                    print(t)                    
                     if "RECEIPT" in hdu.name:
                         # Table contains the RECEIPT
                         df: pd.DataFrame = t.to_pandas()
@@ -154,6 +158,7 @@ class RVDataModel(object):
                     setattr(self, hdu.name, t.to_pandas())
 
             # Leave the rest of HDUs to level specific readers
+            
             if instrument is None:
                 import core.models.level2
 
@@ -163,6 +168,7 @@ class RVDataModel(object):
                 module = importlib.import_module(
                     self.read_methods[instrument]["module"]
                 )
+                print('here2')
                 cls = getattr(module, self.read_methods[instrument]["class"])
                 method = getattr(cls, self.read_methods[instrument]["method"])
                 method(self, hdu_list, **kwargs)

@@ -76,6 +76,7 @@ class EXPRESRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
+        print('converting EXPRES spectrum')
         data = hdul[1].data.copy()
         primary_header = hdul[0].header
 #        fitspec_header = hdul[1].header

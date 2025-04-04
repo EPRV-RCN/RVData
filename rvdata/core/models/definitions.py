@@ -41,4 +41,9 @@ INSTRUMENT_READERS = {
         "class": "NEIDRV2",
         "method": "_read",
     },
+    "EXPRES": {
+        "module": "rvdata.instruments.expres.level2",
+        "class": "EXPRESRV2",
+        "method": "_read",
+    },    
 }
