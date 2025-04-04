@@ -153,7 +153,7 @@ class EXPRESRV2(RV2):
 
         # # Barycentric Correction
         bary_arr = data["bary_wavelength"]  # data['bary_wavelength']
-        berv_kms = (1 - bary_arr / wave) * c.to("km/s")
+        berv_kms = ((1 - bary_arr / wave) * c.to("km/s")).value
         berv_z = 1 - bary_arr / wave
         self.set_data("BARYCORR_KMS", berv_kms)
         self.set_data("BARYCORR_Z", berv_z)
@@ -169,8 +169,18 @@ class EXPRESRV2(RV2):
         # self.create_extension("DRIFT", "ImageHDU", data=np.zeros_like(wave)) # setting to zero assuming shifts expected
 
         # # Exposure Meter
-        self.create_extension("EXPMETER", "ImageHDU",
-                              header=expmeter_header, data=expmeter_data)
+        expmeter_array = np.array([row[0] for row in expmeter_data]).T
+        expmeter_times = hdul[2].data['midpoints'].astype(np.float64)
+        expmeter_wavelengths = hdul[2].data['wavelengths'][0].astype(np.float64)
+
+        expmeter_extension_data = {"time": expmeter_times}
+        for i_wave, col_wavelength in enumerate(expmeter_wavelengths):
+            expmeter_extension_data[str(col_wavelength)] = expmeter_array[i_wave]
+
+        self.create_extension("EXPMETER", "BinTableHDU", data=expmeter_extension_data)
+        # ext_table["extension_name"].append("EXPMETER")
+        # ext_table["description"].append("Chromatic exposure meter")
+
 
         # # Telemetry (Optional)
         # # Might not have this either tbh
