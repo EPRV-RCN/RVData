@@ -82,6 +82,6 @@ DRPFLAG,HIERARCH ESO QC SCIRED CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with pipe
 COLOFLAG,HIERARCH ESO QC SCIRED FLUX CORR CHECK,,PRIMARY,,,True,Issues with color?,Null
 OBSFLAG,,Pass,PRIMARY,,,False,Observer pass/fail for exposure,Null
 SUMMFLAG,,,PRIMARY,,,True,Roll up of other flag keywords,UNKNOWN
-DQLVL0,,Null,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
-DQLVL1,,Null,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
-DQLVL2,,Null,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
+DQLVL0,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
+DQLVL1,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
+DQLVL2,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
