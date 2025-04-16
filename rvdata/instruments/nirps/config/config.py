@@ -26,6 +26,9 @@ NUMORDER = 71
 
 data_format = "L2"  # Can either be original or L2
 
+# DRS version for proper file search functionality.
+DRS_VERSION = "DRS-3.2.5"
+
 # Allows the conversion of the RAW file
 extnames_raw = {
     'posemeter': {'name': 'EXPMETER', 'type': 'BinTableHDU'},
