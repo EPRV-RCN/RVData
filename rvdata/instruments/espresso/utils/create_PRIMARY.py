@@ -537,7 +537,7 @@ def get_simbad_data(obj: str) -> dict:
         result = custom_simbad.query_object(obj)
 
         # Extract Gaia DR3 or DR2 identifiers
-        for name in result['IDS'][0].split('|'):
+        for name in result['ids'][0].split('|'):
             if (name.lower().startswith('gaia dr3')):
                 gaia_dr3_source = name[:8]
                 gaia_dr3_name = name[5:]
@@ -554,8 +554,8 @@ def get_simbad_data(obj: str) -> dict:
             data['CID'] = gaia_dr2_source
 
         # Retrieve parallax value
-        if not np.ma.is_masked(result['PLX_VALUE'][0]):
-            data['CPLX'] = result['PLX_VALUE'][0]
+        if not np.ma.is_masked(result['plx_value'][0]):
+            data['CPLX'] = result['plx_value'][0]
         else:
             data['CPLX'] = 'Null'
 

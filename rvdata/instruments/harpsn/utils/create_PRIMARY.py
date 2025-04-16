@@ -171,11 +171,17 @@ def create_PRIMARY(
             ]['TNG_keyword'].iloc[0]
         ]
     )
-    if (catalog_data['CID'] != 'Null'):
+    cid_default = header_map[
+        header_map['Keyword'] == 'CID'
+    ]['default_value'].iloc[0]
+
+    if (catalog_data['CID'] != cid_default):
         try:
             catalog_data['CCLR'] = get_gaia_data(catalog_data['CID'])
         except Exception:
             print('Gaia request failed.')
+    else:
+        print("Gaia request can't be done because SIMBAD request failed")
 
     catalog_data['CRA'] = RV2.headers['INSTRUMENT_HEADER'][
         header_map[header_map['Keyword'] == 'CRA']['TNG_keyword'].iloc[0]
@@ -537,7 +543,7 @@ def get_simbad_data(obj: str) -> dict:
         result = custom_simbad.query_object(obj)
 
         # Extract Gaia DR3 or DR2 identifiers
-        for name in result['IDS'][0].split('|'):
+        for name in result['ids'][0].split('|'):
             if (name.lower().startswith('gaia dr3')):
                 gaia_dr3_source = name[:8]
                 gaia_dr3_name = name[5:]
@@ -554,8 +560,8 @@ def get_simbad_data(obj: str) -> dict:
             data['CID'] = gaia_dr2_source
 
         # Retrieve parallax value
-        if not np.ma.is_masked(result['PLX_VALUE'][0]):
-            data['CPLX'] = result['PLX_VALUE'][0]
+        if not np.ma.is_masked(result['plx_value'][0]):
+            data['CPLX'] = result['plx_value'][0]
         else:
             data['CPLX'] = 'Null'
 
