@@ -10,6 +10,8 @@ import warnings
 from collections import OrderedDict
 
 import git
+from git.exc import InvalidGitRepositoryError
+
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table
@@ -20,7 +22,8 @@ from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git
 
 
 class RVDataModel(object):
-    """The base class for all RV data models.
+    """
+    The base class for all RV data models.
 
     Warning:
         This class (RVDataModel) should not be used directly.
@@ -86,7 +89,8 @@ class RVDataModel(object):
     # I/O related methods
     @classmethod
     def from_fits(cls, fn, instrument=None, **kwargs):
-        """Create a data instance from a file
+        """
+        Create a data instance from a file
 
         This method implys the ``read`` method for reading the file. Refer to
         it for more detail. It is assume that the input FITS file is in RVData standard format
@@ -110,7 +114,8 @@ class RVDataModel(object):
         return this_data
 
     def read(self, fn, instrument=None, overwrite=False, **kwargs):
-        """Read the content of a RVData standard .fits file and populate this
+        """
+        Read the content of a RVData standard .fits file and populate this
         data structure.
 
         Args:
@@ -159,9 +164,9 @@ class RVDataModel(object):
             # Leave the rest of HDUs to level specific readers
             
             if instrument is None:
-                import core.models.level2
+                import rvdata.core.models.level2
 
-                method = core.models.level2.RV2._read
+                method = rvdata.core.models.level2.RV2._read
                 method(self, hdu_list)
             elif instrument in self.read_methods.keys():
                 module = importlib.import_module(
@@ -233,16 +238,37 @@ class RVDataModel(object):
             git_commit_hash = repo.head.object.hexsha
             git_branch = repo.active_branch.name
             git_tag = str(repo.tags[-1])
-        except (TypeError, IndexError):  # expected if running in testing env
-            git_commit_hash = ""
-            git_branch = ""
-            git_tag = ""
-        except ValueError:  # 12/22/22 new behavior under Docker
-            git_commit_hash = get_git_revision_hash()
-            git_branch = get_git_branch()
-            git_tag = get_git_tag()
         except (
-            BrokenPipeError
+            TypeError,
+            IndexError,
+            InvalidGitRepositoryError,
+        ):  # expected if running in testing env or using pip-installed package
+            from packaging.version import parse
+            from importlib.metadata import PackageNotFoundError, version
+
+            try:
+                # setuptools_scm is now used to manage versioning based on git tags and hashes.
+                # If the version lies beyond the last tag, the version will be the last tag with
+                # the minor version incremented and a string appended of the form:
+                # .dev{N}+g{hash} where {N} is the number of commits beyond the last tag and {hash}
+                # is the abbreviated commit hash. importlib and packaging provide standard ways
+                # of obtaining the version of a package and parsing the version string.
+                translator_version = parse(version("rvdata"))
+                git_commit_hash = str(
+                    translator_version.local
+                )  # this can be None so cast to str
+                git_tag = translator_version.public
+                if "dev" in git_tag:
+                    git_branch = "develop"
+                else:
+                    git_branch = "main"
+            except PackageNotFoundError:
+                git_commit_hash = ""
+                git_branch = ""
+                git_tag = ""
+        except (
+            ValueError,
+            BrokenPipeError,
         ):  # 1/10/23 behavior under Docker uncovered by hour-long testing
             git_commit_hash = get_git_revision_hash()
             git_branch = get_git_branch()

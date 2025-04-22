@@ -211,9 +211,6 @@ class KPFRV2(RV2):
         bary = hdul1["BARY_CORR"].data
         bary_kms = bary["BARYVEL"] / 1000.0
 
-        self.set_header("DRIFT", wave_meta)
-        self.set_data("DRIFT", np.zeros_like(flux_array))
-
         self.set_header("BARYCORR_KMS", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_header("BARYCORR_Z", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_data("BARYCORR_KMS", bary_kms)
