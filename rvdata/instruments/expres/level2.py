@@ -75,7 +75,7 @@ class EXPRESRV2(RV2):
     >>> rv2_obj = EXPRESRV2()
     >>> rv2_obj._read(hdul)
     """
-   
+
     def _read(self, hdul: fits.HDUList) -> None:
         # Set up extension description table
         data = hdul[1].data.copy()
@@ -122,14 +122,14 @@ class EXPRESRV2(RV2):
             print(f"{key}: {standard_head[key]}")
         primary_header = standard_head
 
-        self.set_header("INSTRUMENT_HEADER", hdul[0].header)
+        self.set_header("INSTRUMENT_HEADER", primary_header)
         ext_table["extension_name"].append("INSTRUMENT_HEADER")
         ext_table["description"].append("Primary header of native instrument file")
 
         # Order Table
         order_table_data = pd.DataFrame(
             {
-                "echelle_order": 160 - np.arange(hdul[1].data["wavelength"].shape[0]), # Need to figure this out
+                "echelle_order": 160 - np.arange(hdul[1].data["wavelength"].shape[0]),
                 "order_index": np.arange(hdul[1].data['wavelength'].shape[0]),
                 "wave_start": np.nanmin(hdul[1].data['wavelength'].data, axis=1),
                 "wave_end": np.nanmax(hdul[1].data['wavelength'].data, axis=1),
@@ -137,7 +137,7 @@ class EXPRESRV2(RV2):
         )
         self.set_data("ORDER_TABLE", order_table_data)
         ext_table["extension_name"].append("ORDER_TABLE")
-        ext_table["description"].append("Table of echelle order information")       
+        ext_table["description"].append("Table of echelle order information")
 
         itrace = 1
         # # BLAZE
@@ -145,14 +145,14 @@ class EXPRESRV2(RV2):
         self.set_data(f"TRACE{itrace}_BLAZE", blaze)
         ext_table["extension_name"].append(f"TRACE{itrace}_BLAZE")
         ext_table["description"].append(
-            f"Blaze function"
+            "Blaze function"
         )
         # # SPECTRUM
         spec = data["spectrum"] * blaze
         self.set_data(f"TRACE{itrace}_FLUX", spec)
         ext_table["extension_name"].append(f"TRACE{itrace}_FLUX")
         ext_table["description"].append(
-            f"Flux in EXPRES SCI fiber"
+            "Flux"
         )
 
         # # Wavelength
@@ -160,7 +160,7 @@ class EXPRESRV2(RV2):
         self.set_data(f"TRACE{itrace}_WAVE", wave)
         ext_table["extension_name"].append(f"TRACE{itrace}_WAVE")
         ext_table["description"].append(
-            f"Wavelength solution for EXPRES SCI fiber"
+            "Wavelength solution"
         )
 
         # # Variance
@@ -168,9 +168,9 @@ class EXPRESRV2(RV2):
         self.set_data(f"TRACE{itrace}_VAR", variance)
         ext_table["extension_name"].append(f"TRACE{itrace}_VAR")
         ext_table["description"].append(
-            f"Wavelength solution for EXPRES SCI fiber"
+            "Variance"
         )
-         
+
         # # Barycentric Correction
         bary_arr = data["bary_wavelength"]  # data['bary_wavelength']
         berv_kms = ((1 - bary_arr / wave) * c.to("km/s")).value
@@ -180,7 +180,7 @@ class EXPRESRV2(RV2):
         ext_table["description"].append(
             "Barycentric correction velocity per order in km/s"
         )
-                
+
         self.set_data("BARYCORR_Z", berv_z)
         ext_table["extension_name"].append("BARYCORR_Z")
         ext_table["description"].append(
@@ -197,9 +197,13 @@ class EXPRESRV2(RV2):
         expmeter_extension_data = {"time": expmeter_times}
         for i_wave, col_wavelength in enumerate(expmeter_wavelengths):
             expmeter_extension_data[str(col_wavelength)] = expmeter_array[i_wave]
-
-        self.create_extension("EXPMETER", "BinTableHDU", header=expmeter_header,
-                    data=expmeter_extension_data)
+        
+        self.create_extension(
+            "EXPMETER",
+            "BinTableHDU",
+            header=expmeter_header,
+            data=expmeter_extension_data
+        )
         ext_table["extension_name"].append("EXPMETER")
         ext_table["description"].append("Chromatic exposure meter")
 
@@ -212,8 +216,7 @@ class EXPRESRV2(RV2):
         )
 
         # Set extension description table
-        self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))
-
+        self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))\
 
     # =============================================================================
     # Methods for standardizing header keywords
@@ -243,7 +246,6 @@ class EXPRESRV2(RV2):
 
 
 def drpFlag(hdul):
-
     extensions_to_check = ['spectrum', 'blaze',
                            'wavelength', 'bary_wavelength',
                            'excalibur', 'bary_excalibur',
@@ -252,5 +254,4 @@ def drpFlag(hdul):
     percent_there = np.sum([extn in extension_list for extn in extensions_to_check])/len(extensions_to_check)
     if percent_there == 1:
         return 'Pass'
-    else:
-        return 'Fail' if percent_there == 0 else 'Warn'
+    return 'Fail' if percent_there == 0 else 'Warn'
