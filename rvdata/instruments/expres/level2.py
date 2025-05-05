@@ -197,7 +197,7 @@ class EXPRESRV2(RV2):
         expmeter_extension_data = {"time": expmeter_times}
         for i_wave, col_wavelength in enumerate(expmeter_wavelengths):
             expmeter_extension_data[str(col_wavelength)] = expmeter_array[i_wave]
-        
+
         self.create_extension(
             "EXPMETER",
             "BinTableHDU",
