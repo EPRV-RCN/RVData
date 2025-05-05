@@ -45,5 +45,5 @@ INSTRUMENT_READERS = {
         "module": "rvdata.instruments.expres.level2",
         "class": "EXPRESRV2",
         "method": "_read",
-    },    
+    },
 }
