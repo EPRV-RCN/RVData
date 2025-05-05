@@ -75,15 +75,14 @@ class EXPRESRV2(RV2):
     >>> rv2_obj = EXPRESRV2()
     >>> rv2_obj._read(hdul)
     """
-
+   
     def _read(self, hdul: fits.HDUList) -> None:
-        print('converting EXPRES spectrum')
+        # Set up extension description table
         data = hdul[1].data.copy()
-        primary_header = hdul[0].header
-#        fitspec_header = hdul[1].header
-        expmeter_header = hdul[2].header
-        expmeter_data = hdul[2].data.copy()
-        itrace = 1
+        ext_table = {
+            "extension_name": [],
+            "description": [],
+        }
 
         self.header_funcs = {
             'OBSTYPE': (lambda hdul: obstype_map[hdul[0].header['OBSTYPE']]),
@@ -101,7 +100,6 @@ class EXPRESRV2(RV2):
 
         # Primary with just EPRV Standard FITS Headers
         # primary_header = self.standardizeExpresHeader(hdul)
-
         head0 = hdul[0].header
         standard_head = OrderedDict()
         for key in header_map.index:
@@ -124,52 +122,74 @@ class EXPRESRV2(RV2):
             print(f"{key}: {standard_head[key]}")
         primary_header = standard_head
 
-        self.set_header("PRIMARY", primary_header)
+        self.set_header("INSTRUMENT_HEADER", hdul[0].header)
+        ext_table["extension_name"].append("INSTRUMENT_HEADER")
+        ext_table["description"].append("Primary header of native instrument file")
 
-        # # Original Instrument Header
-        self.set_header("INSTRUMENT_HEADER", primary_header)
-
-        # # Receipt?
-
-        # # DRP Config?
+        # Order Table
+        order_table_data = pd.DataFrame(
+            {
+                "echelle_order": 160 - np.arange(hdul[1].data["wavelength"].shape[0]), # Need to figure this out
+                "order_index": np.arange(hdul[1].data['wavelength'].shape[0]),
+                "wave_start": np.nanmin(hdul[1].data['wavelength'].data, axis=1),
+                "wave_end": np.nanmax(hdul[1].data['wavelength'].data, axis=1),
+            }
+        )
+        self.set_data("ORDER_TABLE", order_table_data)
+        ext_table["extension_name"].append("ORDER_TABLE")
+        ext_table["description"].append("Table of echelle order information")       
 
         itrace = 1
-
         # # BLAZE
         blaze = data["blaze"]
         self.set_data(f"TRACE{itrace}_BLAZE", blaze)
-
+        ext_table["extension_name"].append(f"TRACE{itrace}_BLAZE")
+        ext_table["description"].append(
+            f"Blaze function"
+        )
         # # SPECTRUM
         spec = data["spectrum"] * blaze
         self.set_data(f"TRACE{itrace}_FLUX", spec)
+        ext_table["extension_name"].append(f"TRACE{itrace}_FLUX")
+        ext_table["description"].append(
+            f"Flux in EXPRES SCI fiber"
+        )
 
         # # Wavelength
         wave = data['wavelength']
         self.set_data(f"TRACE{itrace}_WAVE", wave)
-        # # cont = data['continuum']
+        ext_table["extension_name"].append(f"TRACE{itrace}_WAVE")
+        ext_table["description"].append(
+            f"Wavelength solution for EXPRES SCI fiber"
+        )
 
         # # Variance
         variance = data['uncertainty'] ** 2.
         self.set_data(f"TRACE{itrace}_VAR", variance)
-
+        ext_table["extension_name"].append(f"TRACE{itrace}_VAR")
+        ext_table["description"].append(
+            f"Wavelength solution for EXPRES SCI fiber"
+        )
+         
         # # Barycentric Correction
         bary_arr = data["bary_wavelength"]  # data['bary_wavelength']
         berv_kms = ((1 - bary_arr / wave) * c.to("km/s")).value
         berv_z = 1 - bary_arr / wave
         self.set_data("BARYCORR_KMS", berv_kms)
+        ext_table["extension_name"].append("BARYCORR_KMS")
+        ext_table["description"].append(
+            "Barycentric correction velocity per order in km/s"
+        )
+                
         self.set_data("BARYCORR_Z", berv_z)
-
-        # # Photon Weighted Midpoint
-        # #   (FORMAT DOES NOT MATCH BARYCORR_KMS)
-
-        # self.set_data("BJD_TDB", expmeter_header["HIERARCH wtd_mdpt"])
-
-        # # Instrument Drift Map (REQUIRED)
-        # # EXPRES doesn't really calculate this...
-        # # I could make this a polynomial v. excalibur wavelength thing, but that's not really honest
-        # self.create_extension("DRIFT", "ImageHDU", data=np.zeros_like(wave)) # setting to zero assuming shifts expected
+        ext_table["extension_name"].append("BARYCORR_Z")
+        ext_table["description"].append(
+            "Barycentric correction velocity per order in redshift (z)"
+        )
 
         # # Exposure Meter
+        expmeter_header = hdul[2].header
+        expmeter_data = hdul[2].data.copy()
         expmeter_array = np.array([row[0] for row in expmeter_data]).T
         expmeter_times = hdul[2].data['midpoints'].astype(np.float64)
         expmeter_wavelengths = hdul[2].data['wavelengths'][0].astype(np.float64)
@@ -178,21 +198,22 @@ class EXPRESRV2(RV2):
         for i_wave, col_wavelength in enumerate(expmeter_wavelengths):
             expmeter_extension_data[str(col_wavelength)] = expmeter_array[i_wave]
 
-        self.create_extension("EXPMETER", "BinTableHDU",header=expmeter_header,
+        self.create_extension("EXPMETER", "BinTableHDU", header=expmeter_header,
                     data=expmeter_extension_data)
-        # ext_table["extension_name"].append("EXPMETER")
-        # ext_table["description"].append("Chromatic exposure meter")
-
-
-        # # Telemetry (Optional)
-        # # Might not have this either tbh
-        # # self.create_extension("TELEMETRY",)
+        ext_table["extension_name"].append("EXPMETER")
+        ext_table["description"].append("Chromatic exposure meter")
 
         # # Telluric Model
         telluric = data['tellurics']
         self.create_extension(f"TRACE{itrace}_TELLURIC", "ImageHDU", data=telluric)
+        ext_table["extension_name"].append("TRACE1_TELLURIC")
+        ext_table["description"].append(
+            "Telluric line and continuum absorption model"
+        )
 
-        # No sky model, ancillary spectrum, or image
+        # Set extension description table
+        self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))
+
 
     # =============================================================================
     # Methods for standardizing header keywords
