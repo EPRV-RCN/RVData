@@ -107,8 +107,7 @@ class RVDataModel(object):
         if not os.path.isfile(fn):
             raise IOError(f"{fn} does not exist.")
 
-        # populate it with self.read()
-        print('here')
+        # populate it with self.read()        
         this_data.read(fn, instrument, **kwargs)
         # Return this instance
         return this_data

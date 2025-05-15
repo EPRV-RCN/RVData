@@ -2,6 +2,7 @@ import numpy as np
 import os
 from astropy.io import fits
 from astropy.time import Time
+# import astropy.units as u
 from astropy.constants import c
 from collections import OrderedDict
 import pandas as pd
@@ -83,6 +84,7 @@ class EXPRESRV2(RV2):
             "extension_name": [],
             "description": [],
         }
+        head0 = hdul[0].header
 
         self.header_funcs = {
             'OBSTYPE': (lambda hdul: obstype_map[hdul[0].header['OBSTYPE']]),
@@ -98,12 +100,9 @@ class EXPRESRV2(RV2):
             'EXTRACT': (lambda hdul: hdul[1].header['EXTNAME']),
         }
 
-        # Primary with just EPRV Standard FITS Headers
-        # primary_header = self.standardizeExpresHeader(hdul)
-        head0 = hdul[0].header
+        # 0: Primary with just EPRV Standard FITS Headers        
         standard_head = OrderedDict()
         for key in header_map.index:
-            print(key)
             if key in static_headers.keys():  # Keywords that never change
                 standard_head[key] = static_headers[key]
             elif key in self.header_funcs.keys():  # Keywords that require processing
@@ -115,18 +114,32 @@ class EXPRESRV2(RV2):
 
                 else:
                     expres_val = head0[_]
-                print(expres_val)
                 if header_map.loc[key, 'required'] == 'N' and not expres_val:
                     continue
                 standard_head[key] = expres_val
-            print(f"{key}: {standard_head[key]}")
         primary_header = standard_head
+        self.set_header("PRIMARY", primary_header)
+        ext_table['extension_name'].append("PRIMARY")
+        ext_table['description'].append("EPRV Standard Header")
+        
+        # 1: Instrument Header 
+        self.set_header("INSTRUMENT_HEADER", head0)
+        ext_table['extension_name'].append("INSTRUMENT_HEADER")
+        ext_table['description'].append("Primary header of native instrument file")
 
-        self.set_header("INSTRUMENT_HEADER", primary_header)
-        ext_table["extension_name"].append("INSTRUMENT_HEADER")
-        ext_table["description"].append("Primary header of native instrument file")
+        # 2: Receipt 
+        ext_table['extension_name'].append("RECEIPT")
+        ext_table['description'].append("Receipt")
 
-        # Order Table
+        # 3: DRP_CONFIG
+        ext_table['extension_name'].append("DRP_CONFIG")
+        ext_table['description'].append("drp configuration information")        
+
+        # 4: EXT_DESCRIPT
+        ext_table['extension_name'].append("EXT_DESCRIPT")
+        ext_table['description'].append("extension config information")
+
+        # 5: ORDER_TABLE
         order_table_data = pd.DataFrame(
             {
                 "echelle_order": 160 - np.arange(hdul[1].data["wavelength"].shape[0]),
@@ -139,39 +152,35 @@ class EXPRESRV2(RV2):
         ext_table["extension_name"].append("ORDER_TABLE")
         ext_table["description"].append("Table of echelle order information")
 
+        # Spectrum data
+        
         itrace = 1
-        # # BLAZE
         blaze = data["blaze"]
-        self.set_data(f"TRACE{itrace}_BLAZE", blaze)
-        ext_table["extension_name"].append(f"TRACE{itrace}_BLAZE")
-        ext_table["description"].append(
-            "Blaze function"
-        )
-        # # SPECTRUM
+        
+        # 6: TRACE1_FLUX
         spec = data["spectrum"] * blaze
         self.set_data(f"TRACE{itrace}_FLUX", spec)
         ext_table["extension_name"].append(f"TRACE{itrace}_FLUX")
-        ext_table["description"].append(
-            "Flux"
-        )
+        ext_table["description"].append("Flux")
 
-        # # Wavelength
+        # 7: TRACE1_WAVE
         wave = data['wavelength']
         self.set_data(f"TRACE{itrace}_WAVE", wave)
         ext_table["extension_name"].append(f"TRACE{itrace}_WAVE")
-        ext_table["description"].append(
-            "Wavelength solution"
-        )
+        ext_table["description"].append("Wavelength solution")
 
-        # # Variance
+        # 8: TRACE1_VAR  
         variance = data['uncertainty'] ** 2.
         self.set_data(f"TRACE{itrace}_VAR", variance)
         ext_table["extension_name"].append(f"TRACE{itrace}_VAR")
-        ext_table["description"].append(
-            "Variance"
-        )
+        ext_table["description"].append("Variance")
 
-        # # Barycentric Correction
+        # 9: TRACE1_BLAZE               
+        self.set_data(f"TRACE{itrace}_BLAZE", blaze)
+        ext_table["extension_name"].append(f"TRACE{itrace}_BLAZE")
+        ext_table["description"].append("Blaze function")
+
+        # # 10+11: BARYCORR_KMS + BARYCORR_Z
         bary_arr = data["bary_wavelength"]  # data['bary_wavelength']
         berv_kms = ((1 - bary_arr / wave) * c.to("km/s")).value
         berv_z = 1 - bary_arr / wave
@@ -187,7 +196,12 @@ class EXPRESRV2(RV2):
             "Barycentric correction velocity per order in redshift (z)"
         )
 
-        # # Exposure Meter
+        # # 12: BJD_TDB - need to convert this to by pixel
+        self.set_data("BJD_TDB", np.array([hdul[2].header['wtd_mdpt']]).astype(np.float64)) 
+        ext_table["extension_name"].append("BJD_TDB")
+        ext_table["description"].append("Photon weighted midpoint, barycentric dynamical time (JD)")        
+        
+        # # 12: Exposure Meter
         expmeter_header = hdul[2].header
         expmeter_data = hdul[2].data.copy()
         expmeter_array = np.array([row[0] for row in expmeter_data]).T
@@ -207,7 +221,7 @@ class EXPRESRV2(RV2):
         ext_table["extension_name"].append("EXPMETER")
         ext_table["description"].append("Chromatic exposure meter")
 
-        # # Telluric Model
+        # # 13: Telluric Model
         telluric = data['tellurics']
         self.create_extension(f"TRACE{itrace}_TELLURIC", "ImageHDU", data=telluric)
         ext_table["extension_name"].append("TRACE1_TELLURIC")
@@ -216,7 +230,7 @@ class EXPRESRV2(RV2):
         )
 
         # Set extension description table
-        self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))\
+        self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))
 
     # =============================================================================
     # Methods for standardizing header keywords
@@ -225,7 +239,6 @@ class EXPRESRV2(RV2):
         head0 = hdul[0].header
         standard_head = OrderedDict()
         for key in header_map.index:
-            print(key)
             if key in static_headers.keys():  # Keywords that never change
                 standard_head[key] = static_headers[key]
             elif key in self.header_funcs.keys():  # Keywords that require processing
@@ -237,18 +250,16 @@ class EXPRESRV2(RV2):
 
                 else:
                     expres_val = head0[_]
-                print(expres_val)
                 if header_map.loc[key, 'required'] == 'N' and not expres_val:
                     continue
                 standard_head[key] = expres_val
-            print(f"{key}: {standard_head[key]}")
         return standard_head
 
 
 def drpFlag(hdul):
     extensions_to_check = ['spectrum', 'blaze',
                            'wavelength', 'bary_wavelength',
-                           'excalibur', 'bary_excalibur',
+                           'excalibur', 'bary_excalibur', # We don't actually need this here 
                            'continuum', 'tellurics']
     extension_list = hdul[1].data.dtype.names
     percent_there = np.sum([extn in extension_list for extn in extensions_to_check])/len(extensions_to_check)
