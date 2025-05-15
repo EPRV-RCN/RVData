@@ -12,7 +12,7 @@ def main():
     for date in tqdm(dates):
         files = glob(join(ORIGINAL_DIR, f"20{date[:2]}", date,  'Sun*.fits'))
         for fh in tqdm(files):
-            out_fh = join(TRANSLATED_DIR, f"20{date[:2]}", date, basename(fh).replace('.fits', '_expres.fits'))
+            out_fh = join(TRANSLATED_DIR, f"20{date[:2]}", date, basename(fh).replace('.fits', '_expres_lvl2.fits'))
             # if not exists(out_fh):
             makedirs(dirname(out_fh), exist_ok=True)
             try:
