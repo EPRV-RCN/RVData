@@ -14,8 +14,8 @@ Base Classes
 .. toctree::
    :maxdepth: 1
 
-   data_model/base_model.rst
-   data_model/level_2.rst
+   data_model/base_model
+   data_model/level_2
 
 
 Instrument Classes
@@ -23,7 +23,12 @@ Instrument Classes
 .. toctree::
    :maxdepth: 1
 
-   data_model/kpf.rst
+   data_model/kpf
+   data_model/expres
+   data_model/neid
+   data_model/espresso
+   data_model/harps
+   data_model/harpsn
 
 
 Tools
