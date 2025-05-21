@@ -167,3 +167,8 @@ cython_debug/
 local_testing.py
 test.ipynb
 batch_expres.py
+test.csv
+log.txt
+checkout_summary.txt
+standard.fits
+
