@@ -24,7 +24,6 @@ Instrument Classes
    :maxdepth: 1
 
    data_model/kpf
-   data_model/expres
    data_model/neid
    data_model/espresso
    data_model/harps

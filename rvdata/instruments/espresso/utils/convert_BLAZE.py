@@ -49,9 +49,10 @@ def convert_BLAZE(
         for slice in range(1, slice_nb + 1):
             # Extract the corresponding data for this slice
             # Each slice takes every slice_nb-th row starting from (slice-1)
-            blaze_hdu = fits.ImageHDU(
-                data=hdul[1].data[slice - 1 :: slice_nb, :], header=hdul[1].header
-            )
+            single_cam_values = hdul[1].data[slice - 1 :: slice_nb, :]
+
+            # Update the header of the new HDU with relevant metadata
+            blaze_hdu = fits.ImageHDU(data=single_cam_values, header=hdul[1].header)
 
             # Update the header of the new HDU with relevant metadata
             blaze_hdu.header["EXTNAME"] = (
