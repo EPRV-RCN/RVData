@@ -1,6 +1,5 @@
 from collections import OrderedDict
-import importlib
-
+import importlib.resources
 import numpy as np
 import pandas as pd
 
@@ -13,14 +12,25 @@ FITS_TYPE_MAP = {
 
 # Header keywords required by all levels of data are defined in a series
 # of CSV files in this directory.
-config_path = importlib.resources.files(__name__) / "config"
+try:
+    config_path = importlib.resources.files("rvdata.core.models.config")
+except Exception:
+    config_path = None  # fallback for Sphinx/doc builds
 
-LEVEL2_EXTENSIONS = pd.read_csv(config_path / "L2-extensions.csv")
-LEVEL2_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L2-PRIMARY-keywords.csv")
+if config_path is not None:
+    LEVEL2_EXTENSIONS = pd.read_csv(config_path / "L2-extensions.csv")
+    LEVEL2_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L2-PRIMARY-keywords.csv")
+else:
+    LEVEL2_EXTENSIONS = None
+    LEVEL2_PRIMARY_KEYWORDS = None
 
 # Dictionary of instrument readers
 INSTRUMENT_READERS = {
-    "KPF": {"module": "rvdata.instruments.kpf.level2", "class": "KPFRV2", "method": "_read"},
+    "KPF": {
+        "module": "rvdata.instruments.kpf.level2",
+        "class": "KPFRV2",
+        "method": "_read",
+    },
     "ESPRESSO": {
         "module": "rvdata.instruments.espresso.level2",
         "class": "ESPRESSORV2",

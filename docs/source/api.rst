@@ -24,3 +24,11 @@ Instrument Classes
    :maxdepth: 1
 
    data_model/kpf.rst
+
+
+Tools
+-----
+.. automodule:: rvdata.core.tools.git
+   :members:
+   :undoc-members:
+   :show-inheritance:
