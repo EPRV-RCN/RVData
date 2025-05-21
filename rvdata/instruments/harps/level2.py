@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/harps/level2.py
 
 UNIGE-ESO - EPRV
@@ -10,7 +10,8 @@ Version: 1.0.0
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 import os
 from astropy.io import fits
 
@@ -88,7 +89,7 @@ class HARPSRV2(RV2):
     """
 
     def do_conversion(
-            self, hdul: fits.HDUList, directory_structure: str = 'standard'
+        self, hdul: fits.HDUList, directory_structure: str = "standard"
     ) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
@@ -129,20 +130,15 @@ class HARPSRV2(RV2):
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
-            dpr_type = (
-                hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE']
-                .split(",")[1]
-            )
+            dpr_type = hdu_raw["PRIMARY"].header["HIERARCH ESO DPR TYPE"].split(",")[1]
         fibers = config.fiber.get(dpr_type, {})
 
         for fiber in fibers:
             convert_S2D_BLAZE(
-                self, names["s2d_blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["s2d_blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
             convert_BLAZE(
-                self, names["blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
             trace_ind_start += config.slice_nb
 

@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/harpsn/level2.py
 
 UNIGE-ESO - EPRV
@@ -10,16 +10,20 @@ Version: 1.0.0
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 import os
 
 from rvdata.core.models.level2 import RV2
 import rvdata.instruments.harpsn.config.config as config
 from rvdata.instruments.harpsn.utils import (
-    convert_S2D_BLAZE, convert_BLAZE,
-    convert_DRIFT, get_files_names,
-    create_PRIMARY, validate_fits_file
+    convert_S2D_BLAZE,
+    convert_BLAZE,
+    convert_DRIFT,
+    get_files_names,
+    create_PRIMARY,
+    validate_fits_file,
 )
 
 # HARPS-N Level2 Reader
@@ -84,7 +88,7 @@ class HARPSNRV2(RV2):
     """
 
     def do_conversion(
-            self, hdul: fits.HDUList, directory_structure: str = 'standard'
+        self, hdul: fits.HDUList, directory_structure: str = "standard"
     ) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
@@ -125,20 +129,15 @@ class HARPSNRV2(RV2):
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
-            dpr_type = (
-                hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE']
-                .split(",")[1]
-            )
+            dpr_type = hdu_raw["PRIMARY"].header["HIERARCH TNG DPR TYPE"].split(",")[1]
         fibers = config.fiber.get(dpr_type, {})
 
         for fiber in fibers:
             convert_S2D_BLAZE(
-                self, names["s2d_blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["s2d_blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
             convert_BLAZE(
-                self, names["blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
             trace_ind_start += config.slice_nb
 

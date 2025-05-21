@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/espresso/level2.py
 
 UNIGE-ESO - EPRV
@@ -10,7 +10,8 @@ Version: 1.0.0
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 import os
 
@@ -25,7 +26,7 @@ from rvdata.instruments.espresso.utils import (
     validate_fits_file,
     convert_RAW,
     convert_TELLURIC,
-    convert_SKYSUB
+    convert_SKYSUB,
 )
 
 # ESPRESSO Level2 Reader
@@ -91,7 +92,7 @@ class ESPRESSORV2(RV2):
     """
 
     def do_conversion(
-            self, hdul: fits.HDUList, directory_structure: str = 'standard'
+        self, hdul: fits.HDUList, directory_structure: str = "standard"
     ) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
@@ -132,58 +133,50 @@ class ESPRESSORV2(RV2):
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
-            dpr_type = (
-                hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE']
-                .split(",")[1]
-            )
+            dpr_type = hdu_raw["PRIMARY"].header["HIERARCH ESO DPR TYPE"].split(",")[1]
         fibers = config.fiber.get(dpr_type, {})
 
         convert_RAW(self, path)
 
         for fiber in fibers:
             convert_S2D_BLAZE(
-                self, names["s2d_blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["s2d_blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
             convert_BLAZE(
-                self, names["blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
-            if fiber == 'A':
+            if fiber == "A":
                 try:
                     convert_TELLURIC(
-                        self, names["telluric_file_"+fiber],
-                        trace_ind_start, config.slice_nb
+                        self,
+                        names["telluric_file_" + fiber],
+                        trace_ind_start,
+                        config.slice_nb,
                     )
-                    print(
-                        'TRACEi_TELLURIC_x extensions '
-                        'have been generated.'
-                    )
+                    print("TRACEi_TELLURIC_x extensions " "have been generated.")
                 except Exception:
                     print(
-                        'No TELLURIC file found, TRACEi_TELLURIC_x extensions '
-                        'will not be generated.'
+                        "No TELLURIC file found, TRACEi_TELLURIC_x extensions "
+                        "will not be generated."
                     )
 
                 try:
                     convert_SKYSUB(
-                        self, names["skysub_file_"+fiber],
-                        trace_ind_start, config.slice_nb
+                        self,
+                        names["skysub_file_" + fiber],
+                        trace_ind_start,
+                        config.slice_nb,
                     )
-                    print(
-                        'TRACEi_SKYSUB_x extensions '
-                        'have been generated.'
-                    )
+                    print("TRACEi_SKYSUB_x extensions " "have been generated.")
                 except Exception:
                     print(
-                        'No SKYSUB file found, TRACEi_SKYSUB_x extensions '
-                        'will not be generated.'
+                        "No SKYSUB file found, TRACEi_SKYSUB_x extensions "
+                        "will not be generated."
                     )
 
-            if fiber == 'B':
+            if fiber == "B":
                 convert_DRIFT(
-                    self, names["drift_file_"+fiber],
-                    trace_ind_start, config.slice_nb
+                    self, names["drift_file_" + fiber], trace_ind_start, config.slice_nb
                 )
 
             trace_ind_start += config.slice_nb

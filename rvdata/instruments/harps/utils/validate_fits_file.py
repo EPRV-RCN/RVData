@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/harps/utils/validate_fits_file.py
 
 UNIGE-ESO - EPRV
@@ -12,7 +12,8 @@ Validates a FITS file to ensure it meets the necessary criteria for conversion.
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 
 import rvdata.instruments.harps.config.config as config
@@ -31,7 +32,7 @@ def validate_fits_file(path: str) -> None:
 
     with fits.open(path) as hdu_raw:
         # Check required DPR category
-        dpr_catg = hdu_raw['PRIMARY'].header['HIERARCH ESO DPR CATG']
+        dpr_catg = hdu_raw["PRIMARY"].header["HIERARCH ESO DPR CATG"]
         if dpr_catg != config.DPR_CATG_REQUIRED:
             print("Not translatable")
             raise ValueError(
@@ -40,7 +41,7 @@ def validate_fits_file(path: str) -> None:
             )
 
         # Check excluded objects
-        object_name = hdu_raw['PRIMARY'].header['OBJECT']
+        object_name = hdu_raw["PRIMARY"].header["OBJECT"]
         if object_name in config.EXCLUDE_OBJECTS:
             print("Not translatable")
             raise ValueError(
@@ -49,18 +50,16 @@ def validate_fits_file(path: str) -> None:
             )
 
         # Check excluded DPR types
-        dpr_type = (
-            hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE'].split(",")[1]
-        )
+        dpr_type = hdu_raw["PRIMARY"].header["HIERARCH ESO DPR TYPE"].split(",")[1]
         if dpr_type in config.EXCLUDE_DPR_TYPES:
             print("Not translatable")
             raise ValueError(
                 f"Error: File {path} corresponds to a '{dpr_type}' observation"
                 ". Conversion not possible."
-                )
+            )
 
         # Check excluded PROGRAM
-        program = hdu_raw['PRIMARY'].header['HIERARCH ESO OBS PROG ID']
+        program = hdu_raw["PRIMARY"].header["HIERARCH ESO OBS PROG ID"]
         if program in config.EXCLUDE_PROGRAMS:
             print("Not translatable")
             raise ValueError(
