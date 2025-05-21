@@ -1,12 +1,11 @@
 '''
-RVData/instruments/harpsn/level2.py
+RVData/rvdata/instruments/harpsn/level2.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
 Created: Mon Jan 20 2025
 Last Modified: Mon Jan 20 2025
 Version: 1.0.0
-Description:
 
 ---------------------
 Libraries
@@ -84,7 +83,9 @@ class HARPSNRV2(RV2):
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
-    def do_conversion(self, hdul: fits.HDUList) -> None:
+    def do_conversion(
+            self, hdul: fits.HDUList, directory_structure: str = 'standard'
+    ) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
 
@@ -99,6 +100,8 @@ class HARPSNRV2(RV2):
 
         Args:
             hdul (fits.HDUList): The FITS HDU list to be processed.
+            directory_structure (str): Type of database architecture that stores
+                resources. Must be either 'dace' or 'standard'.
 
         Raises:
             ValueError: If the FITS file is invalid and does not meet the
@@ -116,7 +119,7 @@ class HARPSNRV2(RV2):
             raise ValueError(e)
 
         # Retrieve the paths for the necessary files
-        names = get_files_names(path)
+        names = get_files_names(path, directory_structure)
 
         # Convert S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
         trace_ind_start = 1
@@ -147,6 +150,11 @@ class HARPSNRV2(RV2):
         nb_trace = nb_fiber * config.slice_nb
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
-        # Remove unnecessary extensions
-        self.del_extension('RECEIPT')
-        self.del_extension('DRP_CONFIG')
+        # Remove empty extensions
+        rm_list = []
+        for key, value in self.headers.items():
+            if len(value) == 0:
+                rm_list.append(key)
+
+        for key in rm_list:
+            self.del_extension(key)

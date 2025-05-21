@@ -7,6 +7,9 @@ EXCLUDE_OBJECTS = {"SUN", "solar_spectrum", "Sun"}
 # DPR types that should be excluded from conversion
 EXCLUDE_DPR_TYPES = {"CIRPOL"}
 
+# PROGRAM that should be excluded from conversion
+EXCLUDE_PROGRAMS = {"60.A-9036"}
+
 fiber = {
     "WAVE": {'A': 'SCI', 'B': 'FP'},
     "SKY": {'A': 'SCI', 'B': 'SKY'},
@@ -26,6 +29,9 @@ NUMORDER = 71
 
 # Order of the empty row in order to correct size (correspond to the first GAP)
 empty_raw_order = 44
+
+# DRS version for proper file search functionality.
+DRS_VERSION = "DRS-3.2.5"
 
 # Allows the conversion of S2D_BLAZE files
 extnames = {

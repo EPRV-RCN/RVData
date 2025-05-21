@@ -1,5 +1,5 @@
 '''
-RVData/instruments/espresso/utils/validate_fits_file.py
+RVData/rvdata/instruments/espresso/utils/validate_fits_file.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,6 +7,7 @@ Created: Mon Mar 03 2025
 Last Modified: Mon Mar 03 2025
 Version: 1.0.0
 Description:
+Validates a FITS file to ensure it meets the necessary criteria for conversion.
 
 ---------------------
 Libraries
@@ -14,7 +15,7 @@ Libraries
 '''
 from astropy.io import fits
 
-import instruments.espresso.config.config as config
+import rvdata.instruments.espresso.config.config as config
 
 
 def validate_fits_file(path: str) -> None:
@@ -44,7 +45,7 @@ def validate_fits_file(path: str) -> None:
             print("Not translatable")
             raise ValueError(
                 f"Error: File {path} corresponds to an observation of "
-                "{object_name}. Conversion not possible."
+                f"{object_name}. Conversion not possible."
             )
 
         # Check excluded DPR types
@@ -57,6 +58,15 @@ def validate_fits_file(path: str) -> None:
             raise ValueError(
                 f"Error: File {path} corresponds to a '{dpr_type}' "
                 "observation. Conversion not possible."
+            )
+
+        # Check excluded PROGRAM
+        program = hdu_raw['PRIMARY'].header['HIERARCH ESO OBS PROG ID']
+        if program in config.EXCLUDE_PROGRAMS:
+            print("Not translatable")
+            raise ValueError(
+                f"Error: File {path} corresponds to a specific program'{program}'"
+                ". Conversion not possible."
             )
 
         print(dpr_catg, dpr_type, object_name)

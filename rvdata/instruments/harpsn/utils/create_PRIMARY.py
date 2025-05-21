@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harpsn/utils/create_PRIMARY.py
+RVData/rvdata/instruments/harpsn/utils/create_PRIMARY.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,6 +7,11 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+Extracts and processes the necessary data to create the PRIMARY header. It uses
+the header_map.csv file to match TNG keywords with those of the new format.
+The process works in two phases: first, automatically retrieving keywords that
+are already in the correct format, and then modifying the remaining ones on a
+case-by-case basis. Stores all the keywords in an `RV2` PRIMARY object.
 
 ---------------------
 Libraries
@@ -32,17 +37,41 @@ import pandas as pd
 import math
 import numpy as np
 
-import instruments.harpsn.config.config as config
-from core.models.level2 import RV2
+import rvdata.instruments.harpsn.config.config as config
+from rvdata.core.models.level2 import RV2
 
 
 def create_PRIMARY(
         RV2: RV2, names: list[str],
         nb_trace: int, nb_slice: int
 ) -> None:
-    """Creates the L2 header by copying the information from the raw file and
-    adding the necessary information for the L2 file.
     """
+    Create the PRIMARY HDU for the L2 FITS file by copying relevant metadata
+    from different files and applying necessary transformations.
+
+    This function reads a mapping file (`header_map.csv`) that specifies how
+    to translate, copy, or compute header keywords for the L2 file. It then
+    constructs a `PrimaryHDU` with the appropriate metadata.
+
+    Parameters:
+        RV2 (RV2): An instance of the RV2 class containing metadata and headers
+            required for processing.
+        names (list[str]): A dictionary mapping different file types (e.g., raw file)
+            to their corresponding file paths.
+        nb_trace (int): Number of traces in the dataset.
+        nb_slice (int): Number of slices in the dataset.
+
+    Returns:
+        None : The function modifies the RV2 object in place by adding or
+            updating the extnames_raw extensions.
+
+    Notes:
+    - If a keyword has `skip = True` in `header_map.csv`, it is not copied
+      automatically but requires a specific computation.
+    - If a keyword value is missing in the source file, it is set to `Null`.
+    - Special handling is applied for some keyword.
+    """
+
     # We create an empty HDU to store the L2 Primary header
     l2_hdu = fits.PrimaryHDU(data=None)
     l2_hdu.header['EXTNAME'] = 'PRIMARY'
@@ -56,7 +85,10 @@ def create_PRIMARY(
     # Load the CSV file
     header_map = pd.read_csv(header_map_path)
 
+    # We iterate through the header_map file to translate each keyword.
     for index, values in header_map.iterrows():
+        # If the keyword has its skip value set to True, it is not copied
+        # automatically but requires a specific calculation or conversion.
         if (bool(header_map['skip'].iloc[index]) is True):
             continue
 
@@ -99,20 +131,27 @@ def create_PRIMARY(
                         header_map['Description'].iloc[index]
                     )
 
-            # If the value is not present in the raw file, we set it to Null
+            # If the value is not present in the raw file, we set it to the
+            # default value define in the header map
             else:
                 l2_hdu.header[values.iloc[0]] = (
-                    'Null',
+                    header_map['default_value'].iloc[index],
                     header_map['Description'].iloc[index]
                 )
 
+        # If an error occurs (mostly due to the absence of the keyword in the
+        # specified file), the value is set to the default value define in the
+        # header map.
         except Exception as e:
             l2_hdu.header[values.iloc[0]] = (
-                'Null',
+                header_map['default_value'].iloc[index],
                 header_map['Description'].iloc[index]
             )
             key = header_map['Keyword'].iloc[index]
             print(f'{e} Also named {key}.')
+
+    # Here, we handle each skipped keyword by applying specific
+    # translations/conversions.
 
     # FILENAME KEYWORD
     l2_hdu.header['FILENAME'] = (
@@ -132,11 +171,17 @@ def create_PRIMARY(
             ]['TNG_keyword'].iloc[0]
         ]
     )
-    if (catalog_data['CID'] != 'Null'):
+    cid_default = header_map[
+        header_map['Keyword'] == 'CID'
+    ]['default_value'].iloc[0]
+
+    if (catalog_data['CID'] != cid_default):
         try:
             catalog_data['CCLR'] = get_gaia_data(catalog_data['CID'])
         except Exception:
             print('Gaia request failed.')
+    else:
+        print("Gaia request can't be done because SIMBAD request failed")
 
     catalog_data['CRA'] = RV2.headers['INSTRUMENT_HEADER'][
         header_map[header_map['Keyword'] == 'CRA']['TNG_keyword'].iloc[0]
@@ -152,7 +197,7 @@ def create_PRIMARY(
     rv_z = round(rv/(c/1e3).value, 8)
     catalog_data['CZ'] = rv_z
 
-    # Keywords qui dependent du numéro de la TRACE
+    # Keywords that depend on the TRACE number.
     keyword_list = [
         'CSRC', 'CID', 'CRA', 'CDEC', 'CEQNX',
         'CEPCH', 'CPLX', 'CPMR', 'CPMD', 'CRV', 'CZ', 'CCLR'
@@ -193,7 +238,9 @@ def create_PRIMARY(
                 )
             else:
                 l2_hdu.header['TRACE'+str(i)] = (
-                    'UNKNOWN',
+                    header_map[
+                        header_map['Keyword'] == 'TRACE'
+                    ]['default_value'].iloc[0],
                     header_map[
                         header_map['Keyword'] == 'TRACE'
                     ]['Description'].iloc[0]
@@ -228,7 +275,9 @@ def create_PRIMARY(
                     )
             else:
                 l2_hdu.header['CLSRC'+str(i)] = (
-                    'Null',
+                    header_map[
+                        header_map['Keyword'] == 'CLSRC'
+                    ]['default_value'].iloc[0],
                     header_map[
                         header_map['Keyword'] == 'CLSRC'
                     ]['Description'].iloc[0]
@@ -245,7 +294,9 @@ def create_PRIMARY(
             else:
                 for keyword in keyword_list:
                     l2_hdu.header[keyword+str(i)] = (
-                        'Null',
+                        header_map[
+                            header_map['Keyword'] == keyword
+                        ]['default_value'].iloc[0],
                         header_map[
                             header_map['Keyword'] == keyword
                         ]['Description'].iloc[0]
@@ -379,38 +430,34 @@ def create_PRIMARY(
 
     # EXSNRW-N KEYWORD
     for i in range(int(l2_hdu.header['NUMORDER'])):
-        for j in range(nb_slice):
-            l2_hdu.header[f'EXSNRW{str(i*nb_slice+j)}'] = (
-                round(
-                    RV2.data["TRACE1_WAVE"][i, 0]
-                    + (
-                        RV2.data["TRACE1_WAVE"][i, -1]
-                        - RV2.data["TRACE1_WAVE"][i, 0]
-                    )/2
-                ),
-                header_map[header_map['Keyword'] == 'EXSNRW'][
-                    'Description'
-                ].iloc[0]
-            )
+        l2_hdu.header[f'EXSNRW{str(i+1)}'] = (
+            round(
+                RV2.data["TRACE1_WAVE"][i, 0]
+                + (
+                    RV2.data["TRACE1_WAVE"][i, -1]
+                    - RV2.data["TRACE1_WAVE"][i, 0]
+                )/2
+            ),
+            header_map[header_map['Keyword'] == 'EXSNRW'][
+                'Description'
+            ].iloc[0]
+        )
 
     # DRPFLAG KEYWORD
     drp_flag = RV2.headers['INSTRUMENT_HEADER'][
         header_map[header_map['Keyword'] == 'DRPFLAG']['TNG_keyword'].iloc[0]
     ]
     if drp_flag == 1:
-        l2_hdu.header['DRPFLAG'] = (
-            'Pass',
-            header_map[header_map['Keyword'] == 'DRPFLAG'][
-                'Description'
-            ].iloc[0]
-        )
+        drpflag = 'Pass'
     else:
-        l2_hdu.header['DRPFLAG'] = (
-            'Fail',
-            header_map[
-                header_map['Keyword'] == 'DRPFLAG'
-            ]['Description'].iloc[0]
-        )
+        drpflag = 'Fail'
+
+    l2_hdu.header['DRPFLAG'] = (
+        drpflag,
+        header_map[
+            header_map['Keyword'] == 'DRPFLAG'
+        ]['Description'].iloc[0]
+    )
 
     # COLOFLAG KEYWORD
     try:
@@ -420,26 +467,18 @@ def create_PRIMARY(
             ]['TNG_keyword'].iloc[0]
         ]
         if (color_flag == 1):
-            l2_hdu.header['COLOFLAG'] = (
-                'Pass',
-                header_map[
-                    header_map['Keyword'] == 'COLOFLAG'
-                ]['Description'].iloc[0]
-            )
+            coloflag = 'Pass'
         else:
-            l2_hdu.header['COLOFLAG'] = (
-                'Fail',
-                header_map[header_map['Keyword'] == 'COLOFLAG'][
-                    'Description'
-                ].iloc[0]
-            )
+            coloflag = 'Fail'
     except Exception:
-        l2_hdu.header['COLOFLAG'] = (
-            'Fail',
-            header_map[header_map['Keyword'] == 'COLOFLAG'][
-                'Description'
-            ].iloc[0]
-        )
+        coloflag = 'Fail'
+
+    l2_hdu.header['COLOFLAG'] = (
+        coloflag,
+        header_map[header_map['Keyword'] == 'COLOFLAG'][
+            'Description'
+        ].iloc[0]
+    )
 
     # SUMMFLAG KEYWORD
     flags = ["COLOFLAG", "TELFLAG", "INSTFLAG", "DRPFLAG", "OBSFLAG"]
@@ -450,33 +489,20 @@ def create_PRIMARY(
     # State priority : Fail > Warn > Pass
     if "Fail" in flag_values:
         if "Fail" == flag_values[0] and "Fail" not in flag_values[1:]:
-            l2_hdu.header['SUMMFLAG'] = (
-                "Warn",
-                header_map[
-                    header_map['Keyword'] == 'SUMMFLAG'
-                ]['Description'].iloc[0]
-            )
+            summflag = 'Warn'
         else:
-            l2_hdu.header['SUMMFLAG'] = (
-                "Fail",
-                header_map[
-                    header_map['Keyword'] == 'SUMMFLAG'
-                ]['Description'].iloc[0]
-            )
+            summflag = 'Fail'
     elif "Warn" in flag_values:
-        l2_hdu.header['SUMMFLAG'] = (
-            "Warn",
-            header_map[
-                header_map['Keyword'] == 'SUMMFLAG'
-            ]['Description'].iloc[0]
-        )
+        summflag = 'Warn'
     else:
-        l2_hdu.header['SUMMFLAG'] = (
-            "Pass",
-            header_map[
-                header_map['Keyword'] == 'SUMMFLAG'
-            ]['Description'].iloc[0]
-        )
+        summflag = 'Pass'
+
+    l2_hdu.header['SUMMFLAG'] = (
+        summflag,
+        header_map[
+            header_map['Keyword'] == 'SUMMFLAG'
+        ]['Description'].iloc[0]
+    )
 
     if ('PRIMARY' not in RV2.extensions):
         RV2.create_extension(
@@ -517,7 +543,7 @@ def get_simbad_data(obj: str) -> dict:
         result = custom_simbad.query_object(obj)
 
         # Extract Gaia DR3 or DR2 identifiers
-        for name in result['IDS'][0].split('|'):
+        for name in result['ids'][0].split('|'):
             if (name.lower().startswith('gaia dr3')):
                 gaia_dr3_source = name[:8]
                 gaia_dr3_name = name[5:]
@@ -534,8 +560,8 @@ def get_simbad_data(obj: str) -> dict:
             data['CID'] = gaia_dr2_source
 
         # Retrieve parallax value
-        if not np.ma.is_masked(result['PLX_VALUE'][0]):
-            data['CPLX'] = result['PLX_VALUE'][0]
+        if not np.ma.is_masked(result['plx_value'][0]):
+            data['CPLX'] = result['plx_value'][0]
         else:
             data['CPLX'] = 'Null'
 
@@ -546,8 +572,15 @@ def get_simbad_data(obj: str) -> dict:
 
         # Return default values if the object is not found
         cat_list = ['CSRC', 'CID', 'CPLX', 'CCLR']
+
+        base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        header_map_path = os.path.join(base_dir, "config", "header_map.csv")
+        header_map = pd.read_csv(header_map_path)
+
         for key in cat_list:
-            data[key] = 'Null'
+            data[key] = header_map[
+                header_map['Keyword'] == key
+            ]['default_value'].iloc[0]
         return data
 
 
@@ -855,29 +888,25 @@ def get_moon_velocity_in_target_direction(
     # Convert Julian Day to Astropy Time object
     t = Time(julian_day, format='jd')
 
-    # Get the Moon's barycentric position & velocity (in AU and AU/day) using
-    # JPL ephemeris
+    # Get the Moon's barycentric position & velocity (in AU and AU/day)
+    # using JPL ephemeris
     moon_pos, moon_vel = get_body_barycentric_posvel(
         'moon', t, ephemeris='jpl'
     )
 
     # Extract velocity components (AU/day)
-    x_vel, y_vel, z_vel = moon_vel.xyz.to_value(u.AU/u.day)
+    x_vel, y_vel, z_vel = moon_vel.xyz.to_value(u.km/u.s)
 
     # Convert target coordinates (RA, Dec) to radians
     alpha_rad = np.deg2rad(alpha_deg)
     delta_rad = np.deg2rad(delta_deg)
 
     # Compute projected radial velocity
-    projected_velocity_au_per_day = (
+    projected_velocity_km_s = (
         x_vel * np.cos(alpha_rad) * np.cos(delta_rad) +
         y_vel * np.sin(alpha_rad) * np.cos(delta_rad) +
         z_vel * np.sin(delta_rad)
     )
-
-    # Convert AU/day to km/s
-    au_per_day_to_km_s = 149597870.691 / 86400.0
-    projected_velocity_km_s = projected_velocity_au_per_day*au_per_day_to_km_s
 
     return projected_velocity_km_s
 

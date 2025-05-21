@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harpsn/utils/convert_S2D_BLAZE.py
+RVData/rvdata/instruments/harpsn/utils/convert_S2D_BLAZE.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,6 +7,9 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+Extracts and processes data from an S2D_BLAZE FITS file. Stores key
+calibration values in an `RV2` object, applies a Doppler shift correction
+if needed, and organizes data into FITS extensions.
 
 ---------------------
 Libraries
@@ -16,8 +19,8 @@ from astropy.io import fits
 from astropy.constants import c
 import numpy as np
 
-from core.models.level2 import RV2
-import instruments.harpsn.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harpsn.config.config as config
 
 
 def convert_S2D_BLAZE(

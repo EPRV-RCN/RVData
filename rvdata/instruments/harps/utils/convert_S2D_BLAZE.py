@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harps/utils/convert_S2D_BLAZE.py
+RVData/rvdata/instruments/harps/utils/convert_S2D_BLAZE.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,6 +7,10 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+Extracts and processes data from an S2D_BLAZE FITS file. Stores key
+calibration values in an `RV2` object, applies a Doppler shift correction
+if needed, and organizes data into FITS extensions. Inserts a NaN row at
+a specified index and updates existing data if necessary.
 
 ---------------------
 Libraries
@@ -17,8 +21,8 @@ from astropy.constants import c
 import numpy as np
 
 
-from core.models.level2 import RV2
-import instruments.harps.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harps.config.config as config
 
 
 def convert_S2D_BLAZE(
@@ -164,11 +168,24 @@ def add_nan_row(matrix: np.ndarray, row_index: int) -> np.ndarray:
         matrix_updated (np.ndarray): A new array with the NaN row inserted.
     """
 
-    # Force the array to be of type float to avoid insertion issues
-    matrix = matrix.astype(np.float64)
+    # Get the original dtype
+    dtype = matrix.dtype
 
-    # Create a row filled with NaN values
-    nan_row = np.full((1, matrix.shape[1]), np.nan)
+    if (dtype.itemsize <= np.dtype(np.int16).itemsize):
+        if dtype == np.uint16:
+            # Create a row filled with '16384' values (same as bad pixel)
+            nan_row = np.full((1, matrix.shape[1]), 16384, dtype=dtype)
+        else:
+            raise ValueError(
+                "The extension data type does not support the addition of a row"
+                " for the missing order. The current data type of the extension "
+                "is '{0}', which is incompatible with the intended operation. "
+                "Please ensure the extension's data type allows insertion of NaN"
+                " values or consider using a compatible type.".format(dtype)
+            )
+    else:
+        # Create a row filled with NaN values
+        nan_row = np.full((1, matrix.shape[1]), np.nan, dtype=dtype)
 
     # Insert the NaN row into the array
     matrix_updated = np.insert(matrix, row_index, nan_row, axis=0)

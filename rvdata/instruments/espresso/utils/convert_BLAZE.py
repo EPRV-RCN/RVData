@@ -1,5 +1,5 @@
 '''
-RVData/instruments/espresso/utils/convert_S2D_BLAZE.py
+RVData/rvdata/instruments/espresso/utils/convert_S2D_BLAZE.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,6 +7,9 @@ Created: Mon Mar 03 2025
 Last Modified: Mon Mar 03 2025
 Version: 1.0.0
 Description:
+This script extracts 'BLAZE' calibration data from a FITS file and stores it in
+an `RV2` object as extensions (e.g., 'TRACE<X>_BLAZE'). It ensures proper
+naming, metadata handling, and updates existing extensions if necessary.
 
 ---------------------
 Libraries
@@ -14,7 +17,7 @@ Libraries
 '''
 from astropy.io import fits
 
-from core.models.level2 import RV2
+from rvdata.core.models.level2 import RV2
 
 
 def convert_BLAZE(
