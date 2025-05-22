@@ -8,10 +8,10 @@ from .create_PRIMARY import create_PRIMARY
 from .validate_fits_file import validate_fits_file
 
 __all__ = [
-    'convert_BLAZE',
-    'convert_DRIFT',
-    'convert_S2D_BLAZE',
-    'get_files_names',
-    'create_PRIMARY',
-    'validate_fits_file'
+    "convert_BLAZE",
+    "convert_DRIFT",
+    "convert_S2D_BLAZE",
+    "get_files_names",
+    "create_PRIMARY",
+    "validate_fits_file",
 ]

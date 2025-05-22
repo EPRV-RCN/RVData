@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/espresso/utils/convert_SKYSUB.py
 
 UNIGE-ESO - EPRV
@@ -15,7 +15,8 @@ naming, metadata handling, and updates existing extensions if necessary.
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 
 from rvdata.core.models.level2 import RV2
@@ -23,8 +24,7 @@ import rvdata.instruments.espresso.config.config as config
 
 
 def convert_SKYSUB(
-        RV2: RV2, file_path: str,
-        trace_ind_start: int, slice_nb: int
+    RV2: RV2, file_path: str, trace_ind_start: int, slice_nb: int
 ) -> None:
     """
     This function processes a FITS file and converts its data into multiple 'SKYSUB'
@@ -47,33 +47,33 @@ def convert_SKYSUB(
     with fits.open(file_path) as hdul:
         for field in config.extnames_skysub.keys():
             # Loop through each slice from 1 to slice_nb
-            for slice in range(1, slice_nb+1):
+            for slice in range(1, slice_nb + 1):
                 # Extract the corresponding data for this slice
                 # Each slice takes every slice_nb-th row starting from (slice-1)
                 skysub_hdu = fits.ImageHDU(
-                    data=hdul[field].data[slice-1::slice_nb, :],
-                    header=hdul[1].header
+                    data=hdul[field].data[slice - 1 :: slice_nb, :],
+                    header=hdul[1].header,
                 )
 
                 # Update the header of the new HDU with relevant metadata
-                skysub_hdu.header['EXTNAME'] = (
-                    'TRACE'
-                    + str(trace_ind_start+slice-1)
+                skysub_hdu.header["EXTNAME"] = (
+                    "TRACE"
+                    + str(trace_ind_start + slice - 1)
                     + config.extnames_skysub[field]
                 )
-                skysub_hdu.header['CTYPE1'] = ('Pixels', 'Name of axis 1')
-                skysub_hdu.header['CTYPE2'] = ('Order-N', 'Name of axis 2')
+                skysub_hdu.header["CTYPE1"] = ("Pixels", "Name of axis 1")
+                skysub_hdu.header["CTYPE2"] = ("Order-N", "Name of axis 2")
 
                 # Check if the extension already exists in the RV2 object
-                if (skysub_hdu.header['EXTNAME'] not in RV2.extensions):
+                if skysub_hdu.header["EXTNAME"] not in RV2.extensions:
                     # If the extension does not exist, create it
                     RV2.create_extension(
-                        ext_name=skysub_hdu.header['EXTNAME'],
-                        ext_type='ImageHDU',
+                        ext_name=skysub_hdu.header["EXTNAME"],
+                        ext_type="ImageHDU",
                         header=skysub_hdu.header,
-                        data=skysub_hdu.data
+                        data=skysub_hdu.data,
                     )
                 else:
                     # If the extension exists, update its data and header
-                    RV2.set_header(skysub_hdu.header['EXTNAME'], skysub_hdu.header)
-                    RV2.set_data(skysub_hdu.header['EXTNAME'], skysub_hdu.data)
+                    RV2.set_header(skysub_hdu.header["EXTNAME"], skysub_hdu.header)
+                    RV2.set_data(skysub_hdu.header["EXTNAME"], skysub_hdu.data)

@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/harpsn/utils/create_PRIMARY.py
 
 UNIGE-ESO - EPRV
@@ -16,7 +16,8 @@ case-by-case basis. Stores all the keywords in an `RV2` PRIMARY object.
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 from astropy.time import Time
 from astropy.constants import c
@@ -25,7 +26,7 @@ from astropy.coordinates import (
     EarthLocation,
     AltAz,
     get_body,
-    get_body_barycentric_posvel
+    get_body_barycentric_posvel,
 )
 from astropy import units as u
 from astroquery.simbad import Simbad
@@ -41,10 +42,7 @@ import rvdata.instruments.harpsn.config.config as config
 from rvdata.core.models.level2 import RV2
 
 
-def create_PRIMARY(
-        RV2: RV2, names: list[str],
-        nb_trace: int, nb_slice: int
-) -> None:
+def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> None:
     """
     Create the PRIMARY HDU for the L2 FITS file by copying relevant metadata
     from different files and applying necessary transformations.
@@ -74,7 +72,7 @@ def create_PRIMARY(
 
     # We create an empty HDU to store the L2 Primary header
     l2_hdu = fits.PrimaryHDU(data=None)
-    l2_hdu.header['EXTNAME'] = 'PRIMARY'
+    l2_hdu.header["EXTNAME"] = "PRIMARY"
 
     # Get the parent directory of the "utils" folder
     base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -89,54 +87,52 @@ def create_PRIMARY(
     for index, values in header_map.iterrows():
         # If the keyword has its skip value set to True, it is not copied
         # automatically but requires a specific calculation or conversion.
-        if (bool(header_map['skip'].iloc[index]) is True):
+        if bool(header_map["skip"].iloc[index]) is True:
             continue
 
         # Add the HIERARCH keyword to the header if the keyword is longer
         # than 8 characters
-        if (len(values.iloc[0]) > 8):
-            values.iloc[0] = 'HIERARCH ' + values.iloc[0]
+        if len(values.iloc[0]) > 8:
+            values.iloc[0] = "HIERARCH " + values.iloc[0]
         values.iloc[0] = values.iloc[0].strip()
 
         try:
             # If there is a fixed value to set, we set it
-            if (pd.notna(header_map['value'].iloc[index])):
+            if pd.notna(header_map["value"].iloc[index]):
                 l2_hdu.header[values.iloc[0]] = (
-                    header_map['value'].iloc[index],
-                    header_map['Description'].iloc[index]
+                    header_map["value"].iloc[index],
+                    header_map["Description"].iloc[index],
                 )
 
             # Otherwise, we copy the value from the good file
-            elif (pd.notna(header_map['TNG_keyword'].iloc[index])):
-                if (header_map['from'].iloc[index] == 'S2D_BLAZE_A'):
+            elif pd.notna(header_map["TNG_keyword"].iloc[index]):
+                if header_map["from"].iloc[index] == "S2D_BLAZE_A":
                     l2_hdu.header[values.iloc[0]] = (
-                        RV2.headers['INSTRUMENT_HEADER'][
-                            header_map['TNG_keyword'].iloc[index]
+                        RV2.headers["INSTRUMENT_HEADER"][
+                            header_map["TNG_keyword"].iloc[index]
                         ],
-                        header_map['Description'].iloc[index]
+                        header_map["Description"].iloc[index],
                     )
-                elif (header_map['from'].iloc[index] == 'RAW'):
+                elif header_map["from"].iloc[index] == "RAW":
                     with fits.open(names["raw_file"]) as hdu_raw:
                         l2_hdu.header[values.iloc[0]] = (
-                            hdu_raw['PRIMARY'].header[
-                                header_map['TNG_keyword'].iloc[index]
+                            hdu_raw["PRIMARY"].header[
+                                header_map["TNG_keyword"].iloc[index]
                             ],
-                            header_map['Description'].iloc[index]
+                            header_map["Description"].iloc[index],
                         )
-                elif (header_map['from'].iloc[index] == 'CONFIG'):
+                elif header_map["from"].iloc[index] == "CONFIG":
                     l2_hdu.header[values.iloc[0]] = (
-                        getattr(
-                            config, header_map['TNG_keyword'].iloc[index], None
-                        ),
-                        header_map['Description'].iloc[index]
+                        getattr(config, header_map["TNG_keyword"].iloc[index], None),
+                        header_map["Description"].iloc[index],
                     )
 
             # If the value is not present in the raw file, we set it to the
             # default value define in the header map
             else:
                 l2_hdu.header[values.iloc[0]] = (
-                    header_map['default_value'].iloc[index],
-                    header_map['Description'].iloc[index]
+                    header_map["default_value"].iloc[index],
+                    header_map["Description"].iloc[index],
                 )
 
         # If an error occurs (mostly due to the absence of the keyword in the
@@ -144,340 +140,321 @@ def create_PRIMARY(
         # header map.
         except Exception as e:
             l2_hdu.header[values.iloc[0]] = (
-                header_map['default_value'].iloc[index],
-                header_map['Description'].iloc[index]
+                header_map["default_value"].iloc[index],
+                header_map["Description"].iloc[index],
             )
-            key = header_map['Keyword'].iloc[index]
-            print(f'{e} Also named {key}.')
+            key = header_map["Keyword"].iloc[index]
+            print(f"{e} Also named {key}.")
 
     # Here, we handle each skipped keyword by applying specific
     # translations/conversions.
 
     # FILENAME KEYWORD
-    l2_hdu.header['FILENAME'] = (
-        'inst'
+    l2_hdu.header["FILENAME"] = (
+        "inst"
         + config.data_format
-        + '_'
-        + RV2.filename.split('.')[1].replace("-", "").replace("_", "")
-        + '.fits',
-        header_map[header_map['Keyword'] == 'FILENAME']['Description'].iloc[0]
+        + "_"
+        + RV2.filename.split(".")[1].replace("-", "").replace("_", "")
+        + ".fits",
+        header_map[header_map["Keyword"] == "FILENAME"]["Description"].iloc[0],
     )
 
     # Getting SIMBAD/GAIA Catalog datas
     catalog_data = get_simbad_data(
-        RV2.headers['INSTRUMENT_HEADER'][
-            header_map[
-                header_map['Keyword'] == 'OBJECT'
-            ]['TNG_keyword'].iloc[0]
+        RV2.headers["INSTRUMENT_HEADER"][
+            header_map[header_map["Keyword"] == "OBJECT"]["TNG_keyword"].iloc[0]
         ]
     )
-    cid_default = header_map[
-        header_map['Keyword'] == 'CID'
-    ]['default_value'].iloc[0]
+    cid_default = header_map[header_map["Keyword"] == "CID"]["default_value"].iloc[0]
 
-    if (catalog_data['CID'] != cid_default):
+    if catalog_data["CID"] != cid_default:
         try:
-            catalog_data['CCLR'] = get_gaia_data(catalog_data['CID'])
+            catalog_data["CCLR"] = get_gaia_data(catalog_data["CID"])
         except Exception:
-            print('Gaia request failed.')
+            print("Gaia request failed.")
     else:
         print("Gaia request can't be done because SIMBAD request failed")
 
-    catalog_data['CRA'] = RV2.headers['INSTRUMENT_HEADER'][
-        header_map[header_map['Keyword'] == 'CRA']['TNG_keyword'].iloc[0]
-    ].replace("h", ":").replace("m", ":")
+    catalog_data["CRA"] = (
+        RV2.headers["INSTRUMENT_HEADER"][
+            header_map[header_map["Keyword"] == "CRA"]["TNG_keyword"].iloc[0]
+        ]
+        .replace("h", ":")
+        .replace("m", ":")
+    )
 
-    add_keyword_cat = ['CDEC', 'CEQNX', 'CEPCH', 'CPMR', 'CPMD', 'CRV']
+    add_keyword_cat = ["CDEC", "CEQNX", "CEPCH", "CPMR", "CPMD", "CRV"]
     for keyword in add_keyword_cat:
-        catalog_data[keyword] = RV2.headers['INSTRUMENT_HEADER'][
-            header_map[header_map['Keyword'] == keyword]['TNG_keyword'].iloc[0]
+        catalog_data[keyword] = RV2.headers["INSTRUMENT_HEADER"][
+            header_map[header_map["Keyword"] == keyword]["TNG_keyword"].iloc[0]
         ]
 
-    rv = catalog_data['CRV']
-    rv_z = round(rv/(c/1e3).value, 8)
-    catalog_data['CZ'] = rv_z
+    rv = catalog_data["CRV"]
+    rv_z = round(rv / (c / 1e3).value, 8)
+    catalog_data["CZ"] = rv_z
 
     # Keywords that depend on the TRACE number.
     keyword_list = [
-        'CSRC', 'CID', 'CRA', 'CDEC', 'CEQNX',
-        'CEPCH', 'CPLX', 'CPMR', 'CPMD', 'CRV', 'CZ', 'CCLR'
+        "CSRC",
+        "CID",
+        "CRA",
+        "CDEC",
+        "CEQNX",
+        "CEPCH",
+        "CPLX",
+        "CPMR",
+        "CPMD",
+        "CRV",
+        "CZ",
+        "CCLR",
     ]
 
     with fits.open(names["raw_file"]) as hdu_raw:
-        dpr_type = (
-            hdu_raw['PRIMARY'].header['HIERARCH TNG DPR TYPE'].split(",")
-        )
-        for i in range(1, nb_trace+1):
-            if (dpr_type[math.ceil(i/nb_slice)-1] == 'STAR'):
-                l2_hdu.header['TRACE'+str(i)] = (
-                    'SCI',
-                    header_map[
-                        header_map['Keyword'] == 'TRACE'
-                    ]['Description'].iloc[0]
+        dpr_type = hdu_raw["PRIMARY"].header["HIERARCH TNG DPR TYPE"].split(",")
+        for i in range(1, nb_trace + 1):
+            if dpr_type[math.ceil(i / nb_slice) - 1] == "STAR":
+                l2_hdu.header["TRACE" + str(i)] = (
+                    "SCI",
+                    header_map[header_map["Keyword"] == "TRACE"]["Description"].iloc[0],
                 )
-            elif (dpr_type[math.ceil(i/nb_slice)-1] == 'WAVE'):
-                l2_hdu.header['TRACE'+str(i)] = (
-                    'CAL',
-                    header_map[
-                        header_map['Keyword'] == 'TRACE'
-                    ]['Description'].iloc[0]
+            elif dpr_type[math.ceil(i / nb_slice) - 1] == "WAVE":
+                l2_hdu.header["TRACE" + str(i)] = (
+                    "CAL",
+                    header_map[header_map["Keyword"] == "TRACE"]["Description"].iloc[0],
                 )
-            elif (dpr_type[math.ceil(i/nb_slice)-1] == 'DARK'):
-                l2_hdu.header['TRACE'+str(i)] = (
-                    'DARK',
-                    header_map[
-                        header_map['Keyword'] == 'TRACE'
-                    ]['Description'].iloc[0]
+            elif dpr_type[math.ceil(i / nb_slice) - 1] == "DARK":
+                l2_hdu.header["TRACE" + str(i)] = (
+                    "DARK",
+                    header_map[header_map["Keyword"] == "TRACE"]["Description"].iloc[0],
                 )
-            elif (dpr_type[math.ceil(i/nb_slice)-1] == 'SKY'):
-                l2_hdu.header['TRACE'+str(i)] = (
-                    dpr_type[math.ceil(i/nb_slice)-1],
-                    header_map[
-                        header_map['Keyword'] == 'TRACE'
-                    ]['Description'].iloc[0]
+            elif dpr_type[math.ceil(i / nb_slice) - 1] == "SKY":
+                l2_hdu.header["TRACE" + str(i)] = (
+                    dpr_type[math.ceil(i / nb_slice) - 1],
+                    header_map[header_map["Keyword"] == "TRACE"]["Description"].iloc[0],
                 )
             else:
-                l2_hdu.header['TRACE'+str(i)] = (
-                    header_map[
-                        header_map['Keyword'] == 'TRACE'
-                    ]['default_value'].iloc[0],
-                    header_map[
-                        header_map['Keyword'] == 'TRACE'
-                    ]['Description'].iloc[0]
+                l2_hdu.header["TRACE" + str(i)] = (
+                    header_map[header_map["Keyword"] == "TRACE"]["default_value"].iloc[
+                        0
+                    ],
+                    header_map[header_map["Keyword"] == "TRACE"]["Description"].iloc[0],
                 )
 
             # CALIBRATION SOURCE KEYWORD
-            if (l2_hdu.header['TRACE'+str(i)] == 'CAL'):
-                clsrc_value = RV2.headers['INSTRUMENT_HEADER'][
-                    header_map[
-                        header_map['Keyword'] == 'CLSRC'
-                    ]['TNG_keyword'].iloc[0]
+            if l2_hdu.header["TRACE" + str(i)] == "CAL":
+                clsrc_value = RV2.headers["INSTRUMENT_HEADER"][
+                    header_map[header_map["Keyword"] == "CLSRC"]["TNG_keyword"].iloc[0]
                 ]
-                if clsrc_value == 'HEADER':
-                    l2_hdu.header['CLSRC'+str(i)] = (
-                        RV2.headers['INSTRUMENT_HEADER'][
-                            'HIERARCH ESO PRO REC1 RAW2 CATG'
-                        ].split('_')[math.ceil(i/nb_slice)-1],
-                        header_map[
-                            header_map['Keyword'] == 'CLSRC'
-                        ]['Description'].iloc[0]
+                if clsrc_value == "HEADER":
+                    l2_hdu.header["CLSRC" + str(i)] = (
+                        RV2.headers["INSTRUMENT_HEADER"][
+                            "HIERARCH ESO PRO REC1 RAW2 CATG"
+                        ].split("_")[math.ceil(i / nb_slice) - 1],
+                        header_map[header_map["Keyword"] == "CLSRC"][
+                            "Description"
+                        ].iloc[0],
                     )
                 else:
-                    l2_hdu.header['CLSRC'+str(i)] = (
-                        RV2.headers['INSTRUMENT_HEADER'][
-                            header_map[
-                                header_map['Keyword'] == 'CLSRC'
-                            ]['TNG_keyword'].iloc[0]
-                        ].split('_')[math.ceil(i/nb_slice)-1],
-                        header_map[
-                            header_map['Keyword'] == 'CLSRC'
-                        ]['Description'].iloc[0]
+                    l2_hdu.header["CLSRC" + str(i)] = (
+                        RV2.headers["INSTRUMENT_HEADER"][
+                            header_map[header_map["Keyword"] == "CLSRC"][
+                                "TNG_keyword"
+                            ].iloc[0]
+                        ].split("_")[math.ceil(i / nb_slice) - 1],
+                        header_map[header_map["Keyword"] == "CLSRC"][
+                            "Description"
+                        ].iloc[0],
                     )
             else:
-                l2_hdu.header['CLSRC'+str(i)] = (
-                    header_map[
-                        header_map['Keyword'] == 'CLSRC'
-                    ]['default_value'].iloc[0],
-                    header_map[
-                        header_map['Keyword'] == 'CLSRC'
-                    ]['Description'].iloc[0]
+                l2_hdu.header["CLSRC" + str(i)] = (
+                    header_map[header_map["Keyword"] == "CLSRC"]["default_value"].iloc[
+                        0
+                    ],
+                    header_map[header_map["Keyword"] == "CLSRC"]["Description"].iloc[0],
                 )
             # CATALOG KEYWORDS
-            if (l2_hdu.header['TRACE'+str(i)] == 'SCI'):
+            if l2_hdu.header["TRACE" + str(i)] == "SCI":
                 for keyword in keyword_list:
-                    l2_hdu.header[keyword+str(i)] = (
+                    l2_hdu.header[keyword + str(i)] = (
                         catalog_data[keyword],
-                        header_map[
-                            header_map['Keyword'] == keyword
-                        ]['Description'].iloc[0]
+                        header_map[header_map["Keyword"] == keyword][
+                            "Description"
+                        ].iloc[0],
                     )
             else:
                 for keyword in keyword_list:
-                    l2_hdu.header[keyword+str(i)] = (
-                        header_map[
-                            header_map['Keyword'] == keyword
-                        ]['default_value'].iloc[0],
-                        header_map[
-                            header_map['Keyword'] == keyword
-                        ]['Description'].iloc[0]
+                    l2_hdu.header[keyword + str(i)] = (
+                        header_map[header_map["Keyword"] == keyword][
+                            "default_value"
+                        ].iloc[0],
+                        header_map[header_map["Keyword"] == keyword][
+                            "Description"
+                        ].iloc[0],
                     )
 
     # OBSLON KEYWORD
-    l2_hdu.header['OBSLON'] = (
-        parse_geo_coord(RV2.headers['INSTRUMENT_HEADER']['GEOLON']),
-        header_map[header_map['Keyword'] == 'OBSLON']['Description'].iloc[0]
+    l2_hdu.header["OBSLON"] = (
+        parse_geo_coord(RV2.headers["INSTRUMENT_HEADER"]["GEOLON"]),
+        header_map[header_map["Keyword"] == "OBSLON"]["Description"].iloc[0],
     )
 
     # OBSLAT KEYWORD
-    l2_hdu.header['OBSLAT'] = (
-        parse_geo_coord(RV2.headers['INSTRUMENT_HEADER']['GEOLAT']),
-        header_map[header_map['Keyword'] == 'OBSLAT']['Description'].iloc[0]
+    l2_hdu.header["OBSLAT"] = (
+        parse_geo_coord(RV2.headers["INSTRUMENT_HEADER"]["GEOLAT"]),
+        header_map[header_map["Keyword"] == "OBSLAT"]["Description"].iloc[0],
     )
 
     # BINNING KEYWORD
     binx = str(1)
     biny = str(1)
-    l2_hdu.header['BINNING'] = (
+    l2_hdu.header["BINNING"] = (
         f"{binx}x{biny}",
-        header_map[header_map['Keyword'] == 'BINNING']['Description'].iloc[0]
+        header_map[header_map["Keyword"] == "BINNING"]["Description"].iloc[0],
     )
 
     # NUMTRACE KEYWORD
-    l2_hdu.header['NUMTRACE'] = (
+    l2_hdu.header["NUMTRACE"] = (
         nb_trace,
-        header_map[header_map['Keyword'] == 'NUMTRACE']['Description'].iloc[0]
+        header_map[header_map["Keyword"] == "NUMTRACE"]["Description"].iloc[0],
     )
 
     # DATE KEYWORD
     current_time = Time.now()
-    l2_hdu.header['DATE'] = (
+    l2_hdu.header["DATE"] = (
         current_time.iso,
-        header_map[header_map['Keyword'] == 'DATE']['Description'].iloc[0]
+        header_map[header_map["Keyword"] == "DATE"]["Description"].iloc[0],
     )
 
     # JD_UTC KEYWORD
-    l2_hdu.header['JD_UTC'] = (
-        RV2.headers['INSTRUMENT_HEADER']['MJD-OBS'] + 2400000.5,
-        header_map[header_map['Keyword'] == 'JD_UTC']['Description'].iloc[0]
+    l2_hdu.header["JD_UTC"] = (
+        RV2.headers["INSTRUMENT_HEADER"]["MJD-OBS"] + 2400000.5,
+        header_map[header_map["Keyword"] == "JD_UTC"]["Description"].iloc[0],
     )
 
     # TLST KEYWORD
-    l2_hdu.header['TLST'] = (
-        convert_lst(RV2.headers['INSTRUMENT_HEADER']['LST']),
-        header_map[header_map['Keyword'] == 'TLST']['Description'].iloc[0]
+    l2_hdu.header["TLST"] = (
+        convert_lst(RV2.headers["INSTRUMENT_HEADER"]["LST"]),
+        header_map[header_map["Keyword"] == "TLST"]["Description"].iloc[0],
     )
 
     # TRA KEYWORD
-    l2_hdu.header['TRA'] = (
-        deg_to_sexagesimal(RV2.headers['INSTRUMENT_HEADER']['RA-DEG'], True),
-        header_map[header_map['Keyword'] == 'TRA']['Description'].iloc[0]
+    l2_hdu.header["TRA"] = (
+        deg_to_sexagesimal(RV2.headers["INSTRUMENT_HEADER"]["RA-DEG"], True),
+        header_map[header_map["Keyword"] == "TRA"]["Description"].iloc[0],
     )
 
     # TDEC KEYWORD
-    l2_hdu.header['TDEC'] = (
-        deg_to_sexagesimal(RV2.headers['INSTRUMENT_HEADER']['DEC-DEG'], False),
-        header_map[header_map['Keyword'] == 'TDEC']['Description'].iloc[0]
+    l2_hdu.header["TDEC"] = (
+        deg_to_sexagesimal(RV2.headers["INSTRUMENT_HEADER"]["DEC-DEG"], False),
+        header_map[header_map["Keyword"] == "TDEC"]["Description"].iloc[0],
     )
 
     # TEL KEYWORD
-    l2_hdu.header['TEL'] = (
-        RV2.headers['INSTRUMENT_HEADER']['EL']*180/np.pi,
-        header_map[header_map['Keyword'] == 'TEL']['Description'].iloc[0]
+    l2_hdu.header["TEL"] = (
+        RV2.headers["INSTRUMENT_HEADER"]["EL"] * 180 / np.pi,
+        header_map[header_map["Keyword"] == "TEL"]["Description"].iloc[0],
     )
 
     # TZA KEYWORD
-    l2_hdu.header['TZA'] = (
-        np.round(90 - l2_hdu.header['TEL'], 4),
-        header_map[header_map['Keyword'] == 'TZA']['Description'].iloc[0]
+    l2_hdu.header["TZA"] = (
+        np.round(90 - l2_hdu.header["TEL"], 4),
+        header_map[header_map["Keyword"] == "TZA"]["Description"].iloc[0],
     )
 
     # TAZ KEYWORD
     target_azimuth = get_azimuth_target(
-        RV2.headers['INSTRUMENT_HEADER']['RA-DEG'],
-        RV2.headers['INSTRUMENT_HEADER']['DEC-DEG'],
-        l2_hdu.header['OBSLAT'],
-        l2_hdu.header['OBSLON'],
-        l2_hdu.header['OBSALT'],
-        l2_hdu.header['DATE-OBS']
+        RV2.headers["INSTRUMENT_HEADER"]["RA-DEG"],
+        RV2.headers["INSTRUMENT_HEADER"]["DEC-DEG"],
+        l2_hdu.header["OBSLAT"],
+        l2_hdu.header["OBSLON"],
+        l2_hdu.header["OBSALT"],
+        l2_hdu.header["DATE-OBS"],
     )
 
-    l2_hdu.header['TAZ'] = (
+    l2_hdu.header["TAZ"] = (
         target_azimuth,
-        header_map[header_map['Keyword'] == 'TAZ']['Description'].iloc[0]
+        header_map[header_map["Keyword"] == "TAZ"]["Description"].iloc[0],
     )
 
     # THA KEYWORD
-    l2_hdu.header['THA'] = (
-        compute_hour_angle(l2_hdu.header['TLST'], l2_hdu.header['TRA']),
-        header_map[header_map['Keyword'] == 'THA']['Description'].iloc[0]
+    l2_hdu.header["THA"] = (
+        compute_hour_angle(l2_hdu.header["TLST"], l2_hdu.header["TRA"]),
+        header_map[header_map["Keyword"] == "THA"]["Description"].iloc[0],
     )
 
     # SUNEL/MOONANG/MOONEL/MOONILLU/MOONRV KEYWORDS
     moon_sun_params = get_moon_sun_info(
-        RV2.headers['INSTRUMENT_HEADER']['RA-DEG'],
-        RV2.headers['INSTRUMENT_HEADER']['DEC-DEG'],
-        l2_hdu.header['OBSLAT'],
-        l2_hdu.header['OBSLON'],
-        l2_hdu.header['OBSALT'],
-        l2_hdu.header['DATE-OBS'],
-        l2_hdu.header['JD_UTC']
+        RV2.headers["INSTRUMENT_HEADER"]["RA-DEG"],
+        RV2.headers["INSTRUMENT_HEADER"]["DEC-DEG"],
+        l2_hdu.header["OBSLAT"],
+        l2_hdu.header["OBSLON"],
+        l2_hdu.header["OBSALT"],
+        l2_hdu.header["DATE-OBS"],
+        l2_hdu.header["JD_UTC"],
     )
 
     # List of corresponding keywords
-    moon_sun_keywords = ['SUNEL', 'MOONANG', 'MOONEL', 'MOONILLU', 'MOONRV']
+    moon_sun_keywords = ["SUNEL", "MOONANG", "MOONEL", "MOONILLU", "MOONRV"]
 
     # Assign values to headers dynamically
     for key, value in zip(moon_sun_keywords, moon_sun_params):
         l2_hdu.header[key] = (
             value,
-            header_map[header_map['Keyword'] == key]['Description'].iloc[0]
+            header_map[header_map["Keyword"] == key]["Description"].iloc[0],
         )
 
     # INSTERA KEYWORD
-    l2_hdu.header['INSTERA'] = (
-        get_instrument_version(l2_hdu.header['DATE-OBS']),
-        header_map[header_map['Keyword'] == 'INSTERA']['Description'].iloc[0]
+    l2_hdu.header["INSTERA"] = (
+        get_instrument_version(l2_hdu.header["DATE-OBS"]),
+        header_map[header_map["Keyword"] == "INSTERA"]["Description"].iloc[0],
     )
 
     # EXSNR-N KEYWORD
-    for i in range(1, int(l2_hdu.header['NUMORDER'])+1):
-        l2_hdu.header[f'EXSNR{str(i)}'] = (
-            RV2.headers['INSTRUMENT_HEADER'][
-                f"HIERARCH TNG QC ORDER{str(i)} SNR"
-            ],
-            header_map[header_map['Keyword'] == 'EXSNR']['Description'].iloc[0]
+    for i in range(1, int(l2_hdu.header["NUMORDER"]) + 1):
+        l2_hdu.header[f"EXSNR{str(i)}"] = (
+            RV2.headers["INSTRUMENT_HEADER"][f"HIERARCH TNG QC ORDER{str(i)} SNR"],
+            header_map[header_map["Keyword"] == "EXSNR"]["Description"].iloc[0],
         )
 
     # EXSNRW-N KEYWORD
-    for i in range(int(l2_hdu.header['NUMORDER'])):
-        l2_hdu.header[f'EXSNRW{str(i+1)}'] = (
+    for i in range(int(l2_hdu.header["NUMORDER"])):
+        l2_hdu.header[f"EXSNRW{str(i+1)}"] = (
             round(
                 RV2.data["TRACE1_WAVE"][i, 0]
-                + (
-                    RV2.data["TRACE1_WAVE"][i, -1]
-                    - RV2.data["TRACE1_WAVE"][i, 0]
-                )/2
+                + (RV2.data["TRACE1_WAVE"][i, -1] - RV2.data["TRACE1_WAVE"][i, 0]) / 2
             ),
-            header_map[header_map['Keyword'] == 'EXSNRW'][
-                'Description'
-            ].iloc[0]
+            header_map[header_map["Keyword"] == "EXSNRW"]["Description"].iloc[0],
         )
 
     # DRPFLAG KEYWORD
-    drp_flag = RV2.headers['INSTRUMENT_HEADER'][
-        header_map[header_map['Keyword'] == 'DRPFLAG']['TNG_keyword'].iloc[0]
+    drp_flag = RV2.headers["INSTRUMENT_HEADER"][
+        header_map[header_map["Keyword"] == "DRPFLAG"]["TNG_keyword"].iloc[0]
     ]
     if drp_flag == 1:
-        drpflag = 'Pass'
+        drpflag = "Pass"
     else:
-        drpflag = 'Fail'
+        drpflag = "Fail"
 
-    l2_hdu.header['DRPFLAG'] = (
+    l2_hdu.header["DRPFLAG"] = (
         drpflag,
-        header_map[
-            header_map['Keyword'] == 'DRPFLAG'
-        ]['Description'].iloc[0]
+        header_map[header_map["Keyword"] == "DRPFLAG"]["Description"].iloc[0],
     )
 
     # COLOFLAG KEYWORD
     try:
-        color_flag = RV2.headers['INSTRUMENT_HEADER'][
-            header_map[
-                header_map['Keyword'] == 'COLOFLAG'
-            ]['TNG_keyword'].iloc[0]
+        color_flag = RV2.headers["INSTRUMENT_HEADER"][
+            header_map[header_map["Keyword"] == "COLOFLAG"]["TNG_keyword"].iloc[0]
         ]
-        if (color_flag == 1):
-            coloflag = 'Pass'
+        if color_flag == 1:
+            coloflag = "Pass"
         else:
-            coloflag = 'Fail'
+            coloflag = "Fail"
     except Exception:
-        coloflag = 'Fail'
+        coloflag = "Fail"
 
-    l2_hdu.header['COLOFLAG'] = (
+    l2_hdu.header["COLOFLAG"] = (
         coloflag,
-        header_map[header_map['Keyword'] == 'COLOFLAG'][
-            'Description'
-        ].iloc[0]
+        header_map[header_map["Keyword"] == "COLOFLAG"]["Description"].iloc[0],
     )
 
     # SUMMFLAG KEYWORD
@@ -489,27 +466,25 @@ def create_PRIMARY(
     # State priority : Fail > Warn > Pass
     if "Fail" in flag_values:
         if "Fail" == flag_values[0] and "Fail" not in flag_values[1:]:
-            summflag = 'Warn'
+            summflag = "Warn"
         else:
-            summflag = 'Fail'
+            summflag = "Fail"
     elif "Warn" in flag_values:
-        summflag = 'Warn'
+        summflag = "Warn"
     else:
-        summflag = 'Pass'
+        summflag = "Pass"
 
-    l2_hdu.header['SUMMFLAG'] = (
+    l2_hdu.header["SUMMFLAG"] = (
         summflag,
-        header_map[
-            header_map['Keyword'] == 'SUMMFLAG'
-        ]['Description'].iloc[0]
+        header_map[header_map["Keyword"] == "SUMMFLAG"]["Description"].iloc[0],
     )
 
-    if ('PRIMARY' not in RV2.extensions):
+    if "PRIMARY" not in RV2.extensions:
         RV2.create_extension(
-            ext_name='PRIMARY', ext_type='PrimaryHDU', header=l2_hdu.header
+            ext_name="PRIMARY", ext_type="PrimaryHDU", header=l2_hdu.header
         )
     else:
-        RV2.set_header(ext_name='PRIMARY', header=l2_hdu.header)
+        RV2.set_header(ext_name="PRIMARY", header=l2_hdu.header)
     return
 
 
@@ -537,33 +512,33 @@ def get_simbad_data(obj: str) -> dict:
         # Configure Simbad with custom settings
         custom_simbad = Simbad()
         custom_simbad.TIMEOUT = config.timeout  # Increase timeout if needed
-        custom_simbad.add_votable_fields('ids', 'plx')
+        custom_simbad.add_votable_fields("ids", "plx")
 
         # Query Simbad for the object
         result = custom_simbad.query_object(obj)
 
         # Extract Gaia DR3 or DR2 identifiers
-        for name in result['ids'][0].split('|'):
-            if (name.lower().startswith('gaia dr3')):
+        for name in result["ids"][0].split("|"):
+            if name.lower().startswith("gaia dr3"):
                 gaia_dr3_source = name[:8]
                 gaia_dr3_name = name[5:]
-            elif (name.lower().startswith('gaia dr2')):
+            elif name.lower().startswith("gaia dr2"):
                 gaia_dr2_source = name[:8]
                 gaia_dr2_name = name[5:]
 
         # Prioritize DR3 over DR2
         if gaia_dr3_name:
-            data['CSRC'] = gaia_dr3_source
-            data['CID'] = gaia_dr3_name
+            data["CSRC"] = gaia_dr3_source
+            data["CID"] = gaia_dr3_name
         elif gaia_dr2_name:
-            data['CSRC'] = gaia_dr2_source
-            data['CID'] = gaia_dr2_source
+            data["CSRC"] = gaia_dr2_source
+            data["CID"] = gaia_dr2_source
 
         # Retrieve parallax value
-        if not np.ma.is_masked(result['plx_value'][0]):
-            data['CPLX'] = result['plx_value'][0]
+        if not np.ma.is_masked(result["plx_value"][0]):
+            data["CPLX"] = result["plx_value"][0]
         else:
-            data['CPLX'] = 'Null'
+            data["CPLX"] = "Null"
 
         return data
 
@@ -571,16 +546,16 @@ def get_simbad_data(obj: str) -> dict:
         print(f"Catalog not found for the name of {obj}, err:{e}")
 
         # Return default values if the object is not found
-        cat_list = ['CSRC', 'CID', 'CPLX', 'CCLR']
+        cat_list = ["CSRC", "CID", "CPLX", "CCLR"]
 
         base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         header_map_path = os.path.join(base_dir, "config", "header_map.csv")
         header_map = pd.read_csv(header_map_path)
 
         for key in cat_list:
-            data[key] = header_map[
-                header_map['Keyword'] == key
-            ]['default_value'].iloc[0]
+            data[key] = header_map[header_map["Keyword"] == key]["default_value"].iloc[
+                0
+            ]
         return data
 
 
@@ -640,7 +615,7 @@ def parse_geo_coord(coord_str: str) -> float:
     decimal_degrees = degrees + minutes / 60 + seconds / 3600
 
     # Appliquer le signe pour S (latitude) ou W (longitude)
-    if direction in ('S', 'W'):
+    if direction in ("S", "W"):
         decimal_degrees = -decimal_degrees
 
     return decimal_degrees
@@ -658,7 +633,7 @@ def doppler_shift(wave: np.ndarray, rv: float) -> np.ndarray:
         wave_shifted (np.ndarray): the doppler shifted wavelength values
     """
 
-    wave_shifted = wave + wave*rv/(c/1e3).value
+    wave_shifted = wave + wave * rv / (c / 1e3).value
     return wave_shifted
 
 
@@ -673,12 +648,12 @@ def convert_lst(lst: float) -> str:
         lst_sexa (str): the local sidereal time in the format hh:mm:ss.ms
     """
 
-    if (lst < 0):
+    if lst < 0:
         res = convert_lst(-lst)
-        return '-' + res
+        return "-" + res
 
-    hours = int(lst//3600)
-    minutes = int((lst % 3600)//60)
+    hours = int(lst // 3600)
+    minutes = int((lst % 3600) // 60)
     seconds = int(lst % 60)
     ms = round(lst % 1 * 1000)
 
@@ -701,7 +676,7 @@ def deg_to_sexagesimal(value_deg: float, is_ra: bool = False) -> str:
     """
 
     # Handle the signs for Dec (and ignore for RA)
-    sign = '-' if value_deg < 0 and not is_ra else ''
+    sign = "-" if value_deg < 0 and not is_ra else ""
     value_deg = abs(value_deg)
 
     # Conversion for RA (hours) or Dec (degrees)
@@ -732,12 +707,12 @@ def compute_hour_angle(lst: str, ra: str) -> str:
     """
 
     h_ra = int(ra[:2])
-    m_ra = int(ra[3:5]) + h_ra*60
-    s_ra = float(ra[6:12]) + m_ra*60
+    m_ra = int(ra[3:5]) + h_ra * 60
+    s_ra = float(ra[6:12]) + m_ra * 60
 
     h_lst = int(lst[:2])
-    m_lst = int(lst[3:5]) + h_lst*60
-    s_lst = float(lst[6:12]) + m_lst*60
+    m_lst = int(lst[3:5]) + h_lst * 60
+    s_lst = float(lst[6:12]) + m_lst * 60
 
     s_ha = s_lst - s_ra
     return convert_lst(s_ha)
@@ -781,16 +756,17 @@ def get_instrument_version(date_obs_str: str) -> str:
             return version_info["version"]
 
     # If no version matches, raise an exception
-    raise ValueError(
-        f"No instrument version corresponds to the date {date_obs_str}"
-    )
+    raise ValueError(f"No instrument version corresponds to the date {date_obs_str}")
 
 
 def get_moon_sun_info(
-        target_ra: float, target_dec: float,
-        obs_lat: float, obs_lon: float,
-        obs_alt: float, obs_time: str,
-        jd_utc: float
+    target_ra: float,
+    target_dec: float,
+    obs_lat: float,
+    obs_lon: float,
+    obs_alt: float,
+    obs_time: str,
+    jd_utc: float,
 ) -> list:
     """
     Calculates information about the Moon's position and its relationship
@@ -833,7 +809,7 @@ def get_moon_sun_info(
 
     # Target's position
     target_coord = SkyCoord(
-        ra=target_ra, dec=target_dec, frame='icrs', unit="deg", obstime=time
+        ra=target_ra, dec=target_dec, frame="icrs", unit="deg", obstime=time
     )
 
     # Calculate the angular separation between the target and the Moon
@@ -841,9 +817,7 @@ def get_moon_sun_info(
 
     # Calculate the Moon's elevation above the horizon
     # (GCRS here but could be ICRS, no impact)
-    moon_altaz = moon_coord.transform_to(
-        AltAz(obstime=time, location=location)
-    )
+    moon_altaz = moon_coord.transform_to(AltAz(obstime=time, location=location))
     moon_el = round(moon_altaz.alt.deg, 4)
 
     # Get the Sun's position and transform it to the observer's AltAz frame
@@ -855,8 +829,8 @@ def get_moon_sun_info(
     # Calculate the Moon's illumination
     elongation = moon_coord.separation(sun)
     moon_phase_angle = np.arctan2(
-        sun.distance*np.sin(elongation),
-        moon_coord.distance - sun.distance*np.cos(elongation)
+        sun.distance * np.sin(elongation),
+        moon_coord.distance - sun.distance * np.cos(elongation),
     )
     moon_illu = round((1 + np.cos(moon_phase_angle).value) / 2 * 100, 4)
 
@@ -869,7 +843,7 @@ def get_moon_sun_info(
 
 
 def get_moon_velocity_in_target_direction(
-        alpha_deg: float, delta_deg: float, julian_day: float
+    alpha_deg: float, delta_deg: float, julian_day: float
 ) -> float:
     """
     Compute the velocity of the Moon projected in the direction of a given
@@ -886,16 +860,14 @@ def get_moon_velocity_in_target_direction(
     """
 
     # Convert Julian Day to Astropy Time object
-    t = Time(julian_day, format='jd')
+    t = Time(julian_day, format="jd")
 
     # Get the Moon's barycentric position & velocity (in AU and AU/day)
     # using JPL ephemeris
-    moon_pos, moon_vel = get_body_barycentric_posvel(
-        'moon', t, ephemeris='jpl'
-    )
+    moon_pos, moon_vel = get_body_barycentric_posvel("moon", t, ephemeris="jpl")
 
     # Extract velocity components (AU/day)
-    x_vel, y_vel, z_vel = moon_vel.xyz.to_value(u.km/u.s)
+    x_vel, y_vel, z_vel = moon_vel.xyz.to_value(u.km / u.s)
 
     # Convert target coordinates (RA, Dec) to radians
     alpha_rad = np.deg2rad(alpha_deg)
@@ -903,18 +875,21 @@ def get_moon_velocity_in_target_direction(
 
     # Compute projected radial velocity
     projected_velocity_km_s = (
-        x_vel * np.cos(alpha_rad) * np.cos(delta_rad) +
-        y_vel * np.sin(alpha_rad) * np.cos(delta_rad) +
-        z_vel * np.sin(delta_rad)
+        x_vel * np.cos(alpha_rad) * np.cos(delta_rad)
+        + y_vel * np.sin(alpha_rad) * np.cos(delta_rad)
+        + z_vel * np.sin(delta_rad)
     )
 
     return projected_velocity_km_s
 
 
 def get_azimuth_target(
-        target_ra: float, target_dec: float,
-        obs_lat: float, obs_lon: float,
-        obs_alt: float, obs_time: str
+    target_ra: float,
+    target_dec: float,
+    obs_lat: float,
+    obs_lon: float,
+    obs_alt: float,
+    obs_time: str,
 ) -> float:
     """
     Calculates the azimuth of a celestial target from a given observation
@@ -940,7 +915,7 @@ def get_azimuth_target(
 
     # Target's position
     target_coord = SkyCoord(
-        ra=target_ra, dec=target_dec, frame='icrs', unit="deg", obstime=time
+        ra=target_ra, dec=target_dec, frame="icrs", unit="deg", obstime=time
     )
 
     # Calculate the target's azimuth (GCRS here but could be ICRS, no impact)
