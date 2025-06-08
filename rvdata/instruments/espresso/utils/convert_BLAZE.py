@@ -1,5 +1,5 @@
-'''
-RVData/instruments/espresso/utils/convert_S2D_BLAZE.py
+"""
+RVData/rvdata/instruments/espresso/utils/convert_S2D_BLAZE.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,21 +7,22 @@ Created: Mon Mar 03 2025
 Last Modified: Mon Mar 03 2025
 Version: 1.0.0
 Description:
+This script extracts 'BLAZE' calibration data from a FITS file and stores it in
+an `RV2` object as extensions (e.g., 'TRACE<X>_BLAZE'). It ensures proper
+naming, metadata handling, and updates existing extensions if necessary.
 
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 
-from core.models.level2 import RV2
+from rvdata.core.models.level2 import RV2
 
 
 def convert_BLAZE(
-        RV2: RV2,
-        file_path: str,
-        trace_ind_start: int,
-        slice_nb: int
+    RV2: RV2, file_path: str, trace_ind_start: int, slice_nb: int
 ) -> None:
     """
     This function processes a FITS file and converts its data into multiple
@@ -45,31 +46,31 @@ def convert_BLAZE(
 
     with fits.open(file_path) as hdul:
         # Loop through each slice from 1 to slice_nb
-        for slice in range(1, slice_nb+1):
+        for slice in range(1, slice_nb + 1):
             # Extract the corresponding data for this slice
             # Each slice takes every slice_nb-th row starting from (slice-1)
-            blaze_hdu = fits.ImageHDU(
-                data=hdul[1].data[slice-1::slice_nb, :],
-                header=hdul[1].header
-            )
+            single_cam_values = hdul[1].data[slice - 1 :: slice_nb, :]
 
             # Update the header of the new HDU with relevant metadata
-            blaze_hdu.header['EXTNAME'] = (
-                'TRACE'+str(trace_ind_start+slice-1)+'_BLAZE'
+            blaze_hdu = fits.ImageHDU(data=single_cam_values, header=hdul[1].header)
+
+            # Update the header of the new HDU with relevant metadata
+            blaze_hdu.header["EXTNAME"] = (
+                "TRACE" + str(trace_ind_start + slice - 1) + "_BLAZE"
             )
-            blaze_hdu.header['CTYPE1'] = ('Pixels', 'Name of axis 1')
-            blaze_hdu.header['CTYPE2'] = ('Order-N', 'Name of axis 2')
+            blaze_hdu.header["CTYPE1"] = ("Pixels", "Name of axis 1")
+            blaze_hdu.header["CTYPE2"] = ("Order-N", "Name of axis 2")
 
             # Check if the extension already exists in the RV2 object
-            if (blaze_hdu.header['EXTNAME'] not in RV2.extensions):
+            if blaze_hdu.header["EXTNAME"] not in RV2.extensions:
                 # If the extension does not exist, create it
                 RV2.create_extension(
-                    ext_name=blaze_hdu.header['EXTNAME'],
-                    ext_type='ImageHDU',
+                    ext_name=blaze_hdu.header["EXTNAME"],
+                    ext_type="ImageHDU",
                     header=blaze_hdu.header,
-                    data=blaze_hdu.data
+                    data=blaze_hdu.data,
                 )
             else:
                 # If the extension exists, update its data and header
-                RV2.set_header(blaze_hdu.header['EXTNAME'], blaze_hdu.header)
-                RV2.set_data(blaze_hdu.header['EXTNAME'], blaze_hdu.data)
+                RV2.set_header(blaze_hdu.header["EXTNAME"], blaze_hdu.header)
+                RV2.set_data(blaze_hdu.header["EXTNAME"], blaze_hdu.data)

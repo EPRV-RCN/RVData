@@ -23,6 +23,6 @@ Adding a New Instrument Reader
         }
     }
 
-.. literalinclude:: ../../instruments/kpf/level2.py
+.. literalinclude:: ../../rvdata/instruments/kpf/level2.py
    :language: python
    :start-after: # import base class

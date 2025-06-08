@@ -8,28 +8,30 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('../../'))
 
-project = 'RVdata'
-copyright = '2024, BJ Fulton'
-author = 'BJ Fulton'
-release = '0.0.1'
+sys.path.insert(0, os.path.abspath("../../rvdata/"))
+
+project = "RVdata"
+copyright = "2024, BJ Fulton"
+author = "BJ Fulton"
+release = "0.0.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.inheritance_diagram'
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.inheritance_diagram",
 ]
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
 
 missing_value_placeholder = "TBD"
