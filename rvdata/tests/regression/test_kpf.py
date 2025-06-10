@@ -8,8 +8,8 @@ from rvdata.tests.regression.compliance import check_l2_extensions  # , check_l2
 
 file_urls = {
     "KPF": [
-        "https://zenodo.org/api/records/15047493/draft/files/KP.20250208.17485.59.fits/content",
-        "https://zenodo.org/api/records/15047493/draft/files/KP.20250208.17485.59_L1.fits/content",
+        "https://zenodo.org/records/15021737/files/KP.20250208.17485.59.fits?download=1",
+        "https://zenodo.org/records/15021737/files/KP.20250208.17485.59_L1.fits?download=1",
     ]
 }
 
