@@ -84,7 +84,7 @@ class RVDataModel(object):
         if not os.path.isfile(fn):
             raise IOError(f"{fn} does not exist.")
 
-        # populate it with self.read()        
+        # populate it with self.read()
         this_data.read(fn, instrument, **kwargs)
         # Return this instance
         return this_data
@@ -107,7 +107,7 @@ class RVDataModel(object):
             required before calling this function
 
         """
-        
+
         if not fn.endswith(".fits"):
             # Can only read .fits files
             raise IOError("input files must be FITS files")
@@ -116,7 +116,7 @@ class RVDataModel(object):
         self.dirname = os.path.dirname(fn)
 
         with fits.open(fn) as hdu_list:
-            
+
             # Handles the Receipt and the auxilary HDUs
             for hdu in hdu_list:
                 if isinstance(hdu, fits.PrimaryHDU):
@@ -138,7 +138,7 @@ class RVDataModel(object):
                         setattr(self, hdu.name, t.to_pandas())
 
             # Leave the rest of HDUs to level specific readers
-            
+
             if instrument is None:
                 import rvdata.core.models.level2
 
