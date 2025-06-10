@@ -1,14 +1,15 @@
 import requests
 import os
 from rvdata.core.models.level2 import RV2
+
 # from rvdata.instruments.kpf.level2 import KPFRV2
 from rvdata.tests.regression.compliance import check_l2_extensions  # , check_l2_header
 
 
 file_urls = {
     "KPF": [
-        "https://zenodo.org/records/15009170/files/KP.20240715.46231.07.fits?download=1",
-        "https://zenodo.org/records/15009170/files/KP.20240715.46231.07_L1.fits?download=1",
+        "https://zenodo.org/records/15009170/files/KP.20250208.17485.59.fits?download=1",
+        "https://zenodo.org/records/15009170/files/KP.20250208.17485.59_L1.fits?download=1",
     ]
 }
 

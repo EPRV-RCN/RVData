@@ -18,25 +18,20 @@ epoch_start_mjd = Time(epoch_start_isot).mjd
 header_map = pd.read_csv(os.path.join(os.path.dirname(__file__), "config/expres_header_map.csv")).set_index("standard")
 header_map.fillna("", inplace=True)
 
-static_headers = {
-    "ORGANIZA": "Yale",
-    "DATALVL": "L2",
-    "NUMTRACE": 1
-}
+static_headers = {"ORGANIZA": "Yale", "DATALVL": "L2", "NUMTRACE": 1}
 obstype_map = {
-    'Science': "Sci",
-    'Solar': "Sci",
-    'Calibration': "Cal",
-    'Dark': "Cal",
-    'ThAr': "Cal",
-    'Quartz': "Cal",
-    'LFC': "Cal",
+    "Science": "Sci",
+    "Solar": "Sci",
+    "Calibration": "Cal",
+    "Dark": "Cal",
+    "ThAr": "Cal",
+    "Quartz": "Cal",
+    "LFC": "Cal",
 }
 
 
 # EXPRES Level2 Reader
 class EXPRESRV2(RV2):
-
     """
     Read EXPRES extracted file and convert it to the EPRV standard format Python object.
 
@@ -85,19 +80,41 @@ class EXPRESRV2(RV2):
             "description": [],
         }
         head0 = hdul[0].header
+        primary_header = hdul[0].header
+        #        fitspec_header = hdul[1].header
+        expmeter_header = hdul[2].header
+        expmeter_data = hdul[2].data.copy()
+        itrace = 1
 
         self.header_funcs = {
-            'OBSTYPE': (lambda hdul: obstype_map[hdul[0].header['OBSTYPE']]),
-            'BINNING': (lambda hdul: hdul[0].header["CCDBIN"].replace(' ', '')[1:-1].replace(",", 'x')),
-            'NUMORDER': (lambda hdul: hdul[1].header['NAXIS2']),
-            'FILENAME': (lambda hdul: f"EXPRESL2_{hdul[0].header['MIDPOINT'][2:-1].replace('-', '')}.fits"),
-            'JD_UTC': (lambda hdul: Time(hdul[0].header['DATE-SHT']).jd),
-            'INSTERA': (lambda hdul: expres_epochs[np.sum(Time(hdul[0].header['MIDPOINT']).mjd >= epoch_start_mjd) - 1]),
-            'INSTFLAG': (lambda hdul: 'Pass' if (bool(hdul[0].header['EXPMTR']) & bool(hdul[0].header['EXPMTR'])) else 'Fail'),
-            'DRPFLAG': (lambda hdul: drpFlag(hdul)),
-            "DRPTAG": (lambda hdul: hdul[1].header['VERSION']),
-            "VERSION": (lambda hdul: hdul[1].header['VERSION']),
-            'EXTRACT': (lambda hdul: hdul[1].header['EXTNAME']),
+            "OBSTYPE": (lambda hdul: obstype_map[hdul[0].header["OBSTYPE"]]),
+            "BINNING": (
+                lambda hdul: hdul[0]
+                .header["CCDBIN"]
+                .replace(" ", "")[1:-1]
+                .replace(",", "x")
+            ),
+            "NUMORDER": (lambda hdul: hdul[1].header["NAXIS2"]),
+            "FILENAME": (
+                lambda hdul: f"EXPRESL2_{hdul[0].header['MIDPOINT'][2:-1].replace('-', '')}.fits"
+            ),
+            "JD_UTC": (lambda hdul: Time(hdul[0].header["DATE-SHT"]).jd),
+            "INSTERA": (
+                lambda hdul: expres_epochs[
+                    np.sum(Time(hdul[0].header["MIDPOINT"]).mjd >= epoch_start_mjd) - 1
+                ]
+            ),
+            "INSTFLAG": (
+                lambda hdul: (
+                    "Pass"
+                    if (bool(hdul[0].header["EXPMTR"]) & bool(hdul[0].header["EXPMTR"]))
+                    else "Fail"
+                )
+            ),
+            "DRPFLAG": (lambda hdul: drpFlag(hdul)),
+            "DRPTAG": (lambda hdul: hdul[1].header["VERSION"]),
+            "VERSION": (lambda hdul: hdul[1].header["VERSION"]),
+            "EXTRACT": (lambda hdul: hdul[1].header["EXTNAME"]),
         }
 
         # 0: Primary with just EPRV Standard FITS Headers        
@@ -244,7 +261,7 @@ class EXPRESRV2(RV2):
             elif key in self.header_funcs.keys():  # Keywords that require processing
                 standard_head[key] = self.header_funcs[key](hdul)
             else:
-                _ = header_map.loc[key, 'expres']
+                _ = header_map.loc[key, "expres"]
                 if not _:
                     expres_val = ""
 
@@ -262,7 +279,9 @@ def drpFlag(hdul):
                            'excalibur', 'bary_excalibur', # We don't actually need this here 
                            'continuum', 'tellurics']
     extension_list = hdul[1].data.dtype.names
-    percent_there = np.sum([extn in extension_list for extn in extensions_to_check])/len(extensions_to_check)
+    percent_there = np.sum(
+        [extn in extension_list for extn in extensions_to_check]
+    ) / len(extensions_to_check)
     if percent_there == 1:
         return 'Pass'
     return 'Fail' if percent_there == 0 else 'Warn'
