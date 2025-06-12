@@ -3,7 +3,7 @@ import os
 from rvdata.core.models.level2 import RV2
 
 # from rvdata.instruments.kpf.level2 import KPFRV2
-from rvdata.tests.regression.compliance import check_l2_extensions  # , check_l2_header
+from rvdata.tests.regression.compliance import check_l2_extensions, check_l2_header
 
 
 file_urls = {
@@ -32,10 +32,10 @@ def test_kpf():
     kpf = RV2.from_fits(l1file, l0file=l0file, instrument="KPF")
     standard_out = "./kpf_L2_standard.fits"
     kpf.to_fits(standard_out)
-    # l2_standard = RV2.from_fits(standard_out)
+    l2_standard = RV2.from_fits(standard_out)
 
     check_l2_extensions(standard_out)
-    # check_l2_header(l2_standard.headers['PRIMARY'])
+    check_l2_header(l2_standard.headers['PRIMARY'])
 
 
 def test_kpf_benchmark(benchmark):

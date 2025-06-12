@@ -28,9 +28,16 @@ def check_l2_header(header):
     reference_header = pd.read_csv(ref_csv)
     for i, row in reference_header.iterrows():
         key = row["Keyword"]
-        req = -row["Optional"]
-        if req:
+        req = row["Required"] == 'Y'
+        if "#" in key or "..." in key:
+            print(f"Problem checking for keyword: {key}")
+            key = key.split("...")[0].strip()
+        elif req and (key not in header):
+            print(key, req)
             assert key in header, f"Keyword {key} not found in header"
+        else:
+            value = header[key]
+            print(f"{key} = {value} ✓")
 
 
 if __name__ == "__main__":
