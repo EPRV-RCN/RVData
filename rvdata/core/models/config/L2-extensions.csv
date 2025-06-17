@@ -1,0 +1,25 @@
+HDU,Name,DataType,MinBetDepth,Multiplicity,Required,Description,Comments
+0,PRIMARY,PrimaryHDU,,False,True,EPRV Standard FITS HEADER (no data),
+1,INSTRUMENT_HEADER,ImageHDU,,False,True,Inherited instrument header (no data),If this L2 file was translated from an instrument's native data product then this header contains the original data header
+2,RECEIPT,BinTableHDU,,False,True,Table of operations that have been performed on this file,
+3,DRP_CONFIG,BinTableHDU,,False,True,Pipeline details (settings etc) to go from native data to L2,
+4,EXT_DESCRIPT,BinTableHDU,,False,True,Table describing contents of each extension,
+5,ORDER_TABLE,BinTableHDU,,TRUE,TRUE,Table capturing the wavelength extent of each order, Required columns: physical echelle order; index echelle order; start wavelength [64bit]; end wavelength [64bit]
+6,TRACE1_FLUX,ImageHDU,,True,True,Flux in trace 1,
+7,TRACE1_WAVE,ImageHDU,64,True,True,wavelength solution for trace 1,
+8,TRACE1_VAR,ImageHDU,,True,True,variance for trace 1,
+9,TRACE1_BLAZE,ImageHDU,,True,True,blaze for trace 1, 
+10,BARYCORR_KMS,ImageHDU,,False,True,barycentric correction in km/s, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+11,BARYCORR_Z,ImageHDU,,False,True,barycentric correction in redshift, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+12,BJD_TDB,ImageHDU,64,False,True,Photon weighted midpoint, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+13,DRIFT,ImageHDU,,False,False,Drift measurement map in delta lambda, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+14,TRACE1_QUALITY,ImageHDU,UINT8,True,False,Quality of each pixel in trace 1,Format should match TRACE1_FLUX -- recommend convention that 0 is the no flag value
+15,EXPMETER,BinTableHDU,,False,False,Table of exposure meter counts timeseries over the exposure,Table has # of columns equal to the number of wavelengths where the exposure counts are measured and number of rows equal to exposure time / exp meter cadence
+16,TELEMETRY,BinTableHDU,,False,False,Table of telemetry collected during the exposure,Table has 4 columns: time stamp; sensor name; value; units
+17,TRACE1_TELLURIC,ImageHDU,,True,False,Telluric model for trace 1,Follows same format as TRACE1_FLUX HDU; generally used for Science Object traces
+18,TRACE1_SKYMODEL,ImageHDU,,True,False,Sky model for trace 1,Follows same format as TRACE1_FLUX HDU
+19,ANCILLARY_SPECTRUM,ImageHDU,,True,False,Extension(s) that store ancillary spectra, Options include Ca II H&K if separate spectrograph used
+20,IMAGE,ImageHDU,,True,False,Extension(s) that store useful support images, Options include guider cam or sky monitoring or pupil image
+21,CUSTOM1_TRACE1_FLUX,ImageHDU,,True,False,Additionally corrected flux in trace 1,Modified flux extension that includes additional corrections such as telluric or sky corrections -- should have same format as TRACE1_FLUX above
+22,CUSTOM1_TRACE1_WAVE,ImageHDU,,True,False,Additionally corrected wavelength solution for trace 1,Wavelength solution corresponding to USTOM1_TRACE1_FLUX -- should have same format as TRACE1_WAVE above
+23,CUSTOM1_TRACE1_VAR,ImageHDU,,True,False,Additionally corrected variance for the flux in trace 1,Variance of the CUSTOM1_TRACE1_FLUX extension -- should have same format as TRACE1_VAR above

@@ -10,9 +10,12 @@ Documentation for EPRV Data Standardization Project!
    :maxdepth: 2
    :caption: Contents:
 
+   interact.rst
    new.rst
-   api.rst
    FITS-extensions.rst
+   primaryheader.rst
+   units.rst
+   api.rst
 
 Indices and tables
 ==================
