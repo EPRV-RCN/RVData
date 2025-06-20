@@ -30,9 +30,12 @@ class RV2(rvdata.core.models.base.RVDataModel):
                 # TODO: set description and comment
                 self.create_extension(row["Name"], row["DataType"])
 
-        # Add EXT_DESCRIPT as a DataFrame
-        self.set_data("EXT_DESCRIPT", LEVEL2_EXTENSIONS.copy())
-        self.create_extension("EXT_DESCRIPT", "BinTableHDU")
+        # Add EXT_DESCRIPT as a DataFrame, dropping the Comments column
+        ext_descript = LEVEL2_EXTENSIONS.copy().query('Required == True')\
+            .reset_index(drop=True)
+        if "Comments" in ext_descript.columns:
+            ext_descript = ext_descript.drop(columns=["Comments"])
+        self.set_data("EXT_DESCRIPT", ext_descript)
 
     def _read(self, hdul: fits.HDUList) -> None:
         l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
