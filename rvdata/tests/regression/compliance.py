@@ -15,7 +15,7 @@ def check_l2_extensions(inpfile):
         ext = row["Name"]
         req = row["Required"]
         if req:
-            assert ext in hdul, f"Extension {ext} not found in {inpfile}"
+            assert ext in hdul, f"Required extension {ext} not found in {inpfile}"
 
     hdul.close()
 

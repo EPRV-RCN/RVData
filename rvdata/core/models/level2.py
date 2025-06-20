@@ -30,6 +30,10 @@ class RV2(rvdata.core.models.base.RVDataModel):
                 # TODO: set description and comment
                 self.create_extension(row["Name"], row["DataType"])
 
+        # Add EXT_DESCRIPT as a DataFrame
+        self.set_data("EXT_DESCRIPT", LEVEL2_EXTENSIONS.copy())
+        self.create_extension("EXT_DESCRIPT", "BinTableHDU")
+
     def _read(self, hdul: fits.HDUList) -> None:
         l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
 
@@ -84,10 +88,12 @@ class RV2(rvdata.core.models.base.RVDataModel):
 
             ext = self.data[name]
             if isinstance(ext, np.ndarray):
-                row = "|{:20s} |{:20s} |{:20s}\n".format(name, "array", str(ext.shape))
+                row = "|{:20s} |{:20s} |{:20s}\n"\
+                    .format(name, "array", str(ext.shape))
                 head += row
             elif isinstance(ext, pd.DataFrame):
-                row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
+                row = "|{:20s} |{:20s} |{:20s}\n"\
+                    .format(name, "table", str(len(ext)))
                 head += row
         print(head)
 
