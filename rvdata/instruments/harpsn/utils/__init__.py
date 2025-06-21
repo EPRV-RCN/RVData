@@ -1,4 +1,4 @@
-# RVData/instruments/harpsn/utils/__init__.py
+# RVData/rvdata/instruments/harpsn/utils/__init__.py
 
 from .convert_BLAZE import convert_BLAZE
 from .convert_DRIFT import convert_DRIFT

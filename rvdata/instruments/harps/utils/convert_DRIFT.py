@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harps/utils/convert_DRIFT.py
+RVData/rvdata/instruments/harps/utils/convert_DRIFT.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,6 +7,9 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+Extracts 'DRIFT' calibration data from a FITS file and stores it in an `RV2`
+object. Inserts a NaN row at a specified index and updates existing data if
+necessary. If no file is provided, an empty DRIFT extension is created.
 
 ---------------------
 Libraries
@@ -15,8 +18,8 @@ Libraries
 from astropy.io import fits
 import numpy as np
 
-from core.models.level2 import RV2
-import instruments.harps.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harps.config.config as config
 
 
 def convert_DRIFT(RV2: RV2, file_path: str) -> None:
@@ -50,7 +53,7 @@ def convert_DRIFT(RV2: RV2, file_path: str) -> None:
         # If no file is provided, create an empty ImageHDU with default
         # dimensions. This case occurs when Fiber B is SKY or DARK.
         drift_hdu = fits.ImageHDU(
-            data=np.zeros((config.NUMORDER, config.num_pixel))
+            data=np.zeros((config.NUMORDER, config.num_pixel), dtype=np.float32)
         )
 
     # Update the header with relevant metadata
@@ -85,11 +88,11 @@ def add_nan_row(matrix: np.ndarray, row_index: int) -> np.ndarray:
         matrix_updated (np.ndarray): A new array with the NaN row inserted.
     """
 
-    # Force the array to be of type float to avoid insertion issues
-    matrix = matrix.astype(np.float64)
+    # Get the original dtype
+    dtype = matrix.dtype
 
     # Create a row filled with NaN values
-    nan_row = np.full((1, matrix.shape[1]), np.nan)
+    nan_row = np.full((1, matrix.shape[1]), np.nan, dtype=dtype)
 
     # Insert the NaN row into the array
     matrix_updated = np.insert(matrix, row_index, nan_row, axis=0)

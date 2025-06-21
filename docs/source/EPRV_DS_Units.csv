@@ -1,0 +1,15 @@
+Parameter,Unit / Reference Frame,Comment
+Wavelength Solution,in vacuum,
+Barycentric Correction,solar barycenter rest frame,does not include the systemic velocity
+Wavelength Units,Angstrom or Micron,We recommend following the FITS standard by using one of its standard units. Define bitdepth to be 64 bit
+Flux Units,Photoelectrons,
+Time Units,BJD_TDB and UTC.,
+Exposure time,Seconds,
+SNR Units,SNR per pixel,use EXSNRW header keyword to specify SNR wavelength
+RA/Dec Coordinates,Sexigesimal,
+Epoch,Native epoch of the survey,e.g. 2015.5 for Gaia DR2
+Proper Motions,milliarcsecond/year,
+Color,Gaia Bp - Rp,Unless otherwise specified in header keywords
+Systemic Velocity,km/s,
+CCF Velocity,km/s,
+RV Measurement,km/s,

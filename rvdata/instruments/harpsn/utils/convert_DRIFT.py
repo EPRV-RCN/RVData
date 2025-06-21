@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harpsn/utils/convert_DRIFT.py
+RVData/rvdata/instruments/harpsn/utils/convert_DRIFT.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,6 +7,8 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+Extracts 'DRIFT' calibration data from a FITS file and stores it in an `RV2`
+object. If no file is provided, an empty DRIFT extension is created.
 
 ---------------------
 Libraries
@@ -15,8 +17,8 @@ Libraries
 from astropy.io import fits
 import numpy as np
 
-from core.models.level2 import RV2
-import instruments.harpsn.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harpsn.config.config as config
 
 
 def convert_DRIFT(RV2: RV2, file_path: str) -> None:
@@ -46,7 +48,7 @@ def convert_DRIFT(RV2: RV2, file_path: str) -> None:
         # If no file is provided, create an empty ImageHDU with default
         # dimensions. This case occurs when Fiber B is SKY or DARK.
         drift_hdu = fits.ImageHDU(
-            data=np.zeros((config.NUMORDER, config.num_pixel))
+            data=np.zeros((config.NUMORDER, config.num_pixel), dtype=np.float32)
         )
 
     # Update the header with relevant metadata

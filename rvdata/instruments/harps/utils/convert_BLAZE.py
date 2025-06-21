@@ -1,5 +1,5 @@
 '''
-RVData/instruments/harps/utils/convert_S2D_BLAZE.py
+RVData/rvdata/instruments/harps/utils/convert_S2D_BLAZE.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,6 +7,9 @@ Created: Wed Feb 26 2025
 Last Modified: Wed Feb 26 2025
 Version: 1.0.0
 Description:
+This script extracts 'BLAZE' calibration data from a FITS file and stores it in
+an `RV2` object as extensions (e.g., 'TRACE<X>_BLAZE'). It ensures proper
+naming, metadata handling, and updates existing extensions if necessary.
 
 ---------------------
 Libraries
@@ -15,8 +18,8 @@ Libraries
 from astropy.io import fits
 import numpy as np
 
-from core.models.level2 import RV2
-import instruments.harps.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.harps.config.config as config
 
 
 def convert_BLAZE(
@@ -93,11 +96,11 @@ def add_nan_row(matrix: np.ndarray, row_index: int) -> np.ndarray:
         matrix_updated (np.ndarray): A new array with the NaN row inserted.
     """
 
-    # Force the array to be of type float to avoid insertion issues
-    matrix = matrix.astype(np.float64)
+    # Get the original dtype
+    dtype = matrix.dtype
 
     # Create a row filled with NaN values
-    nan_row = np.full((1, matrix.shape[1]), np.nan)
+    nan_row = np.full((1, matrix.shape[1]), np.nan, dtype=dtype)
 
     # Insert the NaN row into the array
     matrix_updated = np.insert(matrix, row_index, nan_row, axis=0)
