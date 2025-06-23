@@ -1,5 +1,5 @@
-'''
-RVData/instruments/espresso/utils/convert_RAW.py
+"""
+RVData/rvdata/instruments/espresso/utils/convert_RAW.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
@@ -7,15 +7,19 @@ Created: Mon Mar 03 2025
 Last Modified: Mon Mar 03 2025
 Version: 1.0.0
 Description:
+Converts raw FITS data into an RV2 object, extracting relevant data
+from specified extensions (image and binary tables, etc) and updating
+the object with the necessary metadata for the EPRV project.
 
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 
-from core.models.level2 import RV2
-import instruments.espresso.config.config as config
+from rvdata.core.models.level2 import RV2
+import rvdata.instruments.espresso.config.config as config
 
 
 def convert_RAW(RV2: RV2, file_path: str) -> None:
@@ -37,47 +41,75 @@ def convert_RAW(RV2: RV2, file_path: str) -> None:
     with fits.open(file_path) as hdul:
         # Loop through all predefined extensions in config.extnames_raw
         for field in config.extnames_raw.keys():
-            # Retrieve field details
             field_info = config.extnames_raw.get(field, {})
-            # Get the extension type
-            field_type = field_info.get('type')
+            field_type = field_info.get("type")
 
             try:
                 # Extract the data from the current field in the FITS file
                 raw_data = hdul[field].data
 
                 # Create the appropriate HDU type based on field type
-                if field_type == 'ImageHDU':
-                    raw_hdu = fits.ImageHDU(
-                        data=raw_data,
-                        header=hdul[field].header
-                    )
-                elif field_type == 'BinTableHDU':
-                    raw_hdu = fits.BinTableHDU(
-                        data=raw_data,
-                        header=hdul[field].header
-                    )
+                if field_type == "ImageHDU":
+                    raw_hdu = fits.ImageHDU(data=raw_data, header=hdul[field].header)
+                elif field_type == "BinTableHDU":
+                    if field_info.get("name") == "EXPMETER":
+                        raw_hdu = fix_tunit_keywords(hdul[field])
+                    else:
+                        raw_hdu = fits.BinTableHDU(
+                            data=raw_data, header=hdul[field].header
+                        )
                 else:
                     # Skip unknown types
                     continue
 
                 # Update the header with relevant metadata
-                raw_hdu.header['EXTNAME'] = field_info.get('name')
+                raw_hdu.header["EXTNAME"] = field_info.get("name")
 
                 # Check if the extension already exists in the RV2 object
-                if (raw_hdu.header['EXTNAME'] not in RV2.extensions):
+                if raw_hdu.header["EXTNAME"] not in RV2.extensions:
                     # If the extension does not exist, create it
                     RV2.create_extension(
-                        ext_name=raw_hdu.header['EXTNAME'],
+                        ext_name=raw_hdu.header["EXTNAME"],
                         ext_type=field_type,
                         header=raw_hdu.header,
-                        data=raw_hdu.data
+                        data=raw_hdu.data,
                     )
                 else:
                     # If the extension exists, update its data and header
-                    RV2.set_header(raw_hdu.header['EXTNAME'], raw_hdu.header)
-                    RV2.set_data(raw_hdu.header['EXTNAME'], raw_hdu.data)
+                    RV2.set_header(raw_hdu.header["EXTNAME"], raw_hdu.header)
+                    RV2.set_data(raw_hdu.header["EXTNAME"], raw_hdu.data)
             except Exception:
-                print('No PUPIL IMAGE and GUIDING IMAGE extensions')
+                print(
+                    f"No {field} data found, "
+                    f'{field_info.get("name")} extension will not be generated'
+                )
                 # Skip if the extension is not find
                 continue
+
+
+def fix_tunit_keywords(hdu) -> None:
+    """
+    Corrects non-standard TUNIT keywords in a FITS HDU header using values
+    from config.py.
+
+    Parameters:
+        hdu (fits.BinTableHDU or fits.ImageHDU): The FITS HDU to process.
+
+    Returns:
+        None: The function modifies the HDU header in place.
+    """
+    # Retrieve the existing columns as ColDefs
+    col_defs = hdu.columns
+
+    # Create a list of new columns with corrected units
+    new_cols = []
+    for col in col_defs:
+        new_unit = config.TUNIT_FIXES.get(col.unit, col.unit)
+        new_col = fits.Column(
+            name=col.name, format=col.format, unit=new_unit, array=hdu.data[col.name]
+        )
+        new_cols.append(new_col)
+
+    # Recreate a BinTableHDU with the corrected columns
+    new_hdu = fits.BinTableHDU.from_columns(new_cols, header=hdu.header)
+    return new_hdu

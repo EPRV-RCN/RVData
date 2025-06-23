@@ -22,9 +22,9 @@ class NEIDRV2(RV2):
 
     Methods
     -------
-    _read(hdul: fits.HDUList) -> None:
-        Reads the input FITS HDU list and extracts relevant information from specific extensions
-        related to the standardized format.
+    _read(hdul: fits.HDUList) -> None
+        Reads the input FITS HDU list, extracts specific extensions related to the science
+        data for different chips and fibers, and stores them in a standardized format.
         - The method processes data from different fibers depending on NEID OBS-MODE:
           SCI/SKY/CAL for HR mode and SCI/SKY for HE mode (different NUMTRACE)
 
@@ -57,6 +57,14 @@ class NEIDRV2(RV2):
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
+        """
+        Read and process NEID Level 1 FITS file, extracting all relevant extensions.
+
+        Parameters
+        ----------
+        hdul : fits.HDUList
+            The FITS HDU list to be processed.
+        """
 
         # Set up extension description table
         ext_table = {

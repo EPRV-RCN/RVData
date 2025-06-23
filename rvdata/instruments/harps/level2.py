@@ -1,17 +1,17 @@
-'''
-RVData/instruments/harps/level2.py
+"""
+RVData/rvdata/instruments/harps/level2.py
 
 UNIGE-ESO - EPRV
 Author: Loris JACQUES & Emile FONTANET
 Created: Tue Jan 07 2025
 Last Modified: Tue Jan 07 2025
 Version: 1.0.0
-Description:
 
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 import os
 from astropy.io import fits
 
@@ -43,22 +43,21 @@ class HARPSRV2(RV2):
 
     Methods
     -------
-    do_conversion(hdul: fits.HDUList) -> None:
+    do_conversion(hdul: fits.HDUList) -> None
         Reads the input FITS HDU list, extracts specific extensions related to
         the science data for different chips and fibers, and stores them in a
         standardized format.
 
         - The method validates the FITS file before conversion to ensure it
-            meets the required criteria.
+          meets the required criteria.
         - Retrieves necessary file paths for additional files required in the
-            processing.
-        - Converts the spectral blaze functions (`S2D_BLAZE_A`, `S2D_BLAZE_B`,
-            `BLAZE_A`, `BLAZE_B`)
-          for the different fibers.
+          processing.
+        - Converts the spectral blaze functions (``S2D_BLAZE_A``,
+          ``S2D_BLAZE_B``, ``BLAZE_A``, ``BLAZE_B``) for the different fibers.
         - Processes and converts the drift file for instrumental calibration.
-        - Creates the `PRIMARY` header and necessary metadata.
-        - For now : Removes unused or redundant extensions such as `RECEIPT`
-            and `DRP_CONFIG`.
+        - Creates the ``PRIMARY`` header and necessary metadata.
+        - For now: Removes unused or redundant extensions such as ``RECEIPT``
+          and ``DRP_CONFIG``.
 
     Attributes
     ----------
@@ -72,14 +71,14 @@ class HARPSRV2(RV2):
 
     Notes
     -----
-    - The `do_conversion` method processes and extracts science and
-        calibration data.
+    - The ``do_conversion`` method processes and extracts science and
+      calibration data.
     - The method ensures the FITS file meets the required criteria before
-        conversion.
+      conversion.
     - Blaze correction functions are processed and stored for each fiber.
     - The drift file is processed separately for calibration.
-    - Unused extensions (like `RECEIPT` and `DRP_CONFIG`) are removed from the
-        final output.
+    - Unused extensions (like ``RECEIPT`` and ``DRP_CONFIG``) are removed from the
+      final output.
 
     Example
     -------
@@ -88,25 +87,37 @@ class HARPSRV2(RV2):
     >>> rv2_obj.to_fits("standard_level2.fits")
     """
 
-    def do_conversion(self, hdul: fits.HDUList) -> None:
+    def do_conversion(
+        self, hdul: fits.HDUList, directory_structure: str = "standard"
+    ) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
 
         This method performs several processing steps:
+
         1. Validates the FITS file structure before conversion.
         2. Retrieves paths for required additional files (e.g., blaze
-            functions, drift corrections).
+           functions, drift corrections).
         3. Converts and stores spectral blaze functions for different fibers.
         4. Converts the drift correction data.
-        5. Creates the `PRIMARY` header and integrates necessary metadata.
-        6. Cleans up unused extensions like `RECEIPT` and `DRP_CONFIG`.
+        5. Creates the ``PRIMARY`` header and integrates necessary metadata.
+        6. Cleans up unused extensions like ``RECEIPT`` and ``DRP_CONFIG``.
 
-        Args:
-            hdul (fits.HDUList): The FITS HDU list to be processed.
+        Parameters
+        ----------
+        hdul : fits.HDUList
+            The FITS HDU list to be processed.
+        directory_structure : str
+            Type of database architecture that stores resources. Must be either
+            'dace' or 'standard'.
 
-        Raises:
-            ValueError: If the FITS file is invalid and does not meet the
-                required criteria for conversion.
+        Raises
+        ------
+        ValueError
+            If the FITS file is invalid and does not meet the required criteria
+            for conversion.
+
+        :noindex:
         """
 
         path = os.path.join(self.dirname, self.filename)
@@ -120,26 +131,21 @@ class HARPSRV2(RV2):
             raise ValueError(e)
 
         # Retrieve the paths for the necessary files
-        names = get_files_names(path)
+        names = get_files_names(path, directory_structure)
 
         # Convert S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, and BLAZE_B files
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
-            dpr_type = (
-                hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE']
-                .split(",")[1]
-            )
+            dpr_type = hdu_raw["PRIMARY"].header["HIERARCH ESO DPR TYPE"].split(",")[1]
         fibers = config.fiber.get(dpr_type, {})
 
         for fiber in fibers:
             convert_S2D_BLAZE(
-                self, names["s2d_blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["s2d_blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
             convert_BLAZE(
-                self, names["blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
             trace_ind_start += config.slice_nb
 
@@ -152,5 +158,10 @@ class HARPSRV2(RV2):
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
         # Remove empty extensions
-        self.del_extension('RECEIPT')
-        self.del_extension('DRP_CONFIG')
+        rm_list = []
+        for key, value in self.headers.items():
+            if len(value) == 0:
+                rm_list.append(key)
+
+        for key in rm_list:
+            self.del_extension(key)

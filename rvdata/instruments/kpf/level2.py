@@ -12,50 +12,42 @@ from rvdata.core.models.level2 import RV2
 # KPF Level2 Reader
 class KPFRV2(RV2):
     """
-    Read a KPF level 1 file and convert it to the EPRV standard format Python object.
+    Data model and reader for RVData Level 2 (RV) data constructed from
+    KPF Level 0 and KPF Level 1 pipeline products.
 
-    This class extends the `RV2` base class to handle the reading of KPF (Keck Planet Finder)
-    Level 1 files and converts them into a standardized EPRV
-    format. Each extension from the FITS file is read, and relevant data, including flux,
-    wavelength, variance, and metadata, are stored as attributes of the resulting Python object.
+    This class extends the `RV2` base class to handle Keck Planet Finder (KPF)
+    data. It reads the relevant science and calibration extensions
+    from both a KPF Level 0 and a KPF Level 1 FITS file, organizes them into a
+    standardized format, and provides convenient access to flux, wavelength,
+    variance, blaze, and metadata for each fiber and chip.
 
-    Methods
-    -------
-    _read(hdul0: fits.HDUList, hdul1: fits.HDUlist) -> None:
-        Reads the input FITS HDU list, extracts specific extensions related to the science
-        data for different chips and fibers, and stores them in a standardized format.
-
-        - The method processes science data (`SCI_FLUX`, `SCI_WAVE`, `SCI_VAR`) from both
-          the GREEN and RED chips and different fibers (`SKY`, `CAL`).
-        - For each chip and fiber, the flux, wavelength, variance, and metadata are extracted
-          and stored as a `SpectrumCollection` object.
-        - Deletes unused extensions such as `RED_TELLURIC`, `GREEN_TELLURIC`, and `TELEMETRY`.
+    Parameters
+    ----------
+    Inherits all parameters from :class:`RV2`.
 
     Attributes
     ----------
     extensions : dict
-        A dictionary containing all the created extensions (e.g., `C1_SCI1`, `C1_SKY1`, `C2_CAL1`)
-        where the keys are the extension names and the values are `SpectrumCollection` objects
-        for each respective dataset.
-
-    header : dict
-        A dictionary containing metadata headers from the FITS file, with each extension's
-        metadata stored under its respective key.
+        Dictionary of all created extensions (e.g., 'TRACE2_FLUX',
+        'TRACE2_WAVE', etc.), mapping extension names to their data arrays.
+    headers : dict
+        Dictionary of headers for each extension, mapping extension names to
+        their FITS headers.
+    data : dict
+        Dictionary of data arrays for each extension.
 
     Notes
     -----
-    - The `_read` method processes science and calibration data from the GREEN and RED chips,
-      and it extracts and organizes data for both the SCI, SKY, and CAL fibers.
-    - The method converts the flux, wavelength, and variance for each extension into
-      `SpectrumCollection` objects.
-    - Unused extensions (like `RED_TELLURIC`, `GREEN_TELLURIC`, and `TELEMETRY`) are removed
-      from the object.
+    To construct an RVData Level 2 object, both a KPF Level 0 and a KPF Level
+    1 FITS file are required. The classmethod `from_fits` should be used to
+    instantiate the object from these files. The `_read` method is not intended
+    to be called directly by users.
 
     Example
     -------
-    >>> from core.models.level2 import RV2
-    >>> rv2_obj = RV2.from_fits("kpf_level0_file.fits", "kpf_level1_file.fits")
-    >>> rv2_obj.to_fits("standard_level2.fits")
+    >>> from rvdata.instruments.kpf.level2 import KPFRV2
+    >>> obj = KPFRV2.from_fits("kpf_L1.fits", l0file="kpf_L0.fits")
+    >>> obj.to_fits("kpf_L2_standard.fits")
     """
 
     def _read(self, hdul1: fits.HDUList, **kwargs) -> None:

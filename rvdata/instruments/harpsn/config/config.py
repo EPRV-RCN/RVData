@@ -7,10 +7,13 @@ EXCLUDE_OBJECTS = {"SUN", "solar_spectrum", "Sun"}
 # DPR types that should be excluded from conversion
 EXCLUDE_DPR_TYPES = {"CIRPOL"}
 
+# PROGRAM that should be excluded from conversion
+EXCLUDE_PROGRAMS = {}
+
 fiber = {
-    "WAVE": {'A': 'SCI', 'B': 'FP'},
-    "SKY": {'A': 'SCI', 'B': 'SKY'},
-    "DARK": {'A': 'SCI'}
+    "WAVE": {"A": "SCI", "B": "FP"},
+    "SKY": {"A": "SCI", "B": "SKY"},
+    "DARK": {"A": "SCI"},
 }
 
 data_format = "L2"  # Can either be original or L2
@@ -24,21 +27,24 @@ num_pixel = 4096
 # Number of orders in a fiber
 NUMORDER = 69
 
+# DRS version for proper file search functionality.
+DRS_VERSION = "DRS-3.0.1"
+
 # Allows the conversion of the S2D_BLAZE files
 extnames = {
-    'SCIDATA': '_FLUX',
-    'ERRDATA': '_VAR',
-    'WAVEDATA_VAC_BARY': '_WAVE',
-    'QUALDATA': '_QUALDATA',
-    'DLLDATA_VAC_BARY': '_DISP'
+    "SCIDATA": "_FLUX",
+    "ERRDATA": "_VAR",
+    "WAVEDATA_VAC_BARY": "_WAVE",
+    "QUALDATA": "_QUALDATA",
+    "DLLDATA_VAC_BARY": "_DISP",
 }
 
 # Define the time ranges of instrument versions
 INSTRUMENT_VERSIONS = [
     {
-        "version": 'HARPN',
+        "version": "HARPN",
         "start_date": "2012-11-10",
-        "end_date": None  # None = Until now
+        "end_date": None,  # None = Until now
     }
 ]
 
