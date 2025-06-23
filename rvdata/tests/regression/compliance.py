@@ -15,7 +15,25 @@ def check_l2_extensions(inpfile):
         ext = row["Name"]
         req = row["Required"]
         if req:
-            assert ext in hdul, f"Extension {ext} not found in {inpfile}"
+            assert ext in hdul, f"Required extension {ext} not found in {inpfile}"
+
+    ext_table = pd.DataFrame(hdul["EXT_DESCRIPT"].data)
+    for i, row in ext_table.iterrows():
+        extname = row["Name"]
+        req = row["Required"]
+        if req:
+            assert (
+                extname in hdul
+            ), f"Extension {extname} not found in data but present in EXT_DESCRIPT table."
+
+    # Check every extension in the data (except PRIMARY) has an entry in EXT_DESCRIPT
+    ext_names_in_table = ext_table["Name"].tolist()
+    for hdu in hdul:
+        if hdu.name == "PRIMARY":
+            continue
+        assert (
+            hdu.name in ext_names_in_table
+        ), f"Extension {hdu.name} present in data but missing from EXT_DESCRIPT table."
 
     hdul.close()
 
@@ -28,16 +46,18 @@ def check_l2_header(header):
     reference_header = pd.read_csv(ref_csv)
     for i, row in reference_header.iterrows():
         key = row["Keyword"]
-        req = row["Required"] == 'Y'
+        req = row["Required"] == "Y"
         if "#" in key or "..." in key:
-            print(f"Problem checking for keyword: {key}")
+            # print(f"Stripping multi keyword: {key}")
             key = key.split("...")[0].strip()
-        elif req and (key not in header):
+        if req and (key not in header):
             print(key, req)
             assert key in header, f"Keyword {key} not found in header"
-        else:
+        elif req and (key in header):
             value = header[key]
             print(f"{key} = {value} ✓")
+        else:
+            continue
 
 
 if __name__ == "__main__":
