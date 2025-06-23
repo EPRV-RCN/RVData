@@ -11,9 +11,9 @@ EXCLUDE_DPR_TYPES = {"CIRPOL"}
 EXCLUDE_PROGRAMS = {"60.A-9036"}
 
 fiber = {
-    "WAVE": {'A': 'SCI', 'B': 'FP'},
-    "SKY": {'A': 'SCI', 'B': 'SKY'},
-    "DARK": {'A': 'SCI'}
+    "WAVE": {"A": "SCI", "B": "FP"},
+    "SKY": {"A": "SCI", "B": "SKY"},
+    "DARK": {"A": "SCI"},
 }
 
 data_format = "L2"  # Can either be original or L2
@@ -35,25 +35,21 @@ DRS_VERSION = "DRS-3.2.5"
 
 # Allows the conversion of S2D_BLAZE files
 extnames = {
-    'SCIDATA': '_FLUX',
-    'ERRDATA': '_VAR',
-    'WAVEDATA_VAC_BARY': '_WAVE',
-    'QUALDATA': '_QUALDATA',
-    'DLLDATA_VAC_BARY': '_DISP'
+    "SCIDATA": "_FLUX",
+    "ERRDATA": "_VAR",
+    "WAVEDATA_VAC_BARY": "_WAVE",
+    "QUALDATA": "_QUALDATA",
+    "DLLDATA_VAC_BARY": "_DISP",
 }
 
 # Define the time ranges of instrument versions
 INSTRUMENT_VERSIONS = [
+    {"version": "HARPS-3", "start_date": "2003-06-01", "end_date": "2015-05-25"},
     {
-        "version": 'HARPS-3',
-        "start_date": "2003-06-01",
-        "end_date": "2015-05-25"
-    },
-    {
-        "version": 'HARPS-15',
+        "version": "HARPS-15",
         "start_date": "2015-06-26",
-        "end_date": None  # None = Until now
-    }
+        "end_date": None,  # None = Until now
+    },
 ]
 
 # Parameters for Simbad queries. Allows setting the timeout after which a

@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/espresso/utils/convert_DRIFT.py
 
 UNIGE-ESO - EPRV
@@ -13,7 +13,8 @@ object. If no file is provided, an empty DRIFT extension is created.
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 import numpy as np
 
@@ -22,8 +23,7 @@ import rvdata.instruments.espresso.config.config as config
 
 
 def convert_DRIFT(
-        RV2: RV2, file_path: str,
-        trace_ind_start: int, slice_nb: int
+    RV2: RV2, file_path: str, trace_ind_start: int, slice_nb: int
 ) -> None:
     """
     Processes a FITS file and converts its data into a 'DRIFT' extension,
@@ -42,13 +42,12 @@ def convert_DRIFT(
             updating the 'DRIFT' extension.
     """
     # Loop through each slice from 1 to slice_nb
-    for slice in range(1, slice_nb+1):
-        if (file_path is not None):
+    for slice in range(1, slice_nb + 1):
+        if file_path is not None:
             with fits.open(file_path) as hdul:
                 # Extract drift data from the FITS file (2nd HDU)
                 drift_hdu = fits.ImageHDU(
-                    data=hdul[1].data[slice-1::slice_nb, :],
-                    header=hdul[1].header
+                    data=hdul[1].data[slice - 1 :: slice_nb, :], header=hdul[1].header
                 )
         else:
             # If no file is provided, create an empty ImageHDU with default
@@ -58,22 +57,22 @@ def convert_DRIFT(
             )
 
         # Update the header with relevant metadata
-        drift_hdu.header['EXTNAME'] = (
-            'TRACE'+str(trace_ind_start+slice-1)+'_DRIFT'
+        drift_hdu.header["EXTNAME"] = (
+            "TRACE" + str(trace_ind_start + slice - 1) + "_DRIFT"
         )
-        drift_hdu.header['CTYPE1'] = ('Pixels', 'Name of axis 1')
-        drift_hdu.header['CTYPE2'] = ('Order-N', 'Name of axis 2')
+        drift_hdu.header["CTYPE1"] = ("Pixels", "Name of axis 1")
+        drift_hdu.header["CTYPE2"] = ("Order-N", "Name of axis 2")
 
         # Check if the extension already exists in the RV2 object
-        if (drift_hdu.header['EXTNAME'] not in RV2.extensions):
+        if drift_hdu.header["EXTNAME"] not in RV2.extensions:
             # If the extension does not exist, create it
             RV2.create_extension(
-                ext_name=drift_hdu.header['EXTNAME'],
-                ext_type='ImageHDU',
+                ext_name=drift_hdu.header["EXTNAME"],
+                ext_type="ImageHDU",
                 header=drift_hdu.header,
-                data=drift_hdu.data
+                data=drift_hdu.data,
             )
         else:
             # If the extension exists, update its data and header
-            RV2.set_header(drift_hdu.header['EXTNAME'], drift_hdu.header)
-            RV2.set_data(drift_hdu.header['EXTNAME'], drift_hdu.data)
+            RV2.set_header(drift_hdu.header["EXTNAME"], drift_hdu.header)
+            RV2.set_data(drift_hdu.header["EXTNAME"], drift_hdu.data)

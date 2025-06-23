@@ -34,8 +34,8 @@ class RV2(rvdata.core.models.base.RVDataModel):
         l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
 
         for hdu in hdul:
-            if 'TRACE' in hdu.name:
-                t1 = 'TRACE1_' + hdu.name.split('_')[1]
+            if "TRACE" in hdu.name:
+                t1 = "TRACE1_" + hdu.name.split("_")[1]
                 fits_type = l2_ext.loc[t1]["DataType"]
             else:
                 fits_type = l2_ext.loc[hdu.name]["DataType"]

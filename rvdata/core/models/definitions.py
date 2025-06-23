@@ -26,7 +26,11 @@ else:
 
 # Dictionary of instrument readers
 INSTRUMENT_READERS = {
-    "KPF": {"module": "rvdata.instruments.kpf.level2", "class": "KPFRV2", "method": "_read"},
+    "KPF": {
+        "module": "rvdata.instruments.kpf.level2",
+        "class": "KPFRV2",
+        "method": "_read",
+    },
     "ESPRESSO": {
         "module": "rvdata.instruments.espresso.level2",
         "class": "ESPRESSORV2",
@@ -45,6 +49,11 @@ INSTRUMENT_READERS = {
     "NEID": {
         "module": "rvdata.instruments.neid.level2",
         "class": "NEIDRV2",
+        "method": "_read",
+    },
+    "EXPRES": {
+        "module": "rvdata.instruments.expres.level2",
+        "class": "EXPRESRV2",
         "method": "_read",
     },
 }

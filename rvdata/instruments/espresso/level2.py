@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/espresso/level2.py
 
 UNIGE-ESO - EPRV
@@ -10,7 +10,8 @@ Version: 1.0.0
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 import os
 import pandas as pd
@@ -25,7 +26,7 @@ from rvdata.instruments.espresso.utils import (
     validate_fits_file,
     convert_RAW,
     convert_TELLURIC,
-    convert_SKYSUB
+    convert_SKYSUB,
 )
 
 # ESPRESSO Level2 Reader
@@ -45,73 +46,82 @@ class ESPRESSORV2(RV2):
 
     Methods
     -------
-    do_conversion(hdul: fits.HDUList) -> None:
-        Reads the input FITS HDU list, extracts specific extensions related to
-        the science data for different chips and fibers, and stores them in a
-        standardized format.
+        do_conversion(hdul: fits.HDUList) -> None
+            Reads the input FITS HDU list, extracts specific extensions related to
+            the science data for different chips and fibers, and stores them in a
+            standardized format.
 
-        - The method validates the FITS file before conversion to ensure it
+            - The method validates the FITS file before conversion to ensure it
             meets the required criteria.
-        - Retrieves necessary file paths for additional files required in the
+            - Retrieves necessary file paths for additional files required in the
             processing.
-        - Converts the spectral blaze functions (`S2D_BLAZE_A`, `S2D_BLAZE_B`,
-            `BLAZE_A`, `BLAZE_B`)
-          for the different fibers.
-        - Processes and converts the drift file for instrumental calibration.
-        - Creates the `PRIMARY` header and necessary metadata.
-        - For now : Removes unused or redundant extensions such as `RECEIPT`
-            and `DRP_CONFIG`.
+            - Converts the spectral blaze functions (``S2D_BLAZE_A``,
+            ``S2D_BLAZE_B``, ``BLAZE_A``, ``BLAZE_B``) for the different fibers.
+            - Processes and converts the drift file for instrumental calibration.
+            - Creates the ``PRIMARY`` header and necessary metadata.
+            - For now: Removes unused or redundant extensions such as ``RECEIPT``
+            and ``DRP_CONFIG``.
 
     Attributes
     ----------
-    extensions : dict
-        A dictionary containing all the created extensions, where the keys are
-        extension names, and the values are the respective data arrays.
+        extensions : dict
+            A dictionary containing all the created extensions, where the keys are
+            extension names, and the values are the respective data arrays.
 
-    header : dict
-        A dictionary containing metadata headers from the FITS files, with
-        each extension's metadata stored under its respective key.
+        header : dict
+            A dictionary containing metadata headers from the FITS files, with
+            each extension's metadata stored under its respective key.
 
     Notes
     -----
-    - The `do_conversion` method processes and extracts science and
+        - The ``do_conversion`` method processes and extracts science and
         calibration data.
-    - The method ensures the FITS file meets the required criteria before
+        - The method ensures the FITS file meets the required criteria before
         conversion.
-    - Blaze correction functions are processed and stored for each fiber.
-    - The drift file is processed separately for calibration.
-    - Unused extensions (like `RECEIPT` and `DRP_CONFIG`) are removed from the
+        - Blaze correction functions are processed and stored for each fiber.
+        - The drift file is processed separately for calibration.
+        - Unused extensions (like ``RECEIPT`` and ``DRP_CONFIG``) are removed from the
         final output.
 
     Example
     -------
-    >>> from core.models.level2 import RV2
-    >>> rv2_obj = ESPRESSORV2.from_fits("espresso_level1_file.fits")
-    >>> rv2_obj.to_fits("standard_level2.fits")
+        >>> from core.models.level2 import RV2
+        >>> rv2_obj = ESPRESSORV2.from_fits("espresso_level1_file.fits")
+        >>> rv2_obj.to_fits("standard_level2.fits")
+
     """
 
     def do_conversion(
-            self, hdul: fits.HDUList, directory_structure: str = 'standard'
+        self, hdul: fits.HDUList, directory_structure: str = "standard"
     ) -> None:
         """
         Converts FITS files based on certain conditions and configurations.
 
         This method performs several processing steps:
+
         1. Validates the FITS file structure before conversion.
         2. Retrieves paths for required additional files (e.g., blaze
-            functions, drift corrections).
+           functions, drift corrections).
         3. Converts and stores spectral blaze functions for different fibers.
         4. Converts the drift correction data.
-        5. Creates the `PRIMARY` header and integrates necessary metadata.
-        6. Cleans up unused extensions like `RECEIPT` and `DRP_CONFIG`.
+        5. Creates the ``PRIMARY`` header and integrates necessary metadata.
+        6. Cleans up unused extensions like ``RECEIPT`` and ``DRP_CONFIG``.
 
-        Args:
-            hdul (fits.HDUList): The FITS HDU list to be processed.
-            directory_structure (str): Type of database architecture that stores
-                resources. Must be either 'dace' or 'standard'.
-        Raises:
-            ValueError: If the FITS file is invalid and does not meet the
-                required criteria for conversion.
+        Parameters
+        ----------
+        hdul : fits.HDUList
+            The FITS HDU list to be processed.
+        directory_structure : str
+            Type of database architecture that stores resources. Must be either
+            'dace' or 'standard'.
+
+        Raises
+        ------
+        ValueError
+            If the FITS file is invalid and does not meet the required criteria
+            for conversion.
+
+        :noindex:
         """
 
         path = os.path.join(self.dirname, self.filename)
@@ -131,57 +141,49 @@ class ESPRESSORV2(RV2):
         trace_ind_start = 1
 
         with fits.open(path) as hdu_raw:
-            dpr_type = (
-                hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE']
-                .split(",")[1]
-            )
+            dpr_type = hdu_raw["PRIMARY"].header["HIERARCH ESO DPR TYPE"].split(",")[1]
         fibers = config.fiber.get(dpr_type, {})
         convert_RAW(self, path)
 
         for fiber in fibers:
             convert_S2D_BLAZE(
-                self, names["s2d_blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["s2d_blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
             convert_BLAZE(
-                self, names["blaze_file_"+fiber],
-                trace_ind_start, config.slice_nb
+                self, names["blaze_file_" + fiber], trace_ind_start, config.slice_nb
             )
-            if fiber == 'A':
+            if fiber == "A":
                 try:
                     convert_TELLURIC(
-                        self, names["telluric_file_"+fiber],
-                        trace_ind_start, config.slice_nb
+                        self,
+                        names["telluric_file_" + fiber],
+                        trace_ind_start,
+                        config.slice_nb,
                     )
-                    print(
-                        'TRACEi_TELLURIC_x extensions '
-                        'have been generated.'
-                    )
+                    print("TRACEi_TELLURIC_x extensions " "have been generated.")
                 except Exception:
                     print(
-                        'No TELLURIC file found, TRACEi_TELLURIC_x extensions '
-                        'will not be generated.'
+                        "No TELLURIC file found, TRACEi_TELLURIC_x extensions "
+                        "will not be generated."
                     )
 
                 try:
                     convert_SKYSUB(
-                        self, names["skysub_file_"+fiber],
-                        trace_ind_start, config.slice_nb
+                        self,
+                        names["skysub_file_" + fiber],
+                        trace_ind_start,
+                        config.slice_nb,
                     )
-                    print(
-                        'TRACEi_SKYSUB_x extensions '
-                        'have been generated.'
-                    )
+                    print("TRACEi_SKYSUB_x extensions " "have been generated.")
                 except Exception:
                     print(
-                        'No SKYSUB file found, TRACEi_SKYSUB_x extensions '
-                        'will not be generated.'
+                        "No SKYSUB file found, TRACEi_SKYSUB_x extensions "
+                        "will not be generated."
                     )
 
-            if fiber == 'B':
+            if fiber == "B":
                 convert_DRIFT(
-                    self, names["drift_file_"+fiber],
-                    trace_ind_start, config.slice_nb
+                    self, names["drift_file_" + fiber], trace_ind_start, config.slice_nb
                 )
 
             trace_ind_start += config.slice_nb

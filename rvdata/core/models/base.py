@@ -34,42 +34,19 @@ class RVDataModel(object):
     from this class, so any attribute and method listed here applies to all data
     models.
 
-    Attributes:
-        extensions (dict): a dictionary of extensions
-
-            This maps extension name to their FITS data type, e.g. PrimaryHDU,
-            ImageHDU, BinTableHDU.
-
-        headers (dict): a dictionary of headers of each extension (HDU)
-
-            This stores all header information from the FITS file as a dictionary
-            with extension name as the keys and the header content as the values.
-            Headers are stored as OrderedDict types.
-
-        data (dict): a dictionary of data of each extension (HDU)
-
-            This stores all extension data from the FITS file as a dictionary
-            with extension name as the keys and the data content as the values.
-            Data type is translated from the FITS type to an appropriate Python
-            data type by core.model.definitions.FITS_TYPE_MAP.
-
-        receipt (pandas.DataFrame): a table that records the history of this data
-
-            The receipt keeps track of the data process history, so that the information
-            stored by this instance can be reproduced from the original data. It is
-            structured as a pandas.DataFrame table, with each row as an entry.
-
-            Anything that modifies the content of a data product are expected to also
-            write to the receipt. Three string inputs from the primitive are required: name,
-            any relevant parameters, and a status. The receipt will also automatically fill
-            in additional information, such as the time of execution, code release version,
-            current branch, ect.
-
-            It is not recommended to modify the receipt Dataframe directly. Use the provided
-            methods to make any adjustments, such as:
-                >>> from core.models.level1 import RV1
-                >>> data = RV1()
-                >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
+    Attributes
+    ----------
+    extensions : dict
+        A dictionary of extensions. This maps extension name to their FITS data type, e.g. PrimaryHDU, ImageHDU, BinTableHDU.
+    headers : dict
+        A dictionary of headers of each extension (HDU). This stores all header information from the FITS file as a dictionary with extension name as the keys and the header content as the values. Headers are stored as OrderedDict types.
+    data : dict
+        A dictionary of data of each extension (HDU). This stores all extension data from the FITS file as a dictionary with extension name as the keys and the data content as the values. Data type is translated from the FITS type to an appropriate Python data type by core.model.definitions.FITS_TYPE_MAP.
+    receipt : pandas.DataFrame
+        A table that records the history of this data. The receipt keeps track of the data process history, so that the information stored by this instance can be reproduced from the original data. It is structured as a pandas.DataFrame table, with each row as an entry. Anything that modifies the content of a data product are expected to also write to the receipt. Three string inputs from the primitive are required: name, any relevant parameters, and a status. The receipt will also automatically fill in additional information, such as the time of execution, code release version, current branch, ect. It is not recommended to modify the receipt Dataframe directly. Use the provided methods to make any adjustments, such as:
+            >>> from core.models.level1 import RV1
+            >>> data = RV1()
+            >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
     """
 
     def __init__(self):
@@ -130,6 +107,7 @@ class RVDataModel(object):
             required before calling this function
 
         """
+
         if not fn.endswith(".fits"):
             # Can only read .fits files
             raise IOError("input files must be FITS files")
@@ -138,6 +116,7 @@ class RVDataModel(object):
         self.dirname = os.path.dirname(fn)
 
         with fits.open(fn) as hdu_list:
+
             # Handles the Receipt and the auxilary HDUs
             for hdu in hdu_list:
                 if isinstance(hdu, fits.PrimaryHDU):
@@ -155,10 +134,11 @@ class RVDataModel(object):
                         )
                         setattr(self, hdu.name, df)
                         setattr(self, hdu.name.lower(), getattr(self, hdu.name))
-                    self.headers[hdu.name] = hdu.header
-                    setattr(self, hdu.name, t.to_pandas())
+                        self.headers[hdu.name] = hdu.header
+                        setattr(self, hdu.name, t.to_pandas())
 
             # Leave the rest of HDUs to level specific readers
+
             if instrument is None:
                 import rvdata.core.models.level2
 
@@ -168,6 +148,7 @@ class RVDataModel(object):
                 module = importlib.import_module(
                     self.read_methods[instrument]["module"]
                 )
+
                 cls = getattr(module, self.read_methods[instrument]["class"])
                 method = getattr(cls, self.read_methods[instrument]["method"])
                 method(self, hdu_list, **kwargs)

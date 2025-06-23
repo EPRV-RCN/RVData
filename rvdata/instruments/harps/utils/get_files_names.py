@@ -1,4 +1,4 @@
-'''
+"""
 RVData/rvdata/instruments/harps/utils/get_files_names.py
 
 UNIGE-ESO - EPRV
@@ -13,7 +13,8 @@ Handles DRIFT file validation and adjusts BLAZE file paths based on timestamps.
 ---------------------
 Libraries
 ---------------------
-'''
+"""
+
 from astropy.io import fits
 from datetime import datetime, timedelta
 import os
@@ -39,42 +40,42 @@ def get_files_names(full_path: str, directory_structure: str) -> dict:
     repo_path = os.path.dirname(full_path)
     base_file_name = os.path.basename(full_path)
 
-    if directory_structure == 'dace':
+    if directory_structure == "dace":
         repo_path = repo_path.replace(
             "HARPSRAW/raw", f"HARPSDRS/{config.DRS_VERSION}/reduced"
         )
 
     # Construct paths for the S2D and BLAZE FITS files (both A and B versions)
     s2d_blaze_file_A = os.path.join(
-        repo_path, 'r.'+base_file_name[:-5]+'_S2D_BLAZE_A.fits'
+        repo_path, "r." + base_file_name[:-5] + "_S2D_BLAZE_A.fits"
     )
     s2d_blaze_file_B = os.path.join(
-        repo_path, 'r.'+base_file_name[:-5]+'_S2D_BLAZE_B.fits'
+        repo_path, "r." + base_file_name[:-5] + "_S2D_BLAZE_B.fits"
     )
     drift_file_B = os.path.join(
-        repo_path, 'r.'+base_file_name[:-5]+'_DRIFT_MATRIX_B.fits'
+        repo_path, "r." + base_file_name[:-5] + "_DRIFT_MATRIX_B.fits"
     )
 
     if not os.path.isfile(drift_file_B):
         with fits.open(full_path) as hdu_raw:
-            dpr_type = hdu_raw['PRIMARY'].header['HIERARCH ESO DPR TYPE']
-            if dpr_type.split(",")[1] == 'SKY':
+            dpr_type = hdu_raw["PRIMARY"].header["HIERARCH ESO DPR TYPE"]
+            if dpr_type.split(",")[1] == "SKY":
                 print(
-                    'SKY type doesn\'t have any DRIFT correction. '
-                    'DRIFT extension will be generated with zeros'
+                    "SKY type doesn't have any DRIFT correction. "
+                    "DRIFT extension will be generated with zeros"
                 )
                 drift_file_B = None
-            elif dpr_type.split(",")[1] == 'DARK':
+            elif dpr_type.split(",")[1] == "DARK":
                 print(
-                    'DARK type doesn\'t have any DRIFT correction. '
-                    'DRIFT extension will be generated with zeros'
+                    "DARK type doesn't have any DRIFT correction. "
+                    "DRIFT extension will be generated with zeros"
                 )
                 drift_file_B = None
             else:
                 drift_file_B = None
                 print(
-                    'No DRIFT_MATRIX_B file found, '
-                    'DRIFT extension will be generated with zeros'
+                    "No DRIFT_MATRIX_B file found, "
+                    "DRIFT extension will be generated with zeros"
                 )
 
     # Open the S2D BLAZE FITS file (A version) to retrieve the BLAZE file names
@@ -82,37 +83,37 @@ def get_files_names(full_path: str, directory_structure: str) -> dict:
     # On Windows, ":" in file names is replaced with "_" as ":" is not allowed
     # in Windows file systems.
     with fits.open(s2d_blaze_file_A) as hdul:
-        for i in hdul['PRIMARY'].header['ESO PRO REC1 CAL* CATG']:
-            if 'BLAZE_A' == hdul['PRIMARY'].header[i]:
-                if (os.name == 'nt'):
+        for i in hdul["PRIMARY"].header["ESO PRO REC1 CAL* CATG"]:
+            if "BLAZE_A" == hdul["PRIMARY"].header[i]:
+                if os.name == "nt":
                     # For Windows: Replace ":" with "_" in file names
                     blaze_file_A = adjust_repo_path(
                         repo_path,
-                        hdul["PRIMARY"].header[i[:-4]+'NAME'].replace(":", "_"),
-                        directory_structure
+                        hdul["PRIMARY"].header[i[:-4] + "NAME"].replace(":", "_"),
+                        directory_structure,
                     )
                 else:
                     # For non-Windows systems: Use file names as they are
                     blaze_file_A = adjust_repo_path(
                         repo_path,
-                        hdul["PRIMARY"].header[i[:-4]+'NAME'],
-                        directory_structure
+                        hdul["PRIMARY"].header[i[:-4] + "NAME"],
+                        directory_structure,
                     )
 
-            if 'BLAZE_B' == hdul['PRIMARY'].header[i]:
-                if (os.name == 'nt'):
+            if "BLAZE_B" == hdul["PRIMARY"].header[i]:
+                if os.name == "nt":
                     # For Windows: Replace ":" with "_" in file names
                     blaze_file_B = adjust_repo_path(
                         repo_path,
-                        hdul["PRIMARY"].header[i[:-4]+'NAME'].replace(":", "_"),
-                        directory_structure
+                        hdul["PRIMARY"].header[i[:-4] + "NAME"].replace(":", "_"),
+                        directory_structure,
                     )
                 else:
                     # For non-Windows systems: Use file names as they are
                     blaze_file_B = adjust_repo_path(
                         repo_path,
-                        hdul["PRIMARY"].header[i[:-4]+'NAME'],
-                        directory_structure
+                        hdul["PRIMARY"].header[i[:-4] + "NAME"],
+                        directory_structure,
                     )
 
     # Construct a dictionary of all the file paths
@@ -123,13 +124,13 @@ def get_files_names(full_path: str, directory_structure: str) -> dict:
         "s2d_blaze_file_B": s2d_blaze_file_B,
         "blaze_file_A": blaze_file_A,
         "blaze_file_B": blaze_file_B,
-        "drift_file_B": drift_file_B
+        "drift_file_B": drift_file_B,
     }
     return names
 
 
 def adjust_repo_path(
-        repo_path: str, blaze_filename: str, directory_structure: str
+    repo_path: str, blaze_filename: str, directory_structure: str
 ) -> str:
     """
     Adjusts the repository path based on the timestamp in the BLAZE file name.
@@ -146,21 +147,17 @@ def adjust_repo_path(
         str: The corrected file path.
     """
     try:
-        if (directory_structure == 'dace'):
+        if directory_structure == "dace":
             # Extract the date and time from the filename
             filename_parts = blaze_filename.split("_BLAZE")[0]
 
             timestamp_str = filename_parts.split("r.HARPS.")[1]
 
             # Convert timestamp to datetime object
-            if ':' in timestamp_str:
-                file_datetime = datetime.strptime(
-                    timestamp_str, "%Y-%m-%dT%H:%M:%S.%f"
-                )
+            if ":" in timestamp_str:
+                file_datetime = datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%S.%f")
             else:
-                file_datetime = datetime.strptime(
-                    timestamp_str, "%Y-%m-%dT%H_%M_%S.%f"
-                )
+                file_datetime = datetime.strptime(timestamp_str, "%Y-%m-%dT%H_%M_%S.%f")
 
             # Extract the current repo date
             repo_date = file_datetime.date()
@@ -180,8 +177,6 @@ def adjust_repo_path(
         return os.path.join(repo_path, blaze_filename)
 
     except Exception as e:
-        print(
-            f"Error processing repo path for BLAZE file '{blaze_filename}':{e}"
-        )
+        print(f"Error processing repo path for BLAZE file '{blaze_filename}':{e}")
         # Return original path if something goes wrong
         return os.path.join(repo_path, blaze_filename)
