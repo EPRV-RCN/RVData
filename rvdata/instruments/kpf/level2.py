@@ -232,6 +232,17 @@ class KPFRV2(RV2):
         self.set_header("RECEIPT", OrderedDict(hdul1["RECEIPT"].header))
         self.set_data("RECEIPT", Table(hdul1["RECEIPT"].data).to_pandas())
 
+        wavelengths = self.data["TRACE2_WAVE"]
+        order_table_data = pd.DataFrame(
+            {
+                "echelle_order": 137 - np.arange(wavelengths.shape[0]),
+                "order_index": np.arange(wavelengths.shape[0]),
+                "wave_start": np.nanmin(wavelengths.data, axis=1),
+                "wave_end": np.nanmax(wavelengths.data, axis=1),
+            }
+        )
+        self.set_data("ORDER_TABLE", order_table_data)
+
         hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
         headmap = pd.read_csv(hmap_path, header=0)
 
@@ -250,3 +261,12 @@ class KPFRV2(RV2):
                 phead[skey] = None
 
         self.set_header("PRIMARY", phead)
+
+        # overwrite EXT_DESCRIPT as a DataFrame, dropping the Comments column
+        ext_file = os.path.join(
+            os.path.dirname(__file__), "config", "L2-extensions.csv"
+        )
+        ext_descript = pd.read_csv(ext_file, header=0)
+        if "Comments" in ext_descript.columns:
+            ext_descript = ext_descript.drop(columns=["Comments"])
+        self.set_data("EXT_DESCRIPT", ext_descript)
