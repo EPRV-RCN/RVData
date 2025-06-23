@@ -815,7 +815,6 @@ def get_moon_velocity_in_target_direction(
     projected_velocity_km_s = (
         x_vel * np.cos(alpha_rad) * np.cos(delta_rad)
         + y_vel * np.sin(alpha_rad) * np.cos(delta_rad)
-        + z_vel * np.sin(delta_rad)
-    )
+        + z_vel * np.sin(delta_rad))
 
     return projected_velocity_km_s
