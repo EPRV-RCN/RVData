@@ -497,7 +497,9 @@ def create_PRIMARY(
             header_map['Keyword'] == 'SUMMFLAG'
         ]['Description'].iloc[0]
     )
-    l2_hdu.header['GEOSYS'] = ('WGS84','Coordinate system for observatory location')
+    l2_hdu.header['GEOSYS'] = (
+        'WGS84', 'Coordinate system for observatory location'
+    )
     if ('PRIMARY' not in RV2.extensions):
         RV2.create_extension(
             ext_name='PRIMARY', ext_type='PrimaryHDU', header=l2_hdu.header
@@ -581,7 +583,8 @@ def get_simbad_data(obj: str) -> dict:
 def convert_to_sexagesimal(value: float) -> str:
     """
     Converts a numerical value in HHMMSS.SSS or DDMMSS.SSS format
-    into a properly formatted sexagesimal string (HH:MM:SS.SSS or DD:MM:SS.SSS).
+    into a properly formatted sexagesimal string 
+    (HH:MM:SS.SSS or DD:MM:SS.SSS).
 
     Args:
         value (float): The numerical value to convert, where
@@ -589,7 +592,8 @@ def convert_to_sexagesimal(value: float) -> str:
             or DDMMSS.SSS represents degrees, minutes, and seconds.
 
     Returns:
-        str: The formatted sexagesimal string in HH:MM:SS.SSS or DD:MM:SS.SSS format.
+        str: The formatted sexagesimal string in HH:MM:SS.SSS 
+        or DD:MM:SS.SSS format.
     """
 
     # Preserve the negative sign if present
@@ -600,7 +604,8 @@ def convert_to_sexagesimal(value: float) -> str:
     minutes = int((value % 10000) // 100)   # Extract MM
     seconds = (value % 100)                 # Extract SS.SSS
 
-    # Return formatted string with leading zeros and three decimal places for seconds
+    # Return formatted string with leading zeros and three 
+    # decimal places for seconds
     return f"{sign}{hours_or_degrees:02}:{minutes:02}:{seconds:06.3f}"
 
 

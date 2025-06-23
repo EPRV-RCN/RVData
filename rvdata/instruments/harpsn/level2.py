@@ -13,7 +13,7 @@ Libraries
 '''
 from astropy.io import fits
 import os
-
+import pandas as pd
 from rvdata.core.models.level2 import RV2
 import rvdata.instruments.harpsn.config.config as config
 from rvdata.instruments.harpsn.utils import (
@@ -150,7 +150,7 @@ class HARPSNRV2(RV2):
         nb_trace = nb_fiber * config.slice_nb
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
-        #Filling the EXT_DESCRIPT and ORDER_TABLE extensions
+        # Filling the EXT_DESCRIPT and ORDER_TABLE extensions
         try:
             # Get the parent directory of the "utils" folder
             base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -158,7 +158,6 @@ class HARPSNRV2(RV2):
             # Properly construct the file path
             ext_descript_path = os.path.join(base_dir, "config", "ext_descript.csv")
             ext_descript_df = pd.read_csv(ext_descript_path)
-            
             self.set_data('EXT_DESCRIPT', ext_descript_df)
         except Exception as e:
             print('Error while setting EXT_DESCRIPT data:', e)
@@ -168,5 +167,5 @@ class HARPSNRV2(RV2):
             if len(value) == 0:
                 rm_list.append(key)
 
-        #for key in rm_list:
+        # for key in rm_list:
         #    self.del_extension(key)

@@ -184,7 +184,7 @@ class NIRPSRV2(RV2):
 
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
-        #Filling the EXT_DESCRIPT and ORDER_TABLE extensions
+        # Filling the EXT_DESCRIPT and ORDER_TABLE extensions
         try:
             # Get the parent directory of the "utils" folder
             base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -192,7 +192,6 @@ class NIRPSRV2(RV2):
             # Properly construct the file path
             ext_descript_path = os.path.join(base_dir, "config", "ext_descript.csv")
             ext_descript_df = pd.read_csv(ext_descript_path)
-            
             self.set_data('EXT_DESCRIPT', ext_descript_df)
         except Exception as e:
             print('Error while setting EXT_DESCRIPT data:', e)
@@ -213,5 +212,5 @@ class NIRPSRV2(RV2):
             if len(value) == 0:
                 rm_list.append(key)
 
-        #for key in rm_list:
+        # for key in rm_list:
         #    self.del_extension(key)
