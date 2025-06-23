@@ -497,7 +497,7 @@ def create_PRIMARY(
             header_map['Keyword'] == 'SUMMFLAG'
         ]['Description'].iloc[0]
     )
-
+    l2_hdu.header['GEOSYS'] = ('WGS84','Coordinate system for observatory location')
     if ('PRIMARY' not in RV2.extensions):
         RV2.create_extension(
             ext_name='PRIMARY', ext_type='PrimaryHDU', header=l2_hdu.header

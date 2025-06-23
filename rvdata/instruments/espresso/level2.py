@@ -13,7 +13,8 @@ Libraries
 '''
 from astropy.io import fits
 import os
-
+import pandas as pd
+import numpy as np
 from rvdata.core.models.level2 import RV2
 import rvdata.instruments.espresso.config.config as config
 from rvdata.instruments.espresso.utils import (
@@ -115,7 +116,6 @@ class ESPRESSORV2(RV2):
         """
 
         path = os.path.join(self.dirname, self.filename)
-
         # Validate the FITS file before conversion. If it does not meet the
         # criteria, raise an error
         try:
@@ -127,6 +127,7 @@ class ESPRESSORV2(RV2):
         # Retrieve the paths for the necessary files
         names = get_files_names(path, directory_structure)
 
+        
         # Convert RAW, S2D_BLAZE_A, S2D_BLAZE_B, BLAZE_A, BLAZE_B, DRIFT_B, TELLURIC
         # and SKYSUB files
         trace_ind_start = 1
@@ -193,11 +194,34 @@ class ESPRESSORV2(RV2):
         nb_trace = nb_fiber * config.slice_nb
         create_PRIMARY(self, names, nb_trace, config.slice_nb)
 
+
+        #Filling the EXT_DESCRIPT and ORDER_TABLE extensions
+        try:
+            # Get the parent directory of the "utils" folder
+            base_dir = os.path.dirname(os.path.realpath(__file__))
+
+            # Properly construct the file path
+            ext_descript_path = os.path.join(base_dir, "config", "ext_descript.csv")
+            ext_descript_df = pd.read_csv(ext_descript_path)
+            
+            self.set_data('EXT_DESCRIPT', ext_descript_df)
+        except Exception as e:
+            print('Error while setting EXT_DESCRIPT data:', e)
+        
+        try:
+            base_dir = os.path.dirname(os.path.realpath(__file__))
+
+            # Properly construct the file path
+            table_order_path = os.path.join(base_dir, "config", "table_order.csv")
+            self.set_data('ORDER_TABLE', pd.read_csv(table_order_path))
+        except Exception as e:
+            print('Error while setting ORDER_TABLE data:', e)
         # Remove empty extensions
         rm_list = []
         for key, value in self.headers.items():
             if len(value) == 0:
                 rm_list.append(key)
-
-        for key in rm_list:
-            self.del_extension(key)
+        
+        #We do not remove the extensions for now, as it is not needed
+        #for key in rm_list:
+        #    self.del_extension(key)
