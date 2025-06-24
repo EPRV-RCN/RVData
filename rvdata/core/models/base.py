@@ -143,10 +143,12 @@ class RVDataModel(object):
             if instrument is None:
                 if lvl == 2:
                     import rvdata.core.models.level2
+
                     method = rvdata.core.models.level2.RV2._read
                     method(self, hdu_list)
                 elif lvl == 4:
                     import rvdata.core.models.level4
+
                     method = rvdata.core.models.level4.RV4._read
                     method(self, hdu_list)
             elif instrument in self.read_methods.keys():
@@ -159,7 +161,7 @@ class RVDataModel(object):
                     methname = methname.replace("level2", "level{}".format(lvl))
 
                 module = importlib.import_module(modname)
-                
+
                 cls = getattr(module, clsname)
                 method = getattr(cls, methname)
                 method(self, hdu_list, **kwargs)
