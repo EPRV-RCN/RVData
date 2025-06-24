@@ -3,9 +3,9 @@ HDU,Name,DataType,Multiplicity,Required,Description,Comments
 1,INSTRUMENT_HEADER,ImageHDU,FALSE,TRUE,Inherited instrument header (no data),Carried forward from L2 FITS file
 2,RECEIPT,BinTableHDU,FALSE,TRUE,Table of operations that have been performed on this file,
 3,DRP_CONFIG,BinTableHDU,FALSE,TRUE,Pipeline details (settings etc) to go from native data to L2,
-4,RV1...N,BinTableHDU,TRUE,TRUE,Derived Radial Velocity Measurement,"Required Columns: BJD_TDB [64bit], wave_start [64bit], wave_end [64bit], pixel_start, pixel_end, RV_Trace1-N, RV_error, BC_vel, order index, echelle order Optional columns [teams can add more if they like]: 
+4,RV1,BinTableHDU,TRUE,TRUE,Derived Radial Velocity Measurement,"Required Columns: BJD_TDB [64bit], wave_start [64bit], wave_end [64bit], pixel_start, pixel_end, RV_Trace1-N, RV_error, BC_vel, order index, echelle order Optional columns [teams can add more if they like]: 
 pixel_start, pixel_end, order_index, echelle_order, weight, residual_drift note: weight is a roll up of multiple weighting factors (throughput, color correction, etc) applied to the RV in the same row of this table and should be defined by the instrument team in the their read the docs page"
-5,CCF1...N,ImageHDU,TRUE,FALSE,"Array with same dimensionality of RV1...N, that contains the CCF that produced each RV1...N",
-6,DIAGNOSTICS1...J,BinTableHDU,TRUE,FALSE,"Activity indicators, CCF metrics, etc",Does not have same dimensions as RV1/CCF1
-7,CUSTOM_CCF1...N,ImageHDU,TRUE,FALSE,Additional CCFs from (e.g.) different masks,Additional CCF extensions could show results for different masks or different CCF calculation
-8,CUSTOM_RV1...N,BinTableHDU,TRUE,FALSE,Derived Radial Velocity Measurement from CUSTOM_CCF1...N,
+5,CCF1,ImageHDU,TRUE,FALSE,"Array with same dimensionality of RV1...N, that contains the CCF that produced each RV1...N",
+6,DIAGNOSTICS1,BinTableHDU,TRUE,FALSE,"Activity indicators, CCF metrics, etc",Does not have same dimensions as RV1/CCF1
+7,CUSTOM_CCF1,ImageHDU,TRUE,FALSE,Additional CCFs from (e.g.) different masks,Additional CCF extensions could show results for different masks or different CCF calculation
+8,CUSTOM_RV1,BinTableHDU,TRUE,FALSE,Derived Radial Velocity Measurement from CUSTOM_CCF1...N,
