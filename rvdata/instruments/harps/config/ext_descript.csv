@@ -1,0 +1,18 @@
+ext_name,description
+PRIMARY,The primary header containing the keywords following the standard format
+INSTRUMENT_HEADER, The original instrument header
+RECEIPT, The list of operations performed on this file
+DRP_CONFIG, Pipeline details to go from the raw file to this file
+EXT_DESCRIPT, Contains the description of all the extensions in the file
+ORDER_TABLE, Table capturing the wavelength extent of each order
+TRACEI_FLUX, The flux measured in trace i
+TRACEI_WAVE, The wavelength associated to the flux in trace i
+TRACEI_VAR, The variance for trace i
+TRACEI_BLAZE, The blaze for trace i
+TRACEI_QUALDATA, The data quality array for trace i
+TRACEI_DISP, The dispersion for trace i
+TRACEI_DRIFT, The drift for trace i
+BARYCORR_KMS, The barycentric correction in km/s
+BARYCORR_Z, The barycentric correction in redshift 
+BJD_TDB,Photon weighted midpoint
+EXPMETER, The exposure meter
