@@ -251,7 +251,7 @@ class KPFRV2(RV2):
         for i, row in headmap.iterrows():
             skey = row["STANDARD"]
             kpfkey = row["INSTRUMENT"]
-            if pd.notnull(kpfkey):
+            if pd.notnull(kpfkey) and kpfkey in ihead.keys():
                 kpfval = ihead[kpfkey]
             else:
                 kpfval = row["DEFAULT"]

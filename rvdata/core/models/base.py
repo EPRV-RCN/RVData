@@ -70,7 +70,7 @@ class RVDataModel(object):
         Create a data instance from a file
 
         This method implys the ``read`` method for reading the file. Refer to
-        it for more detail. It is assume that the input FITS file is in RVData standard format
+        it for more detail. It is assumed that the input FITS file is in RVData standard format
 
         Args:
             fn (str): file path (relative to the repository)
@@ -138,19 +138,32 @@ class RVDataModel(object):
                         setattr(self, hdu.name, t.to_pandas())
 
             # Leave the rest of HDUs to level specific readers
-
+            # assume reader method and class names folow RV2 conventions
+            lvl = self.level
             if instrument is None:
-                import rvdata.core.models.level2
+                if lvl == 2:
+                    import rvdata.core.models.level2
 
-                method = rvdata.core.models.level2.RV2._read
-                method(self, hdu_list)
+                    method = rvdata.core.models.level2.RV2._read
+                    method(self, hdu_list)
+                elif lvl == 4:
+                    import rvdata.core.models.level4
+
+                    method = rvdata.core.models.level4.RV4._read
+                    method(self, hdu_list)
             elif instrument in self.read_methods.keys():
-                module = importlib.import_module(
-                    self.read_methods[instrument]["module"]
-                )
+                clsname = self.read_methods[instrument]["class"]
+                methname = self.read_methods[instrument]["method"]
+                modname = self.read_methods[instrument]["module"]
+                if lvl != 2:
+                    modname = modname.replace("level2", "level{}".format(lvl))
+                    clsname = clsname.replace("RV2", "RV{}".format(lvl))
+                    methname = methname.replace("level2", "level{}".format(lvl))
 
-                cls = getattr(module, self.read_methods[instrument]["class"])
-                method = getattr(cls, self.read_methods[instrument]["method"])
+                module = importlib.import_module(modname)
+
+                cls = getattr(module, clsname)
+                method = getattr(cls, methname)
                 method(self, hdu_list, **kwargs)
             else:
                 # the provided data_type is not recognized, ie.
