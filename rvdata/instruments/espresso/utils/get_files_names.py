@@ -166,7 +166,7 @@ def adjust_repo_path(
             repo_date = file_datetime.date()
 
             # If file's time is before noon, shift repo_path to the previous day
-            if file_datetime.hour < 12:
+            if file_datetime.hour < 16:
                 new_repo_date = repo_date - timedelta(days=1)
                 new_repo_path = os.path.join(
                     os.path.dirname(repo_path), new_repo_date.strftime("%Y-%m-%d")
