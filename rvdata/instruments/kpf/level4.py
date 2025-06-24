@@ -52,6 +52,7 @@ class KPFRV4(RV4):
 
     def _read(self, hdul2: fits.HDUList, **kwargs) -> None:
 
+        # construct the extensions
         ccf_array = None
         for c, chip in enumerate(["GREEN", "RED"]):
             ccf_ext = f"{chip}_CCF_RW"
@@ -63,6 +64,26 @@ class KPFRV4(RV4):
                 ccf_array = np.concatenate((ccf_array, hdul2[ccf_ext].data), axis=1)
 
         self.create_extension("CCF1", "ImageHDU", data=ccf_array, header=ccf_meta)
+
+        # set the primary header
+        hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
+        headmap = pd.read_csv(hmap_path, header=0)
+        phead = fits.PrimaryHDU().header
+        ihead = hdul2["PRIMARY"].header
+        for i, row in headmap.iterrows():
+            skey = row["STANDARD"]
+            kpfkey = row["INSTRUMENT"]
+            if pd.notnull(kpfkey):
+                kpfval = ihead[kpfkey]
+            else:
+                kpfval = row["DEFAULT"]
+            if pd.notnull(kpfval):
+                phead[skey] = kpfval
+            else:
+                phead[skey] = None
+
+        self.set_header("PRIMARY", phead)
+        self.set_header("INSTRUMENT_HEADER", ihead)
 
         rv_ext = "RV"
         # column mapping between KPF and data standard, keys are standard names
@@ -101,35 +122,18 @@ class KPFRV4(RV4):
             rvdata["RV_TRACE{}".format(i)] = rvdata["RV_TRACE{}".format(i)] - sysvel
 
         rv_header = OrderedDict(hdul2[rv_ext].header)
+        rv_header["RVSTART"] = ccf_meta["STARTV"]
+        rv_header["RVSTEP"] = ccf_meta["STEPV"]
+        rv_header["MASK"] = ccf_meta["SCI_MASK"]
+
         self.set_data("RV1", rvdata)
         self.set_header("RV1", rv_header)
-
-        self.set_header("INSTRUMENT_HEADER", hdul2["PRIMARY"].header)
 
         self.set_header("DRP_CONFIG", OrderedDict(hdul2["CONFIG"].header))
         self.set_data("DRP_CONFIG", Table(hdul2["CONFIG"].data).to_pandas())
 
         self.set_header("RECEIPT", OrderedDict(hdul2["RECEIPT"].header))
         self.set_data("RECEIPT", Table(hdul2["RECEIPT"].data).to_pandas())
-
-        hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
-        headmap = pd.read_csv(hmap_path, header=0)
-
-        phead = fits.PrimaryHDU().header
-        ihead = self.headers["INSTRUMENT_HEADER"]
-        for i, row in headmap.iterrows():
-            skey = row["STANDARD"]
-            kpfkey = row["INSTRUMENT"]
-            if pd.notnull(kpfkey):
-                kpfval = ihead[kpfkey]
-            else:
-                kpfval = row["DEFAULT"]
-            if pd.notnull(kpfval):
-                phead[skey] = kpfval
-            else:
-                phead[skey] = None
-
-        self.set_header("PRIMARY", phead)
 
         all_exts = list(self.extensions.keys())
         for ext_name in all_exts:

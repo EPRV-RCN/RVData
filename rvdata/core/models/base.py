@@ -13,10 +13,16 @@ import git
 from git.exc import InvalidGitRepositoryError
 
 import pandas as pd
+import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
-from rvdata.core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
+from rvdata.core.models.definitions import (
+    FITS_TYPE_MAP,
+    INSTRUMENT_READERS,
+    LEVEL2_PRIMARY_KEYWORDS,
+    LEVEL4_PRIMARY_KEYWORDS,
+)
 from rvdata.core.models.receipt_columns import RECEIPT_COL
 from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 
@@ -169,6 +175,32 @@ class RVDataModel(object):
                 # the provided data_type is not recognized, ie.
                 # not in the self.read_methods list
                 raise IOError("cannot recognize data type {}".format(instrument))
+
+        # check and recast the headers into appropriate types
+        for i, row in pd.concat(
+            [LEVEL2_PRIMARY_KEYWORDS, LEVEL4_PRIMARY_KEYWORDS]
+        ).iterrows():
+            key = row["Keyword"]
+            if key in self.headers["PRIMARY"]:
+                value = self.headers["PRIMARY"][key]
+                if value is None:
+                    continue
+                try:
+                    if row["Data type"].lower() == "uint":
+                        self.headers["PRIMARY"][key] = int(value)
+                    elif row["Data type"].lower() == "float":
+                        self.headers["PRIMARY"][key] = float(value)
+                    elif row["Data type"].lower() == "string":
+                        self.headers["PRIMARY"][key] = str(value)
+                    elif row["Data type"].lower() == "double":
+                        self.headers["PRIMARY"][key] = np.float64(value)
+                    else:
+                        warnings.warn(f"Unknown type {row['Type']} for keyword {key}")
+                except (TypeError, AttributeError, ValueError):
+                    warnings.warn(
+                        f"Cannot convert value {value} for keyword {key} to type {row['Data type']}"
+                    )
+
         # compute MD5 sum of source file and write it into a receipt entry for tracking.
         # Note that MD5 sum has known security vulnerabilities, but we are only using
         # this to ensure data integrity, and there is no known reason for someone to try
