@@ -63,7 +63,6 @@ class KPFRV4(RV4):
             else:
                 ccf_array = np.concatenate((ccf_array, hdul2[ccf_ext].data), axis=1)
 
-
         self.create_extension("CCF1", "ImageHDU", data=ccf_array, header=ccf_meta)
 
         # set the primary header
