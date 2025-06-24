@@ -61,7 +61,7 @@ TUNIT_FIXES = {"sec": "s", "counts": "count", "ADU": "adu", "days": "d"}
 
 # Define the time ranges of instrument versions
 INSTRUMENT_VERSIONS = [
-    {"version": "ESPRESSO18", "start_date": "2017-11-27", "end_date": "2019-06-13"},
+    {"version": "ESPRESSO18", "start_date": "2017-11-27", "end_date": "2019-06-14"},
     {
         "version": "ESPRESSO19",
         "start_date": "2019-06-24",
