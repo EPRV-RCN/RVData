@@ -52,7 +52,7 @@ class KPFRV2(RV2):
 
     def _read(self, hdul1: fits.HDUList, **kwargs) -> None:
         hdul0 = fits.open(kwargs["l0file"])
-        dateobs = hdul0["PRIMARY"].header["DATE-OBS"]
+        dateobs = hdul1["PRIMARY"].header["DATE-OBS"]
 
         blazedf = pd.read_csv(
             os.path.join(os.path.dirname(__file__), "config/smooth_lamp_pattern.csv"),
@@ -78,6 +78,7 @@ class KPFRV2(RV2):
                 flux_ext = f"{chip}_SCI_FLUX{i}"
                 wave_ext = f"{chip}_SCI_WAVE{i}"
                 var_ext = f"{chip}_SCI_VAR{i}"
+                blaze_ext = f"{chip}_SCI_BLAZE{i}"
 
                 if flux_array is None:
                     flux_array = hdul1[flux_ext].data
@@ -101,13 +102,17 @@ class KPFRV2(RV2):
                 else:
                     var_array = np.concatenate((var_array, hdul1[var_ext].data), axis=0)
 
-                if blaze_array is None:
-                    blaze_array = blazeHDU[flux_ext].data
-                    blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
+                if blaze_ext in hdul1:
+                    blaze_data = hdul1[blaze_ext].data
+                    blaze_meta = OrderedDict(hdul1[blaze_ext].header)
                 else:
-                    blaze_array = np.concatenate(
-                        (blaze_array, blazeHDU[flux_ext].data), axis=0
-                    )
+                    blaze_data = blazeHDU[flux_ext].data
+                    blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
+
+                if blaze_array is None:
+                    blaze_array = blaze_data
+                else:
+                    blaze_array = np.concatenate((blaze_array, blaze_data), axis=0)
 
             self.create_extension(
                 out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
