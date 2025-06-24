@@ -1,0 +1,87 @@
+Keyword,ESO_keyword,value,Extension,from,comment,skip,Description,default_value
+INSTRUME,INSTRUME,,PRIMARY,S2D_BLAZE_A,,False,Instrument name,UNKNOWN
+ORGANIZA,,ESO,PRIMARY,S2D_BLAZE_A,,False,Organization the data belongs to,Null
+ORIGIN,ORIGIN,,PRIMARY,,,False,Institution that created this file,Null
+DATALVL,,L2,PRIMARY,,,False,Data Product Base Level,UNKNOWN
+OBSERVER,,UNKNOWN,PRIMARY,,,False,Observer,UNKNOWN
+PROGRAM,HIERARCH ESO OBS PROG ID,,PRIMARY,S2D_BLAZE_A,,False,Observing program name,Null
+PINAME,PI-COI,,PRIMARY,S2D_BLAZE_A,,False,Program PI Name,Null
+OBSTYPE,HIERARCH ESO DPR CATG,,PRIMARY,RAW,,False,Observation type,UNKNOWN
+OBSMODE,HIERARCH ESO INS MODE,,PRIMARY,S2D_BLAZE_A,,False,Observing mode,Null
+READMODE,,Null,PRIMARY,S2D_BLAZE_A,,False,Readout method,Null
+BINNING,,,PRIMARY,S2D_BLAZE_A,,True,Binning Mode,Null                
+NUMTRACE,,,PRIMARY,,,True,Iterator for Number of Object related keywords,UNDEFINED
+NUMORDER,NUMORDER,,PRIMARY,CONFIG,,False,Number of Orders,UNDEFINED
+OBJECT,OBJECT,,PRIMARY,S2D_BLAZE_A,,False,Original target,UNKNOWN
+ALIASES1,HIERARCH ESO OBS NAME,,PRIMARY,S2D_BLAZE_A,,False,OB name,Null
+ALIASES2,HIERARCH ESO OBS TARG NAME,,PRIMARY,S2D_BLAZE_A,,False,OB name,Null
+FILENAME,,,PRIMARY,,,True,Name of the FITS file,UNKNOWN
+DATE,DATE,,PRIMARY,,,True,[UTC] Last modification date of this file,UNKNOWN
+DATE-OBS,DATE-OBS,,PRIMARY,S2D_BLAZE_A,,False,[UTC] Date at start of exposure,UNKNOWN
+JD_UTC,MJD-OBS,,PRIMARY,S2D_BLAZE_A,,True,[day] Julian date of DATE-OBS,UNDEFINED
+EXPTIME,EXPTIME,,PRIMARY,S2D_BLAZE_A,,False,[s] Exposure time,UNDEFINED
+TRACE,,,,,,True,Type of object in trace,UNKNOWN
+CLSRC,HIERARCH ESO PRO REC1 RAW1 CATG,,PRIMARY,S2D_BLAZE_A,,True,Name of calibration source in trace,UNKNOWN
+CSRC,gaia_source,,PRIMARY,Simbad,,True,Catalog source for obj in trace,UNKNOWN
+CID,gaia_name,,PRIMARY,Simbad,,True,Catalog DR2/3 name for obj in trace,UNKNOWN
+CRA,HIERARCH ESO TEL TARG ALPHA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] Catalog right ascension for obj in trace,UNKNOWN
+CDEC,HIERARCH ESO TEL TARG DELTA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] Catalog declination for obj in trace,UNKNOWN
+CEQNX,HIERARCH ESO TEL TARG EQUINOX,,PRIMARY,S2D_BLAZE_A,,True,[yr] Catalog equinox for obj in trace,UNDEFINED
+CEPCH,HIERARCH ESO TEL TARG EPOCH,,PRIMARY,S2D_BLAZE_A,,True,[yr] Catalog epoch for obj in trace,UNDEFINED
+CPLX,PLX_VALUE,,PRIMARY,Simbad,,True,[mas] Catalog parallax for obj in trace,Null
+CPMR,HIERARCH ESO TEL TARG PMA,,PRIMARY,S2D_BLAZE_A,,True,["/yr] Catalog proper motion RA (obj) in trace,Null
+CPMD,HIERARCH ESO TEL TARG PMD,,PRIMARY,S2D_BLAZE_A,,True,["/yr] Catalog proper motion DEC (obj) in trace,Null
+CRV,HIERARCH ESO TEL TARG RADVEL,,PRIMARY,S2D_BLAZE_A,,True,[km/s] Catalog Systemic RV for obj in trace,UNDEFINED
+CZ,CZ,,PRIMARY,CRV,,True,Catalog Z for obj in trace,Null
+CCLR,CCLR,,PRIMARY,S2D_BLAZE_A,,True,[mag] Catalog Gaia B-R for obj in trace,Null
+OBSERVAT,ORIGIN,,PRIMARY,S2D_BLAZE_A,,False,Observatory name,UNKNOWN
+TELESCOP,TELESCOP,,PRIMARY,S2D_BLAZE_A,,False,Telescope name,UNKNOWN
+OBSLON,HIERARCH ESO TEL GEOLON,,PRIMARY,S2D_BLAZE_A,,False,[deg] Observatory longitude,UNDEFINED
+OBSLAT,HIERARCH ESO TEL GEOLAT,,PRIMARY,S2D_BLAZE_A,,False,[deg] Observatory latitude,UNDEFINED
+OBSALT,HIERARCH ESO TEL GEOELEV,,PRIMARY,S2D_BLAZE_A,,False,[m] Observatory altitude,UNDEFINED
+SEEING,HIERARCH ESO INS2 AOS ATM SEEING,,PRIMARY,S2D_BLAZE_A,,False,[arcsec] Seeing at beginning of exposure,Null
+AIRMASS,HIERARCH ESO TEL AIRM START,,PRIMARY,S2D_BLAZE_A,,False,[secZ] Airmass at center field (beginning),Null
+TTIME,DATE-OBS,,PRIMARY,S2D_BLAZE_A,,False,[UTC] TCS-data date/time,Null
+TEQNX,HIERARCH ESO TEL TARG EQUINOX,,PRIMARY,S2D_BLAZE_A,,False,[yr] TCS equinox,Null
+TEPCH,HIERARCH ESO TEL TARG EPOCH,,PRIMARY,S2D_BLAZE_A,,False,[yr] TCS epoch,Null
+TLST,LST,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS local sidereal time,Null
+TRA,RA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS RA,Null
+TDEC,DEC,,PRIMARY,S2D_BLAZE_A,,True,[sexa] TCS DEC,Null
+TEL,HIERARCH ESO TEL ALT,,PRIMARY,S2D_BLAZE_A,,False,[deg] TCS elevation angle,Null
+TZA,,,PRIMARY,,,True,[deg] Zenith angle,Null
+TAZ,HIERARCH ESO TEL AZ,,PRIMARY,S2D_BLAZE_A,,False,[deg] TCS azimuth angle,Null
+THA,,,PRIMARY,,,True,[sexa] TCS hour angle,Null
+PARANG,HIERARCH ESO TEL PARANG START,,PRIMARY,S2D_BLAZE_A,,False,[deg] Parallactic angle at exposure start,Null
+PARANG2,HIERARCH ESO TEL PARANG END,,PRIMARY,S2D_BLAZE_A,,False,[deg] Parallactic angle at exposure end,Null
+ROTANG,HIERARCH ESO ADA ABSROT END,,PRIMARY,S2D_BLAZE_A,,False,[deg] Rotator angle,Null
+SUNEL,,,PRIMARY,,,True,[deg] Sun Elevation Angle,Null
+MOONANG,,,PRIMARY,,,True,[deg] Target-Moon Angle,Null
+MOONEL,,,PRIMARY,,,True,[deg] Moon Elevation Angle,Null
+MOONILLU,,,PRIMARY,,,True,[%] Moon illumination,Null
+MOONRV,,,PRIMARY,,,True,[km/s] RV of reflected sunlight off moon,Null
+INHUM,,Null,,,,False,[%] Relative humidity inside dome,Null
+INHUMT,,Null,,,,False,INHUM timestamp,Null
+OUTTMP,HIERARCH ESO TEL AMBI TEMP,,PRIMARY,S2D_BLAZE_A,,False,[C] Outside temperature,Null
+OUTTMPT,,Null,,,,False,OUTTMP timestamp,Null
+OUTHUM,HIERARCH ESO TEL AMBI RHUM,,PRIMARY,S2D_BLAZE_A,?,False,[%] Outiside relative humidity,Null
+OUTHUMT,,Null,,,,False,OUTHUM timestamp,Null
+ENVWINDS,HIERARCH ESO TEL AMBI WINDSP,,PRIMARY,S2D_BLAZE_A,,False,[m/s] Wind speed,Null
+ENVWINDD,HIERARCH ESO TEL AMBI WINDDIR,,PRIMARY,S2D_BLAZE_A,,False,[angle] Wind direction,Null
+DRPTAG,HIERARCH ESO PRO REC1 PIPE ID,,PRIMARY,S2D_BLAZE_A,,False,RV DRP version,UNKNOWN
+EPRVTAG,,v1.1.0,PRIMARY,,,False,Version of EPRV standard applied,UNKNOWN
+VOCLASS,,EPRVSTANDARDv1.1.0,PRIMARY,,,False,Version of EPRV standard applied,UNKNOWN
+DRPHASH,,Null,PRIMARY,,,False,Git commit hash,Null
+INSTERA,,,PRIMARY,,,True,Tag to track permanent changes to instrument,UNKNOWN
+EXTRACT,HIERARCH ESO PRO REC1 PARAM12 VALUE,,PRIMARY,S2D_BLAZE_A,,False,Type of 1D extraction,Null
+EXSNR,,,PRIMARY,,,True,Extracted signal-to-noise in the order,Null
+EXSNRW,,,PRIMARY,,,True,[Angstroms] Central wavelength of EXTSNRN,Null
+FULLCOMP,,Yes,PRIMARY,,,False,Fully compliant with the RVSTAND EPRV standard?,UNKNOWN
+TELFLAG,,Pass,PRIMARY,,,False,Issues with observatory or telescope?,Null
+INSTFLAG,,Pass,PRIMARY,,,False,Issues with instrument?,Null
+DRPFLAG,HIERARCH ESO QC SCIRED CHECK,,PRIMARY,S2D_BLAZE_A,,True,Issues with pipeline? ,Null
+COLOFLAG,HIERARCH ESO QC SCIRED FLUX CORR CHECK,,PRIMARY,,,True,Issues with color?,Null
+OBSFLAG,,Pass,PRIMARY,,,False,Observer pass/fail for exposure,Null
+SUMMFLAG,,,PRIMARY,,,True,Roll up of other flag keywords,UNKNOWN
+DQLVL0,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
+DQLVL1,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
+DQLVL2,,UNDEFINED,PRIMARY,,,False,Quality check bitfield of N characters,UNDEFINED
