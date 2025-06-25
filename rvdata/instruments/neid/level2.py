@@ -16,17 +16,17 @@ class NEIDRV2(RV2):
     Read a NEID Level 2 file and convert it to the EPRV L2 standard format Python object.
 
     This class extends the `RV2` base class to handle the reading of NEID Level 2 files and
-    converts them into a standardized EPRV level 2 data format. Each extension from the FITS file
-    is read, and relevant data, including flux, wavelength, variance, and metadata, are stored as
-    attributes of the resulting Python object.
+    converts them into a standardized EPRV Level 2 data format. Relevant extensions are taken from
+    the NEID FITS file and stored as attributes of the data standard Python object.
 
     Methods
     -------
     _read(hdul: fits.HDUList) -> None
-        Reads the input FITS HDU list, extracts specific extensions related to the science
-        data for different chips and fibers, and stores them in a standardized format.
-        - The method processes data from different fibers depending on NEID OBS-MODE:
-          SCI/SKY/CAL for HR mode and SCI/SKY for HE mode (different NUMTRACE)
+        Reads the input FITS HDU list, extracts specific extensions related to the science data
+        for different chips and fibers, and stores them in a standardized format.
+
+        The method processes data from different fibers depending on the NEID observation mode.
+        There are three traces (SCI/SKY/CAL) for HR mode and two traces (SCI/SKY) for HE mode.
 
     Attributes
     ----------
@@ -36,24 +36,26 @@ class NEIDRV2(RV2):
         data type (e.g., ImageHDU, BinTableHDU).
 
     headers : dict
-        A dictionary containing metadata headers from the FITS file, with each extension's
-        metadata stored under its respective key.
+        A dictionary containing metadata headers relevant for each extension. These are largely
+        taken from the input NEID FITS file, but some metadata is added in the translator (e.g.,
+        the instrument RV era).
 
     data : dict
-        A dictionary containing the data entries from the FITS file, with each extension's data
-        stored under its respective key.
+        A dictionary containing the data entries for each extension. These are largely directly
+        taken from the input NEID FITS file, but some are reorganized (e.g., exposure meter data).
 
     Notes
     -----
-    - The `_read` method processes and organizes science and calibration data from all SCI, SKY,
-      and CAL fibers.
+    To construct an RVData Level 2 object, only a NEID Level 2 FITS file is required. The
+    classmethod `from_fits` should be used to instantiate the object from these files. The `_read`
+    method is not intended to be called directly by users.
 
     Example
     -------
-    >>> from astropy.io import fits
+    >>> from rvdata.instruments.neid.level2 import NEIDRV2
     >>> hdul = fits.open('neidL2_YYYYMMDDTHHMMSS.fits')
-    >>> rv2_obj = NEIDRV2()
-    >>> rv2_obj._read(hdul)
+    >>> neid_rv2_obj = NEIDRV2.from_fits("neidL2_YYYYMMDDTHHMMSS.fits", instrument="NEID")
+    >>> neid_rv2_obj.to_fits("neid_L2_standard.fits")
     """
 
     def _read(self, hdul: fits.HDUList) -> None:
@@ -149,11 +151,11 @@ class NEIDRV2(RV2):
             var_array = hdul[var_ext].data
             var_meta = hdul[var_ext].header
 
-            # Blaze -- this will require NEID L2 rather than NEID L1 files
+            # Blaze
             blaze_array = hdul[blaze_ext].data
             blaze_meta = hdul[blaze_ext].header
 
-            # Output extensions into base model
+            # Output extensions into base model. If first fiber, extension already exists in object
             if i_fiber == 0:
                 self.set_header(out_prefix + "FLUX", flux_meta)
                 self.set_data(out_prefix + "FLUX", flux_array)
@@ -278,7 +280,7 @@ class NEIDRV2(RV2):
         )
         ext_table["extension_name"].append("TRACE1_TELLURIC")
         ext_table["description"].append(
-            "Telluric line and continuum absorption model for science fiber"
+            "Telluric model for science fiber (line and continuum absorption combined)"
         )
 
         # Sky model - Nothing for now
