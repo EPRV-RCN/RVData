@@ -24,7 +24,7 @@ NUMORDER = 85
 data_format = "L2"  # Can either be original or L2
 
 # DRS version for proper file search functionality.
-DRS_VERSION = "DRS-3.2.5"
+DRS_VERSION = "DRS-3.3.10"
 
 # Allows the conversion of the RAW file
 extnames_raw = {
@@ -61,7 +61,7 @@ TUNIT_FIXES = {"sec": "s", "counts": "count", "ADU": "adu", "days": "d"}
 
 # Define the time ranges of instrument versions
 INSTRUMENT_VERSIONS = [
-    {"version": "ESPRESSO18", "start_date": "2017-11-27", "end_date": "2019-06-12"},
+    {"version": "ESPRESSO18", "start_date": "2017-11-27", "end_date": "2019-06-14"},
     {
         "version": "ESPRESSO19",
         "start_date": "2019-06-24",

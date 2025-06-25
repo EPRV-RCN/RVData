@@ -1,0 +1,33 @@
+HDU,Name,DataType,MinBetDepth,Multiplicity,Required,Description,Comments
+0,PRIMARY,PrimaryHDU,,False,True,EPRV Standard FITS HEADER (no data),
+1,INSTRUMENT_HEADER,ImageHDU,,False,True,Inherited instrument header
+2,RECEIPT,BinTableHDU,,False,True,Table of operations that have been performed on this file,
+3,DRP_CONFIG,BinTableHDU,,False,True,Pipeline details (settings etc) to go from native data to L2,
+4,EXT_DESCRIPT,BinTableHDU,,False,True,Table describing contents of each extension,
+5,ORDER_TABLE,BinTableHDU,,TRUE,TRUE,Table capturing the wavelength extent of each order, columns: physical echelle order; index echelle order; start wavelength [64bit]; end wavelength [64bit]
+6,TRACE1_FLUX,ImageHDU,,True,True,calibration fiber flux
+7,TRACE1_WAVE,ImageHDU,64,True,True,calibration fiber wavelength solution,
+8,TRACE1_VAR,ImageHDU,,True,True,calibration fiber variance,
+9,TRACE1_BLAZE,ImageHDU,,True,True,calibration fiber blaze,
+6,TRACE2_FLUX,ImageHDU,,True,True,Science slice 1 flux,
+7,TRACE2_WAVE,ImageHDU,64,True,True,Science slice 1 wavelength solution,
+8,TRACE2_VAR,ImageHDU,,True,True,Science slice 1 variance,
+9,TRACE2_BLAZE,ImageHDU,,True,True,Science slice 1 blaze, 
+6,TRACE3_FLUX,ImageHDU,,True,True,Science slice 2 flux,
+7,TRACE3_WAVE,ImageHDU,64,True,True,Science slice 2 wavelength solution,
+8,TRACE3_VAR,ImageHDU,,True,True,Science slice 2 variance,
+9,TRACE3_BLAZE,ImageHDU,,True,True,Science slice 2 blaze, 
+6,TRACE4_FLUX,ImageHDU,,True,True,Science slice 3 flux,
+7,TRACE4_WAVE,ImageHDU,64,True,True,Science slice 3 wavelength solution,
+8,TRACE4_VAR,ImageHDU,,True,True,Science slice 3 variance,
+9,TRACE4_BLAZE,ImageHDU,,True,True,Science slice 3 blaze, 
+6,TRACE5_FLUX,ImageHDU,,True,True,Sky fiber flux,
+7,TRACE5_WAVE,ImageHDU,64,True,True,Sky fiber wavelength solution,
+8,TRACE5_VAR,ImageHDU,,True,True,Sky fiber variance,
+9,TRACE5_BLAZE,ImageHDU,,True,True,Sky fiber blaze, 
+10,BARYCORR_KMS,ImageHDU,,False,True,barycentric correction in km/s, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+11,BARYCORR_Z,ImageHDU,,False,True,barycentric correction in redshift, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+12,BJD_TDB,ImageHDU,64,False,True,Photon weighted midpoint, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+13,DRIFT,ImageHDU,,False,False,Drift measurement map in delta lambda, Format should convey how this is applied to the wavelength solution -- can be a single value in which case 1 correction for whole array; can be an array of Norders in which case there's a different correction for each order; or can be array of Nord x Mpix in which case there's a different correction for each pixel
+15,EXPMETER,BinTableHDU,,False,False,Table of exposure meter counts timeseries over the exposure,Table has # of columns equal to the number of wavelengths where the exposure counts are measured and number of rows equal to exposure time / exp meter cadence
+16,TELEMETRY,BinTableHDU,,False,False,Table of telemetry collected during the exposure,Table has 4 columns: time stamp; sensor name; value; units
