@@ -311,6 +311,12 @@ class NEIDRV2(RV2):
                     phead[skey] = mode_dep_phead[skey]
                 else:
                     continue
+            
+        # Add instrument era
+        era_map = pd.read_csv(os.path.join(os.path.dirname(__file__), "config/neid_inst_eras.csv"))
+        era_time_diffs = phead['JD_UTC'] - era_map['startdate'].values
+        era = era_map['era'].values[np.argmin(era_time_diffs[np.where(era_time_diffs>=0)[0]])]
+        phead['INSTERA'] = era
 
         self.set_header("PRIMARY", phead)
 
