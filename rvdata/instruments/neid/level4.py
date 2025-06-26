@@ -1,12 +1,14 @@
 from astropy.io import fits
+
 # from astropy.table import Table
 import numpy as np
 import pandas as pd
 import os
-# from collections import OrderedDict
+from collections import OrderedDict
 
 # # import base class
 from rvdata.core.models.level4 import RV4
+
 # from rvdata.core.models.definitions import LEVEL4_EXTENSIONS
 
 
@@ -16,8 +18,8 @@ class NEIDRV4(RV4):
     Data model and reader for RVData Level 4 (RV) data constructed from
     NEID Level 2 pipeline products.
 
-    This class extends the `RV4` base class to handle NEID data. It 
-    reads the relevant extensions from a NEID Level 2 FITS file and 
+    This class extends the `RV4` base class to handle NEID data. It
+    reads the relevant extensions from a NEID Level 2 FITS file and
     organizes them into a standardized format.
 
     Parameters
@@ -38,8 +40,8 @@ class NEIDRV4(RV4):
     Notes
     -----
     To construct an RVData Level 4 object, a NEID Level 2 FITS file is required.
-    The classmethod `from_fits` should be used to instantiate the object 
-    from these files. The `_read` method is not intended to be called 
+    The classmethod `from_fits` should be used to instantiate the object
+    from these files. The `_read` method is not intended to be called
     directly by users.
 
     Example
@@ -128,4 +130,20 @@ class NEIDRV4(RV4):
 
         # RV1 - turn the CCFS extension header into a table
 
-        # CCF1 - take the CCFS data extension, unsure about header
+        # CCF extension
+
+        # Translate some NEID CCFS extension header keys to standard keys
+        ccf_header_map = {
+            "VELSTART": "CCFSTART",
+            "VELSTEP": "CCFSTEP",
+            "CCFMASK": "CCFMASK",
+        }
+        ccf_header = OrderedDict()
+
+        for ccf_skey, ccf_ikey in ccf_header_map.items():
+            ccf_header[ccf_skey] = hdul["CCFS"].header[ccf_ikey]
+        ccf_header["VELNSTEP"] = hdul["CCFS"].data.shape[1]
+
+        self.create_extension(
+            "CCF1", "ImageHDU", data=hdul["CCFS"].data, header=ccf_header
+        )
