@@ -1,13 +1,13 @@
 from astropy.io import fits
-from astropy.table import Table
-import numpy as np
+# from astropy.table import Table
+# import numpy as np
 import pandas as pd
 import os
-from collections import OrderedDict
+# from collections import OrderedDict
 
 # import base class
 from rvdata.core.models.level3 import RV3
-from rvdata.core.models.definitions import LEVEL3_EXTENSIONS
+# from rvdata.core.models.definitions import LEVEL3_EXTENSIONS
 from rvdata.core.tools import stitch_spectrum
 
 
