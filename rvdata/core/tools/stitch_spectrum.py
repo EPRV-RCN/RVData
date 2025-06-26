@@ -215,7 +215,7 @@ def stitch_orders(
     spec_mask = np.logical_or(sciflx_mask, sciwav_mask, sciblz_mask)
 
     # Mask data where the spectrum is bad or missing
-    #sci_flxm = np.where(spec_mask, float("nan"), sci_flx)
+    # sci_flxm = np.where(spec_mask, float("nan"), sci_flx)
     sci_wavm = np.where(spec_mask, float("nan"), sci_wav)
     sci_blzm = np.where(spec_mask, float("nan"), sci_blz)
     sci_dflxm = np.where(spec_mask, float("nan"), sci_dflx)
@@ -227,8 +227,8 @@ def stitch_orders(
     sci_bzewavr, sci_bzbeenvr = calculate_spectral_envelope(
         sci_wavm[iorderflatbreak:iordermax, :], sci_blzm[iorderflatbreak:iordermax, :]
     )
-    #sci_bzewav = np.concatenate((sci_bzewavb, sci_bzewavr), axis=0)
-    #sci_bzbeenv = np.concatenate((sci_bzbeenvb, sci_bzbeenvr), axis=0)
+    # sci_bzewav = np.concatenate((sci_bzewavb, sci_bzewavr), axis=0)
+    # sci_bzbeenv = np.concatenate((sci_bzbeenvb, sci_bzbeenvr), axis=0)
 
     # Interpolate the spectral envelope to the wavelength grid of the science data
     sci_bzenvb = interp1d(
