@@ -29,7 +29,7 @@ class NEIDRV3(RV3):
     Attributes
     ----------
     extensions : dict
-        Dictionary of all created extensions 
+        Dictionary of all created extensions
         (e.g., 'STITCHED_CORR_TRACE1_FLUX', 'STITCHED_CORR_TRACE1_WAVE', etc.),
         mapping extension names to their data arrays.
     headers : dict
@@ -52,22 +52,21 @@ class NEIDRV3(RV3):
     >>> obj.to_fits("neid_L3_standard.fits")
     """
 
-
-
     def _read(self, hdul2: fits.HDUList, **kwargs) -> None:
-        
+
         # read the wavelength, flux, and blaze data
-        sci_flx = hdul2['SCIFLUX'].data # 4-116 order in NEID out of 122
-        sci_wav = hdul2['SCIWAVE'].data
-        sci_blz = hdul2['SCIBLAZE'].data
+        sci_flx = hdul2["SCIFLUX"].data  # 4-116 order in NEID out of 122
+        sci_wav = hdul2["SCIWAVE"].data
+        sci_blz = hdul2["SCIBLAZE"].data
 
         # stitch the orders
-        st_wave, st_flux = stitch_spectrum.stitch_orders(sci_wav, sci_flx, sci_blz,inst_stitch_config_sel='NEID')
-        
+        st_wave, st_flux = stitch_spectrum.stitch_orders(
+            sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
+        )
+
         # save the stitched spectrum
         self.set_data("STITCHED_CORR_TRACE1_FLUX", st_flux)
         self.set_data("STITCHED_CORR_TRACE1_WAVE", st_wave)
-
 
         # set the primary header
         hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
@@ -88,7 +87,6 @@ class NEIDRV3(RV3):
 
         self.set_header("PRIMARY", phead)
         self.set_header("INSTRUMENT_HEADER", ihead)
-        
 
         # self.set_header("DRP_CONFIG", OrderedDict(hdul2["CONFIG"].header))
         # self.set_data("DRP_CONFIG", Table(hdul2["CONFIG"].data).to_pandas())
