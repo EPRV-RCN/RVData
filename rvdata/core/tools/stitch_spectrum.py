@@ -223,10 +223,10 @@ def stitch_orders(
     # Calculate the spectral envelope for the blaze extension
     sci_bzewavb, sci_bzbeenvb = calculate_spectral_envelope(
         sci_wavm[iordermin:iorderflatbreak, :], sci_blzm[iordermin:iorderflatbreak, :]
-    )  # , fsr=fsrmask[:78,:])
+    )
     sci_bzewavr, sci_bzbeenvr = calculate_spectral_envelope(
         sci_wavm[iorderflatbreak:iordermax, :], sci_blzm[iorderflatbreak:iordermax, :]
-    )  # , fsr=fsrmask[78:,:])
+    )
     sci_bzewav = np.concatenate((sci_bzewavb, sci_bzewavr), axis=0)
     sci_bzbeenv = np.concatenate((sci_bzbeenvb, sci_bzbeenvr), axis=0)
 
