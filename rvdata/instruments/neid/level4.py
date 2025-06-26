@@ -130,6 +130,61 @@ class NEIDRV4(RV4):
 
         # RV1 - turn the CCFS extension header into a table
 
+        neid_fsr = pd.read_csv(
+            os.path.join(os.path.dirname(__file__), "config/neid_fsr.csv")
+        )
+
+        rv_table_data = OrderedDict(
+            {
+                "BJD_TDB": np.array(
+                    [hdul[0].header[f"SSBJD{173-order:03d}"] for order in range(122)]
+                ),
+                "RV": np.array(
+                    [
+                        hdul["CCFS"].header[f"CCFRV{173-order:03d}"]
+                        for order in range(122)
+                    ]
+                ),
+                "RV_error": np.full(122, np.nan),
+                "BC_vel": np.array(
+                    [hdul[0].header[f"SSBRV{173-order:03d}"] for order in range(122)]
+                ),
+                "wave_start": np.full(122, np.nan),
+                "wave_end": np.full(122, np.nan),
+                "pixel_start": np.full(122, np.nan),
+                "pixel_end": np.full(122, np.nan),
+                "order_index": np.arange(122),
+                "echelle_order": 173 - np.arange(122),
+                "weight": np.array(
+                    [
+                        hdul["CCFS"].header[f"CCFWT{173-order:03d}"]
+                        for order in range(122)
+                    ]
+                ),
+            }
+        )
+
+        for order in range(122):
+            if (
+                np.isfinite(neid_fsr["fsr_start"].values[order])
+                and (rv_table_data["RV"][order] != None)
+                and (rv_table_data["RV"][order] != 0)
+            ):
+                fsr_pixel_start = int(neid_fsr["fsr_start"].values[order])
+                fsr_pixel_end = int(neid_fsr["fsr_end"].values[order])
+
+                rv_table_data["wave_start"][order] = hdul["sciwave"].data[
+                    order, fsr_pixel_start
+                ]
+                rv_table_data["wave_end"][order] = hdul["sciwave"].data[
+                    order, fsr_pixel_end
+                ]
+
+                rv_table_data["pixel_start"][order] = fsr_pixel_start
+                rv_table_data["pixel_end"][order] = fsr_pixel_end
+
+        self.set_data("RV1", pd.DataFrame(rv_table_data))
+
         # CCF extension
 
         # Translate some NEID CCFS extension header keys to standard keys
@@ -146,4 +201,13 @@ class NEIDRV4(RV4):
 
         self.create_extension(
             "CCF1", "ImageHDU", data=hdul["CCFS"].data, header=ccf_header
+        )
+
+        # Diagnostics extension - for now just put in the activity extension directly
+
+        self.create_extension(
+            "DIAGNOSTICS1",
+            "BinTableHDU",
+            data=hdul["ACTIVITY"].data,
+            header=hdul["ACTIVITY"].header,
         )
