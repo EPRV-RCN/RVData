@@ -21,6 +21,7 @@ from rvdata.core.models.definitions import (
     FITS_TYPE_MAP,
     INSTRUMENT_READERS,
     LEVEL2_PRIMARY_KEYWORDS,
+    LEVEL3_PRIMARY_KEYWORDS,
     LEVEL4_PRIMARY_KEYWORDS,
 )
 from rvdata.core.models.receipt_columns import RECEIPT_COL
@@ -152,6 +153,11 @@ class RVDataModel(object):
 
                     method = rvdata.core.models.level2.RV2._read
                     method(self, hdu_list)
+                elif lvl == 3:
+                    import rvdata.core.models.level3
+
+                    method = rvdata.core.models.level4.RV3._read
+                    method(self, hdu_list)
                 elif lvl == 4:
                     import rvdata.core.models.level4
 
@@ -178,7 +184,7 @@ class RVDataModel(object):
 
         # check and recast the headers into appropriate types
         for i, row in pd.concat(
-            [LEVEL2_PRIMARY_KEYWORDS, LEVEL4_PRIMARY_KEYWORDS]
+            [LEVEL2_PRIMARY_KEYWORDS, LEVEL3_PRIMARY_KEYWORDS, LEVEL4_PRIMARY_KEYWORDS]
         ).iterrows():
             key = row["Keyword"]
             if key in self.headers["PRIMARY"]:
