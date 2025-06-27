@@ -1,7 +1,7 @@
 HDU,Name,DataType,MinBitDepth,Multiplicity,Required,Description,Comments
 0,PRIMARY,PrimaryHDU,,False,True,EPRV Standard FITS HEADER (no data),Carried forward from L2 FITS file
 1,INSTRUMENT_HEADER,ImageHDU,,False,True,Inherited instrument header (no data),Carried forward from L2 FITS file
-2,RECEIPT,BinTableHDU,,False,True,Table of operations that have been performed on this file,
+2,RECEIPT,BinTableHDU,,False,True,Table of operations that have been performed on this file
 3,DRP_CONFIG,BinTableHDU,,False,True,Pipeline details (settings etc) to go from native data to L2
 4,ORDER_TABLE,BinTableHDU,,TRUE,TRUE,Table capturing the wavelength extent of each order, Required columns: physical echelle order; index echelle order; start wavelength [64bit]; end wavelength [64bit]
 5,STITCHED_CORR_TRACE1_FLUX,ImageHDU,,True,True,Order stitched blaze-corrected flux in trace 1,This flux array stitches together all orders and has been blaze corrected

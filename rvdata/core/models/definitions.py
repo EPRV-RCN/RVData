@@ -20,11 +20,15 @@ except Exception:
 if config_path is not None:
     LEVEL2_EXTENSIONS = pd.read_csv(config_path / "L2-extensions.csv")
     LEVEL2_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L2-PRIMARY-keywords.csv")
+    LEVEL3_EXTENSIONS = pd.read_csv(config_path / "L3-extensions.csv")
+    LEVEL3_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L3-PRIMARY-keywords.csv")
     LEVEL4_EXTENSIONS = pd.read_csv(config_path / "L4-extensions.csv")
     LEVEL4_PRIMARY_KEYWORDS = pd.read_csv(config_path / "L4-PRIMARY-keywords.csv")
 else:
     LEVEL2_EXTENSIONS = None
     LEVEL2_PRIMARY_KEYWORDS = None
+    LEVEL3_EXTENSIONS = None
+    LEVEL3_PRIMARY_KEYWORDS = None
     LEVEL4_EXTENSIONS = None
     LEVEL4_PRIMARY_KEYWORDS = None
 
