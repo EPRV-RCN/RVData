@@ -8,8 +8,9 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath("../../rvdata/"))
-from rvdata.version import __version__
+sys.path.insert(0, os.path.abspath("../.."))
+print('sys.path: ',sys.path)
+from rvdata import __version__
 
 project = "RVdata"
 copyright = "2024, BJ Fulton"
