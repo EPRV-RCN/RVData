@@ -15,6 +15,7 @@ Documentation for EPRV Data Standardization Project!
    FITS-extensions.rst
    primaryheader.rst
    units.rst
+   instrumentoverviews.rst
    api.rst
 
 Indices and tables

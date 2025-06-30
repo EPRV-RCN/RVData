@@ -1,5 +1,5 @@
 """
-Level 2 Data Model for RV spectral data
+Level 3 Data Model for RV spectral data
 """
 
 # External dependencies
@@ -9,43 +9,39 @@ import numpy as np
 import pandas as pd
 
 import rvdata.core.models.base
-from rvdata.core.models.definitions import LEVEL2_EXTENSIONS
+import rvdata.core.models.level2
+from rvdata.core.models.definitions import LEVEL3_EXTENSIONS
 
 
-class RV2(rvdata.core.models.base.RVDataModel):
+class RV3(rvdata.core.models.level2.RV2):
     """
-    The level 2 RV data. Initialized with empty fields.
+    The level 3 RV data. Initialized with empty fields.
     Attributes inherited from RVDataModel, additional attributes below.
 
     """
 
     def __init__(self):
         super().__init__()
-        self.level = 2
+        self.level = 3
 
-        # TODO: initialize header keywords for each extension
-
-        for i, row in LEVEL2_EXTENSIONS.iterrows():
+        for i, row in LEVEL3_EXTENSIONS.iterrows():
             if row["Required"]:
                 # TODO: set description and comment
-                self.create_extension(row["Name"], row["DataType"])
+                if row["Name"] not in self.extensions.keys():
+                    self.create_extension(row["Name"], row["DataType"])
 
         # Add EXT_DESCRIPT as a DataFrame, dropping the Comments column
-        ext_descript = LEVEL2_EXTENSIONS.copy().query('Required == True')\
-            .reset_index(drop=True)
+        ext_descript = (
+            LEVEL3_EXTENSIONS.copy().query("Required == True").reset_index(drop=True)
+        )
         if "Comments" in ext_descript.columns:
             ext_descript = ext_descript.drop(columns=["Comments"])
         self.set_data("EXT_DESCRIPT", ext_descript)
 
     def _read(self, hdul: fits.HDUList) -> None:
-        l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
-
+        l3_ext = LEVEL3_EXTENSIONS.set_index("Name")
         for hdu in hdul:
-            if "TRACE" in hdu.name:
-                t1 = "TRACE1_" + hdu.name.split("_")[1]
-                fits_type = l2_ext.loc[t1]["DataType"]
-            else:
-                fits_type = l2_ext.loc[hdu.name]["DataType"]
+            fits_type = l3_ext.loc[hdu.name]["DataType"]
             if hdu.name not in self.extensions.keys():
                 self.create_extension(hdu.name, fits_type)
 
@@ -91,12 +87,10 @@ class RV2(rvdata.core.models.base.RVDataModel):
 
             ext = self.data[name]
             if isinstance(ext, np.ndarray):
-                row = "|{:20s} |{:20s} |{:20s}\n"\
-                    .format(name, "array", str(ext.shape))
+                row = "|{:20s} |{:20s} |{:20s}\n".format(name, "array", str(ext.shape))
                 head += row
             elif isinstance(ext, pd.DataFrame):
-                row = "|{:20s} |{:20s} |{:20s}\n"\
-                    .format(name, "table", str(len(ext)))
+                row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
                 head += row
         print(head)
 

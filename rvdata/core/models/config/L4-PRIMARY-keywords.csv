@@ -1,0 +1,8 @@
+Keyword,Description,Units,Data type,Example Value,FITS required,Default,Inherited? [Y/N/M],Required,Notes
+BJDTDB,Barycentric Julian Day in Terrestrial Dynamical time,JD,double,2456000.0034665440,,,,Y,
+RV,RV value recommended by team,km/s,float,,,,,Y,
+RVERR,Error on RV ,km/s,float,,,,,Y,
+BERV,Barycentric RV,km/s,float,,,,,Y,
+RVMETHOD,"RV derivation method (CCF, SERVAL, etc)",--,string,,,,,,
+SYSVEL,Systemic Velocity subtracted from RVs,km/s,float,,,UNDEFINED,,Y,"default is that this is the CRV# value from the PRIMARY header and should be removed -- can remain UNDEFINED if no meaningful Sys RV removed, e.g. for iodine instruments"
+SYSACC,Acceleration of the systemic velocity,m/s/s,float,,,,,N,

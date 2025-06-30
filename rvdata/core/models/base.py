@@ -13,10 +13,17 @@ import git
 from git.exc import InvalidGitRepositoryError
 
 import pandas as pd
+import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
-from rvdata.core.models.definitions import FITS_TYPE_MAP, INSTRUMENT_READERS
+from rvdata.core.models.definitions import (
+    FITS_TYPE_MAP,
+    INSTRUMENT_READERS,
+    LEVEL2_PRIMARY_KEYWORDS,
+    LEVEL3_PRIMARY_KEYWORDS,
+    LEVEL4_PRIMARY_KEYWORDS,
+)
 from rvdata.core.models.receipt_columns import RECEIPT_COL
 from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 
@@ -70,7 +77,7 @@ class RVDataModel(object):
         Create a data instance from a file
 
         This method implys the ``read`` method for reading the file. Refer to
-        it for more detail. It is assume that the input FITS file is in RVData standard format
+        it for more detail. It is assumed that the input FITS file is in RVData standard format
 
         Args:
             fn (str): file path (relative to the repository)
@@ -138,24 +145,68 @@ class RVDataModel(object):
                         setattr(self, hdu.name, t.to_pandas())
 
             # Leave the rest of HDUs to level specific readers
-
+            # assume reader method and class names folow RV2 conventions
+            lvl = self.level
             if instrument is None:
-                import rvdata.core.models.level2
+                if lvl == 2:
+                    import rvdata.core.models.level2
 
-                method = rvdata.core.models.level2.RV2._read
-                method(self, hdu_list)
+                    method = rvdata.core.models.level2.RV2._read
+                    method(self, hdu_list)
+                elif lvl == 3:
+                    import rvdata.core.models.level3
+
+                    method = rvdata.core.models.level4.RV3._read
+                    method(self, hdu_list)
+                elif lvl == 4:
+                    import rvdata.core.models.level4
+
+                    method = rvdata.core.models.level4.RV4._read
+                    method(self, hdu_list)
             elif instrument in self.read_methods.keys():
-                module = importlib.import_module(
-                    self.read_methods[instrument]["module"]
-                )
+                clsname = self.read_methods[instrument]["class"]
+                methname = self.read_methods[instrument]["method"]
+                modname = self.read_methods[instrument]["module"]
+                if lvl != 2:
+                    modname = modname.replace("level2", "level{}".format(lvl))
+                    clsname = clsname.replace("RV2", "RV{}".format(lvl))
+                    methname = methname.replace("level2", "level{}".format(lvl))
 
-                cls = getattr(module, self.read_methods[instrument]["class"])
-                method = getattr(cls, self.read_methods[instrument]["method"])
+                module = importlib.import_module(modname)
+
+                cls = getattr(module, clsname)
+                method = getattr(cls, methname)
                 method(self, hdu_list, **kwargs)
             else:
                 # the provided data_type is not recognized, ie.
                 # not in the self.read_methods list
                 raise IOError("cannot recognize data type {}".format(instrument))
+
+        # check and recast the headers into appropriate types
+        for i, row in pd.concat(
+            [LEVEL2_PRIMARY_KEYWORDS, LEVEL3_PRIMARY_KEYWORDS, LEVEL4_PRIMARY_KEYWORDS]
+        ).iterrows():
+            key = row["Keyword"]
+            if key in self.headers["PRIMARY"]:
+                value = self.headers["PRIMARY"][key]
+                if value is None:
+                    continue
+                try:
+                    if row["Data type"].lower() == "uint":
+                        self.headers["PRIMARY"][key] = int(value)
+                    elif row["Data type"].lower() == "float":
+                        self.headers["PRIMARY"][key] = float(value)
+                    elif row["Data type"].lower() == "string":
+                        self.headers["PRIMARY"][key] = str(value)
+                    elif row["Data type"].lower() == "double":
+                        self.headers["PRIMARY"][key] = np.float64(value)
+                    else:
+                        warnings.warn(f"Unknown type {row['Type']} for keyword {key}")
+                except (TypeError, AttributeError, ValueError):
+                    warnings.warn(
+                        f"Cannot convert value {value} for keyword {key} to type {row['Data type']}"
+                    )
+
         # compute MD5 sum of source file and write it into a receipt entry for tracking.
         # Note that MD5 sum has known security vulnerabilities, but we are only using
         # this to ensure data integrity, and there is no known reason for someone to try

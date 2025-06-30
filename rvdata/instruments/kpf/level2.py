@@ -3,6 +3,7 @@ from astropy.table import Table
 import numpy as np
 import pandas as pd
 import os
+import warnings
 from collections import OrderedDict
 
 # import base class
@@ -52,7 +53,7 @@ class KPFRV2(RV2):
 
     def _read(self, hdul1: fits.HDUList, **kwargs) -> None:
         hdul0 = fits.open(kwargs["l0file"])
-        dateobs = hdul0["PRIMARY"].header["DATE-OBS"]
+        dateobs = hdul1["PRIMARY"].header["DATE-OBS"]
 
         blazedf = pd.read_csv(
             os.path.join(os.path.dirname(__file__), "config/smooth_lamp_pattern.csv"),
@@ -78,6 +79,7 @@ class KPFRV2(RV2):
                 flux_ext = f"{chip}_SCI_FLUX{i}"
                 wave_ext = f"{chip}_SCI_WAVE{i}"
                 var_ext = f"{chip}_SCI_VAR{i}"
+                blaze_ext = f"{chip}_SCI_BLAZE{i}"
 
                 if flux_array is None:
                     flux_array = hdul1[flux_ext].data
@@ -101,13 +103,18 @@ class KPFRV2(RV2):
                 else:
                     var_array = np.concatenate((var_array, hdul1[var_ext].data), axis=0)
 
-                if blaze_array is None:
-                    blaze_array = blazeHDU[flux_ext].data
-                    blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
+                if blaze_ext in hdul1:
+                    blaze_data = hdul1[blaze_ext].data
+                    blaze_meta = OrderedDict(hdul1[blaze_ext].header)
                 else:
-                    blaze_array = np.concatenate(
-                        (blaze_array, blazeHDU[flux_ext].data), axis=0
-                    )
+                    warnings.warn("Blaze extensions not found in KPF L1 file, using default.")
+                    blaze_data = blazeHDU[flux_ext].data
+                    blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
+
+                if blaze_array is None:
+                    blaze_array = blaze_data
+                else:
+                    blaze_array = np.concatenate((blaze_array, blaze_data), axis=0)
 
             self.create_extension(
                 out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
@@ -232,6 +239,17 @@ class KPFRV2(RV2):
         self.set_header("RECEIPT", OrderedDict(hdul1["RECEIPT"].header))
         self.set_data("RECEIPT", Table(hdul1["RECEIPT"].data).to_pandas())
 
+        wavelengths = self.data["TRACE2_WAVE"]
+        order_table_data = pd.DataFrame(
+            {
+                "echelle_order": 137 - np.arange(wavelengths.shape[0]),
+                "order_index": np.arange(wavelengths.shape[0]),
+                "wave_start": np.nanmin(wavelengths.data, axis=1),
+                "wave_end": np.nanmax(wavelengths.data, axis=1),
+            }
+        )
+        self.set_data("ORDER_TABLE", order_table_data)
+
         hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
         headmap = pd.read_csv(hmap_path, header=0)
 
@@ -240,7 +258,7 @@ class KPFRV2(RV2):
         for i, row in headmap.iterrows():
             skey = row["STANDARD"]
             kpfkey = row["INSTRUMENT"]
-            if pd.notnull(kpfkey):
+            if pd.notnull(kpfkey) and kpfkey in ihead.keys():
                 kpfval = ihead[kpfkey]
             else:
                 kpfval = row["DEFAULT"]
@@ -250,3 +268,12 @@ class KPFRV2(RV2):
                 phead[skey] = None
 
         self.set_header("PRIMARY", phead)
+
+        # overwrite EXT_DESCRIPT as a DataFrame, dropping the Comments column
+        ext_file = os.path.join(
+            os.path.dirname(__file__), "config", "L2-extensions.csv"
+        )
+        ext_descript = pd.read_csv(ext_file, header=0)
+        if "Comments" in ext_descript.columns:
+            ext_descript = ext_descript.drop(columns=["Comments"])
+        self.set_data("EXT_DESCRIPT", ext_descript)
