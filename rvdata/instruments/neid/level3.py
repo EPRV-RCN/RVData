@@ -61,36 +61,13 @@ class NEIDRV3(RV3):
         # TODO: read NEID Level 2 and create the Level 2 data standard
 
         # Set up the primary header
-        phead = make_neid_primary_header.make_base_primary_header(hdul2[0].header)
-        phead["DATALVL"] = 3
-
-        # Add L3 specific entries to the primary header
-
-        for i, row in LEVEL3_PRIMARY_KEYWORDS.iterrows():
-            key = row["Keyword"]
-            value = row["Default"]
-            try:
-                if row["Data type"].lower() == "uint":
-                    phead[key] = int(value)
-                elif row["Data type"].lower() == "float":
-                    phead[key] = float(value)
-                elif row["Data type"].lower() == "string":
-                    phead[key] = str(value)
-                elif row["Data type"].lower() == "double":
-                    phead[key] = np.float64(value)
-                elif row["Data type"].lower() == "boolean":
-                    phead[key] = value.upper() == 'TRUE'
-                else:
-                    print(f"Unknown type {row['Data type']} for keyword {key}")
-            except (TypeError, AttributeError, ValueError):
-                print(
-                    f"Cannot convert value {value} for keyword {key} to type {row['Data type']}"
-                )
-
-        self.set_header("PRIMARY", phead)
+        l3prihdr = make_neid_primary_header.make_base_primary_header(hdul2[0].header)
+        l3phead = self.headers["PRIMARY"]
+        l3prihdr.extend(l3phead)
+        l3prihdr["DATALVL"] = 3
 
         # Instrument header
-        self.set_header("INSTRUMENT_HEADER", hdul2["PRIMARY"].header)
+        # self.set_header("INSTRUMENT_HEADER", hdul2["PRIMARY"].header)
 
         # TODO iterate over traces
         # read the wavelength, flux, and blaze data
@@ -104,25 +81,25 @@ class NEIDRV3(RV3):
                 sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
             )
             # save the stitched spectrum
-            self.set_data("STITCHED_CORR_TRACE1_FLUX", st_flux)
-            self.set_data("STITCHED_CORR_TRACE1_WAVE", st_wave)
-            phead["BLZCORR"] = True
-            phead["LMPCORR"] = True
-            phead["SEDCORR"] = False
-            phead["INTERPMD"] = "BINDENSITY"
-            phead["FLXNRMMD"] = "None"
-            phead["DISPCORR"] = True
-            self.set_header("PRIMARY", phead)
+            self.set_data("STITCHED_CORR_SCI_FLUX", st_flux)
+            self.set_data("STITCHED_CORR_SCI_WAVE", st_wave)
+            l3prihdr["BLZCORR"] = True
+            l3prihdr["LMPCORR"] = True
+            l3prihdr["SEDCORR"] = False
+            l3prihdr["INTERPMD"] = "BINDENSITY"
+            l3prihdr["FLXNRMMD"] = "None"
+            l3prihdr["DISPCORR"] = True
+            self.set_header("PRIMARY", l3prihdr)
 
         except Exception as e:
             print(f"Error stitching orders: {e}")
-            phead["BLZCORR"] = False
-            phead["LMPCORR"] = False
-            phead["SEDCORR"] = False
-            phead["INTERPMD"] = "None"
-            phead["FLXNRMMD"] = "None"
-            phead["DISPCORR"] = False
-            self.set_header("PRIMARY", phead)
+            l3prihdr["BLZCORR"] = False
+            l3prihdr["LMPCORR"] = False
+            l3prihdr["SEDCORR"] = False
+            l3prihdr["INTERPMD"] = "None"
+            l3prihdr["FLXNRMMD"] = "None"
+            l3prihdr["DISPCORR"] = False
+            self.set_header("PRIMARY", l3prihdr)
 
         # self.set_header("DRP_CONFIG", OrderedDict(hdul2["CONFIG"].header))
         # self.set_data("DRP_CONFIG", Table(hdul2["CONFIG"].data).to_pandas())
