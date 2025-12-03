@@ -127,7 +127,10 @@ class RVDataModel(object):
             # Handles the Receipt and the auxilary HDUs
             for hdu in hdu_list:
                 if isinstance(hdu, fits.PrimaryHDU):
-                    self.headers[hdu.name] = hdu.header
+                    if instrument is None:
+                        self.headers["PRIMARY"] = hdu.header
+                    else:
+                        self.headers["INSTRUMENT_HEADER"] = hdu.header
                 elif isinstance(hdu, fits.BinTableHDU):
                     if "RECEIPT" in hdu.name:
                         t = Table.read(hdu)

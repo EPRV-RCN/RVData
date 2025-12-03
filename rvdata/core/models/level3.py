@@ -10,7 +10,7 @@ import pandas as pd
 
 import rvdata.core.models.base
 import rvdata.core.models.level2
-from rvdata.core.models.definitions import LEVEL3_EXTENSIONS
+from rvdata.core.models.definitions import LEVEL3_EXTENSIONS, LEVEL3_PRIMARY_KEYWORDS
 
 
 class RV3(rvdata.core.models.base.RVDataModel):
@@ -39,6 +39,28 @@ class RV3(rvdata.core.models.base.RVDataModel):
         self.set_data("EXT_DESCRIPT", ext_descript)
 
         # TODO: initialize the LEVEL3_PRIMARY_KEYWORDS in the Level 3 PRIMARY header
+        # Add L3 specific entries to the primary header
+
+        for i, row in LEVEL3_PRIMARY_KEYWORDS.iterrows():
+            key = row["Keyword"]
+            value = row["Default"]
+            try:
+                if row["Data type"].lower() == "uint":
+                    self.headers["PRIMARY"][key] = int(value)
+                elif row["Data type"].lower() == "float":
+                    self.headers["PRIMARY"][key] = float(value)
+                elif row["Data type"].lower() == "string":
+                    self.headers["PRIMARY"][key] = str(value)
+                elif row["Data type"].lower() == "double":
+                    self.headers["PRIMARY"][key] = np.float64(value)
+                elif row["Data type"].lower() == "boolean":
+                    self.headers["PRIMARY"][key] = value.upper() == 'TRUE'
+                else:
+                    print(f"Unknown type {row['Data type']} for keyword {key}")
+            except (TypeError, AttributeError, ValueError):
+                print(
+                    f"Cannot convert value {value} for keyword {key} to type {row['Data type']}"
+                )
 
     def _read(self, hdul: fits.HDUList) -> None:
         l3_ext = LEVEL3_EXTENSIONS.set_index("Name")
