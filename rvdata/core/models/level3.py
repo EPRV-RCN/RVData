@@ -38,6 +38,8 @@ class RV3(rvdata.core.models.base.RVDataModel):
             ext_descript = ext_descript.drop(columns=["Comments"])
         self.set_data("EXT_DESCRIPT", ext_descript)
 
+        # TODO: initialize the LEVEL3_PRIMARY_KEYWORDS in the Level 3 PRIMARY header
+
     def _read(self, hdul: fits.HDUList) -> None:
         l3_ext = LEVEL3_EXTENSIONS.set_index("Name")
         for hdu in hdul:

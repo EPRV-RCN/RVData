@@ -58,6 +58,7 @@ class NEIDRV3(RV3):
     """
 
     def _read(self, hdul2: fits.HDUList, **kwargs) -> None:
+        # TODO: read NEID Level 2 and create the Level 2 data standard
 
         # Set up the primary header
         phead = make_neid_primary_header.make_base_primary_header(hdul2[0].header)

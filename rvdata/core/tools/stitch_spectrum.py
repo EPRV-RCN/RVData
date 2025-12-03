@@ -4,6 +4,7 @@ from specutils import Spectrum
 from specutils.manipulation import FluxConservingResampler
 from scipy.interpolate import interp1d
 
+# TODO: clean up functions
 
 def calculate_spectral_envelope(
     wave, flux, wavepoints=None, boxsize=100, percentile=99, fsr=None
@@ -161,7 +162,7 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
 
     return st_wave, st_flux
 
-
+# TODO: detach level3 instrument config from function into config file with instrument configs entries
 def stitch_orders(
     sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
 ):  # , inst_stitch_config=stitch_config['NEID']):
