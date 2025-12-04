@@ -56,44 +56,6 @@ class NEIDRV3(RV3):
 
         l2obj = NEIDRV2()
         l2obj.read(hdul2, instrument="NEID")
-        # Set up the primary header
-        l3prihdr = l2obj.headers["PRIMARY"]
-        l3phead = self.headers["PRIMARY"]
-        l3prihdr.extend(l3phead)
-        l3prihdr["DATALVL"] = 3
-
-        # TODO iterate over traces
-        # read the wavelength, flux, and blaze data
-
-        sci_flx = l2obj.data["TRACE1_FLUX"].astype(np.float64)
-        sci_wav = l2obj.data["TRACE1_WAVE"].astype(np.float64)
-        sci_blz = l2obj.data["TRACE1_BLAZE"].astype(np.float64)
-
-        # stitch the orders
-        try:
-            st_wave, st_flux = stitch_spectrum.stitch_orders(
-                sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
-            )
-            # save the stitched spectrum
-            self.set_data("STITCHED_CORR_SCI_FLUX", st_flux)
-            self.set_data("STITCHED_CORR_SCI_WAVE", st_wave)
-            l3prihdr["BLZCORR"] = True
-            l3prihdr["LMPCORR"] = True
-            l3prihdr["SEDCORR"] = False
-            l3prihdr["INTERPMD"] = "BINDENSITY"
-            l3prihdr["FLXNRMMD"] = "None"
-            l3prihdr["DISPCORR"] = True
-            self.set_header("PRIMARY", l3prihdr)
-
-        except Exception as e:
-            print(f"Error stitching orders: {e}")
-            l3prihdr["BLZCORR"] = False
-            l3prihdr["LMPCORR"] = False
-            l3prihdr["SEDCORR"] = False
-            l3prihdr["INTERPMD"] = "None"
-            l3prihdr["FLXNRMMD"] = "None"
-            l3prihdr["DISPCORR"] = False
-            self.set_header("PRIMARY", l3prihdr)
 
         # self.set_header("DRP_CONFIG", OrderedDict(hdul2["CONFIG"].header))
         # self.set_data("DRP_CONFIG", Table(hdul2["CONFIG"].data).to_pandas())

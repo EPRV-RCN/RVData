@@ -10,6 +10,7 @@ import pandas as pd
 
 import rvdata.core.models.base
 from rvdata.core.models.definitions import LEVEL3_EXTENSIONS, LEVEL3_PRIMARY_KEYWORDS
+from rvdata.core.tools import stitch_spectrum
 
 
 class RV3(rvdata.core.models.base.RVDataModel):
@@ -79,6 +80,56 @@ class RV3(rvdata.core.models.base.RVDataModel):
 
             self.set_header(hdu.name, hdu.header)
 
+    @staticmethod
+    def convert_level2_to_level3(l2obj) -> None:
+        """
+        Read data from a Level 2 RVDataModel object and populate Level 3 fields
+        """
+
+        l3obj = RV3()
+        
+        # Set up the primary header
+        l3prihdr = l2obj.headers["PRIMARY"]
+        # l3phead = l3obj.headers["PRIMARY"]
+        # l3prihdr.extend(l3phead)
+        l3prihdr["DATALVL"] = 3
+
+        # TODO iterate over traces
+        # read the wavelength, flux, and blaze data
+
+        sci_flx = l2obj.data["TRACE1_FLUX"].astype(np.float64)
+        sci_wav = l2obj.data["TRACE1_WAVE"].astype(np.float64)
+        sci_blz = l2obj.data["TRACE1_BLAZE"].astype(np.float64)
+
+        # stitch the orders
+        try:
+            st_wave, st_flux = stitch_spectrum.stitch_orders(
+                sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
+            )
+            # save the stitched spectrum
+            l3prihdr["BLZCORR"] = True
+            l3prihdr["LMPCORR"] = True
+            l3prihdr["SEDCORR"] = False
+            l3prihdr["INTERPMD"] = "BINDENSITY"
+            l3prihdr["FLXNRMMD"] = "None"
+            l3prihdr["DISPCORR"] = True
+
+        except Exception as e:
+            print(f"Error stitching orders: {e}")
+            l3prihdr["BLZCORR"] = False
+            l3prihdr["LMPCORR"] = False
+            l3prihdr["SEDCORR"] = False
+            l3prihdr["INTERPMD"] = "None"
+            l3prihdr["FLXNRMMD"] = "None"
+            l3prihdr["DISPCORR"] = False
+
+        l3obj.set_header("PRIMARY", l3prihdr)
+        l3obj.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
+        l3obj.set_data("STITCHED_CORR_SCI_WAVE", st_wave)
+        l3obj.set_data("STITCHED_CORR_SCI_FLUX", st_flux)
+
+        return l3obj
+    
     def info(self):
         """
         Pretty print information about this data to stdout
