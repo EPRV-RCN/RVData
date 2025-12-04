@@ -164,8 +164,8 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
 
 # TODO: detach level3 instrument config from function into config file with instrument configs entries
 def stitch_orders(
-    sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
-):  # , inst_stitch_config=stitch_config['NEID']):
+    sci_wav, sci_flx, sci_blz, inst_stitch_config=None
+):
     """Stitch the spectral orders of a science spectrum.
 
     Parameters
@@ -178,7 +178,6 @@ def stitch_orders(
         Blaze function of the science spectrum, shape (norders, npixels).
     inst_stitch_config : dict, optional
         Instrument-specific stitching configuration parameters.
-        Default is for NEID.
 
     Returns
     -------
@@ -190,17 +189,6 @@ def stitch_orders(
     2025-06-21, LPA
     """
     # instrument configuration parameters
-    stitch_config = {
-        "NEID": {
-            "iordermin": 4,  # First order to include in stitching # TODO use wav limits instead
-            "iorderflatbreak": 78,  # Order where the flat breaks # TODO make function for flat break
-            "iordermax": 116,  # Last order to include in stitching # TODO use wav limits instead
-            "nbins": 50000,  # Number of bins for the stitched spectrum
-            # TODO Specify wavstart and waveend and derive nbins from the input data itself
-        }
-    }
-    inst_stitch_config = stitch_config[inst_stitch_config_sel]
-
     iordermin = inst_stitch_config["iordermin"]
     iorderflatbreak = inst_stitch_config["iorderflatbreak"]
     iordermax = inst_stitch_config["iordermax"]

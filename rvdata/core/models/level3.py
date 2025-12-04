@@ -11,6 +11,7 @@ import pandas as pd
 import rvdata.core.models.base
 from rvdata.core.models.definitions import LEVEL3_EXTENSIONS, LEVEL3_PRIMARY_KEYWORDS
 from rvdata.core.tools import stitch_spectrum
+from rvdata.core.tools.utils import create_configdict_from_file
 
 
 class RV3(rvdata.core.models.base.RVDataModel):
@@ -90,8 +91,6 @@ class RV3(rvdata.core.models.base.RVDataModel):
         
         # Set up the primary header
         l3prihdr = l2obj.headers["PRIMARY"]
-        # l3phead = l3obj.headers["PRIMARY"]
-        # l3prihdr.extend(l3phead)
         l3prihdr["DATALVL"] = 3
 
         # TODO iterate over traces
@@ -101,10 +100,14 @@ class RV3(rvdata.core.models.base.RVDataModel):
         sci_wav = l2obj.data["TRACE1_WAVE"].astype(np.float64)
         sci_blz = l2obj.data["TRACE1_BLAZE"].astype(np.float64)
 
+        # get instrument stitching config
+        inst = l3prihdr["INSTRUME"].lower()
+        stitch_config = create_configdict_from_file(f"rvdata/instruments/{inst}/config/{inst}_level3.config")
+
         # stitch the orders
         try:
             st_wave, st_flux = stitch_spectrum.stitch_orders(
-                sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
+                sci_wav, sci_flx, sci_blz, inst_stitch_config=stitch_config
             )
             # save the stitched spectrum
             l3prihdr["BLZCORR"] = True
