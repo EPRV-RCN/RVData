@@ -6,6 +6,7 @@ from scipy.interpolate import interp1d
 
 # TODO: clean up functions
 
+
 def calculate_spectral_envelope(
     wave, flux, wavepoints=None, boxsize=100, percentile=99, fsr=None
 ):
@@ -49,19 +50,18 @@ def calculate_spectral_envelope(
         return (None, None)
 
     # Parse the FSR mask
-    pixstart = np.zeros(norders)
-    pixend = np.ones(norders) * (npixels - 1)
+    pixstart = np.zeros(norders, dtype=float)
+    pixend = np.full(norders, npixels - 1, dtype=float)
     if fsr is not None:
         if fsr.shape == wave.shape:
-            for o in range(norders):
-                if np.sum(np.logical_not(fsr[o, :])) == 0:
-                    pixstart[o] = np.nan
-                    pixend[o] = np.nan
-                else:
-                    pixstart[o] = np.min(np.argwhere(np.logical_not(fsr[o, :])))
-                    pixend[o] = np.max(np.argwhere(np.logical_not(fsr[o, :])))
+            fsr_mask = ~fsr
+            has_valid_pixels = np.any(fsr_mask, axis=1)
+            first_valid = np.argmax(fsr_mask, axis=1)
+            last_valid = np.argmax(fsr_mask[:, ::-1], axis=1)
+            pixstart = np.where(has_valid_pixels, first_valid, np.nan)
+            pixend = np.where(has_valid_pixels, npixels - 1 - last_valid, np.nan)
         else:
-            print("fsr and wave not equal shape.  not using fsr")
+            print("FSR and wavelength array are not equal shape. Not using FSR.")
 
     if wavepoints is not None:
         # Wavelengths are specified
@@ -70,37 +70,43 @@ def calculate_spectral_envelope(
         # Remove any nans and zeros
         wavepoints = wavepoints[~np.isnan(wavepoints)]
         wavepoints = wavepoints[wavepoints != 0]
-        # For each wavepoint, identify the order index where the point is closest to the order midpoint
-        # Note that this ignores the FSR mask...
-        worder = [
-            np.nanargmin(np.abs(wave[:, int(npixels / 2)] - w)) for w in wavepoints
-        ]
-        # Calculate the index in each order that corresponds to the order,wavepoint pair
-        windex = [
-            np.nanargmin(np.abs(wave[w[0], :] - w[1])) for w in zip(worder, wavepoints)
-        ]
-        # Calculate the flux percentile threshold at these points
+        if wavepoints.size == 0:
+            return (wavepoints, np.array([], dtype=float))
+        wave_midpoints = wave[:, npixels // 2]
+        # Identify the order that best matches each wavepoint using broadcasted distances
+        worder = np.nanargmin(
+            np.abs(wave_midpoints[:, None] - wavepoints[None, :]), axis=0
+        )
+        selected_wave = wave[worder, :]
+        # Locate the nearest pixel index within each selected order
+        windex = np.nanargmin(np.abs(selected_wave - wavepoints[:, None]), axis=1)
+        hbox = boxsize // 2
+        start = np.clip(windex - hbox, 0, npixels - 1)
+        end = np.clip(windex + hbox, 0, npixels - 1)
+        pixel_indices = np.arange(npixels)
+        window_mask = (pixel_indices >= start[:, None]) & (pixel_indices < end[:, None])
+        window_flux = np.where(window_mask, flux[worder], np.nan)
+        fluxout = np.nanpercentile(window_flux, percentile, axis=1)
         waveout = wavepoints
-        fluxout = np.empty(len(wavepoints))
-        hbox = int(boxsize / 2)
-        for i in range(len(windex)):
-            f = flux[
-                worder[i],
-                max([windex[i] - hbox, 0]) : min([windex[i] + hbox, npixels - 1]),
-            ]
-            fluxout[i] = np.percentile(f, percentile)
     else:
         # Calculate the envelope
-        fluxout = np.empty(norders) * np.nan
-        waveout = np.empty(norders) * np.nan
-        for o in range(norders):
-            if ~np.isnan(
-                pixstart[o]
-            ):  # Only need to check start; end nan is tied to start
-                f = flux[o, int(pixstart[o]) : int(pixend[o])]
-                w = wave[o, int(pixstart[o]) : int(pixend[o])]
-                fluxout[o] = np.percentile(f[~np.isnan(f)], percentile)
-                waveout[o] = np.nanmean(w[np.where(f > fluxout[o])])
+        valid_orders = ~np.isnan(pixstart)
+        start = np.where(valid_orders, pixstart, 0).astype(int)
+        end = np.where(valid_orders, pixend, 0).astype(int)
+        pixel_indices = np.arange(npixels)
+        order_window_mask = (pixel_indices >= start[:, None]) & (
+            pixel_indices < end[:, None]
+        )
+        masked_flux = np.where(order_window_mask, flux, np.nan)
+        masked_wave = np.where(order_window_mask, wave, np.nan)
+        fluxout = np.full(norders, np.nan)
+        if np.any(valid_orders):
+            fluxout[valid_orders] = np.nanpercentile(
+                masked_flux[valid_orders], percentile, axis=1
+            )
+        waveout = np.nanmean(
+            np.where(masked_flux > fluxout[:, None], masked_wave, np.nan), axis=1
+        )
 
     return (waveout, fluxout)
 
@@ -162,10 +168,9 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
 
     return st_wave, st_flux
 
+
 # TODO: detach level3 instrument config from function into config file with instrument configs entries
-def stitch_orders(
-    sci_wav, sci_flx, sci_blz, inst_stitch_config=None
-):
+def stitch_orders(sci_wav, sci_flx, sci_blz, inst_stitch_config=None):
     """Stitch the spectral orders of a science spectrum.
 
     Parameters
