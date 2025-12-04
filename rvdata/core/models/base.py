@@ -91,18 +91,37 @@ class RVDataModel(object):
         if not os.path.isfile(fn):
             raise IOError(f"{fn} does not exist.")
 
+        if not fn.endswith(".fits"):
+            # Can only read .fits files
+            raise IOError("input files must be FITS files")
+
         # populate it with self.read()
-        this_data.read(fn, instrument, **kwargs)
+        with fits.open(fn) as hdul:
+            this_data.read(hdul, instrument, **kwargs)
+            this_data.filename = os.path.basename(fn)
+            this_data.dirname = os.path.dirname(fn)
+
+        # compute MD5 sum of source file and write it into a receipt entry for tracking.
+        # Note that MD5 sum has known security vulnerabilities, but we are only using
+        # this to ensure data integrity, and there is no known reason for someone to try
+        # to hack astronomical data files.  If something more secure is is needed,
+        # substitute hashlib.sha256 for hashlib.md5
+        md5 = hashlib.md5()
+        with open(fn, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                md5.update(chunk)
+        this_data.receipt_add_entry("from_fits", "PASS")
+        
         # Return this instance
         return this_data
 
-    def read(self, fn, instrument=None, overwrite=False, **kwargs):
+    def read(self, hdu_list: fits.HDUList, instrument=None, overwrite=False, **kwargs):
         """
         Read the content of a RVData standard .fits file and populate this
         data structure.
 
         Args:
-            fn (str): file path (relative to the repository)
+            hdul (fits.HDUList): open FITS HDU list
             instrument (str): instrument name. None implies FITS file is in EPRV standard format.
             overwrite (bool): if this instance is not empty, specifies whether to overwrite
 
@@ -115,78 +134,69 @@ class RVDataModel(object):
 
         """
 
-        if not fn.endswith(".fits"):
-            # Can only read .fits files
-            raise IOError("input files must be FITS files")
-
-        self.filename = os.path.basename(fn)
-        self.dirname = os.path.dirname(fn)
-
-        with fits.open(fn) as hdu_list:
-
-            # Handles the Receipt and the auxilary HDUs
-            for hdu in hdu_list:
-                if isinstance(hdu, fits.PrimaryHDU):
-                    if instrument is None:
-                        self.headers["PRIMARY"] = hdu.header
+        # Handles the Receipt and the auxilary HDUs
+        for hdu in hdu_list:
+            if isinstance(hdu, fits.PrimaryHDU):
+                if instrument is None:
+                    self.headers["PRIMARY"] = hdu.header
+                else:
+                    self.headers["INSTRUMENT_HEADER"] = hdu.header
+            elif isinstance(hdu, fits.BinTableHDU):
+                if "RECEIPT" in hdu.name:
+                    t = Table.read(hdu)
+                    # Table contains the RECEIPT
+                    df: pd.DataFrame = t.to_pandas()
+                    # TODO: get receipt columns from core.models.config.BASE-RECEIPT-columns.csv
+                    if df.empty:
+                        df = pd.DataFrame(columns=RECEIPT_COL)
                     else:
-                        self.headers["INSTRUMENT_HEADER"] = hdu.header
-                elif isinstance(hdu, fits.BinTableHDU):
-                    if "RECEIPT" in hdu.name:
-                        t = Table.read(hdu)
-                        # Table contains the RECEIPT
-                        df: pd.DataFrame = t.to_pandas()
-                        # TODO: get receipt columns from core.models.config.BASE-RECEIPT-columns.csv
-                        if df.empty:
-                            df = pd.DataFrame(columns=RECEIPT_COL)
-                        else:
-                            df = df.reindex(
-                                df.columns.union(RECEIPT_COL, sort=False),
-                                axis=1,
-                                fill_value="",
-                            )
-                        setattr(self, hdu.name, df)
-                        setattr(self, hdu.name.lower(), getattr(self, hdu.name))
-                        self.headers[hdu.name] = hdu.header
-                        setattr(self, hdu.name, t.to_pandas())
+                        df = df.reindex(
+                            df.columns.union(RECEIPT_COL, sort=False),
+                            axis=1,
+                            fill_value="",
+                        )
+                    setattr(self, hdu.name, df)
+                    setattr(self, hdu.name.lower(), getattr(self, hdu.name))
+                    self.headers[hdu.name] = hdu.header
+                    setattr(self, hdu.name, t.to_pandas())
 
-            # Leave the rest of HDUs to level specific readers
-            # assume reader method and class names folow RV2 conventions
-            lvl = self.level
-            if instrument is None:
-                if lvl == 2:
-                    import rvdata.core.models.level2
+        # Leave the rest of HDUs to level specific readers
+        # assume reader method and class names folow RV2 conventions
+        lvl = self.level
+        if instrument is None:
+            if lvl == 2:
+                import rvdata.core.models.level2
 
-                    method = rvdata.core.models.level2.RV2._read
-                    method(self, hdu_list)
-                elif lvl == 3:
-                    import rvdata.core.models.level3
+                method = rvdata.core.models.level2.RV2._read
+                method(self, hdu_list)
+            elif lvl == 3:
+                import rvdata.core.models.level3
 
-                    method = rvdata.core.models.level3.RV3._read
-                    method(self, hdu_list)
-                elif lvl == 4:
-                    import rvdata.core.models.level4
+                method = rvdata.core.models.level3.RV3._read
+                method(self, hdu_list)
+            elif lvl == 4:
+                import rvdata.core.models.level4
 
-                    method = rvdata.core.models.level4.RV4._read
-                    method(self, hdu_list)
-            elif instrument in self.read_methods.keys():
-                clsname = self.read_methods[instrument]["class"]
-                methname = self.read_methods[instrument]["method"]
-                modname = self.read_methods[instrument]["module"]
-                if lvl != 2:
-                    modname = modname.replace("level2", "level{}".format(lvl))
-                    clsname = clsname.replace("RV2", "RV{}".format(lvl))
-                    methname = methname.replace("level2", "level{}".format(lvl))
+                method = rvdata.core.models.level4.RV4._read
+                method(self, hdu_list)
+        elif instrument in self.read_methods.keys():
+            clsname = self.read_methods[instrument]["class"]
+            methname = self.read_methods[instrument]["method"]
+            modname = self.read_methods[instrument]["module"]
+            if lvl != 2:
+                modname = modname.replace("level2", "level{}".format(lvl))
+                clsname = clsname.replace("RV2", "RV{}".format(lvl))
+                methname = methname.replace("level2", "level{}".format(lvl))
 
-                module = importlib.import_module(modname)
+            module = importlib.import_module(modname)
 
-                cls = getattr(module, clsname)
-                method = getattr(cls, methname)
-                method(self, hdu_list, **kwargs)
-            else:
-                # the provided data_type is not recognized, ie.
-                # not in the self.read_methods list
-                raise IOError("cannot recognize data type {}".format(instrument))
+            cls = getattr(module, clsname)
+            method = getattr(cls, methname)
+            method(self, hdu_list, **kwargs)
+        else:
+            # the provided data_type is not recognized, ie.
+            # not in the self.read_methods list
+            raise IOError("cannot recognize data type {}".format(instrument))
 
         # check and recast the headers into appropriate types
         for i, row in pd.concat(
@@ -207,7 +217,7 @@ class RVDataModel(object):
                     elif row["Data type"].lower() == "double":
                         self.headers["PRIMARY"][key] = np.float64(value)
                     elif row["Data type"].lower() == "boolean":
-                        self.headers["PRIMARY"][key] = value.upper() == 'TRUE'
+                        self.headers["PRIMARY"][key] = value.upper() == "TRUE"
                     else:
                         warnings.warn(
                             f"Unknown type {row['Data type']} for keyword {key}"
@@ -217,16 +227,6 @@ class RVDataModel(object):
                         f"Cannot convert value {value} for keyword {key} to type {row['Data type']}"
                     )
 
-        # compute MD5 sum of source file and write it into a receipt entry for tracking.
-        # Note that MD5 sum has known security vulnerabilities, but we are only using
-        # this to ensure data integrity, and there is no known reason for someone to try
-        # to hack astronomical data files.  If something more secure is is needed,
-        # substitute hashlib.sha256 for hashlib.md5
-        md5 = hashlib.md5()
-        with open(fn, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                md5.update(chunk)
-        self.receipt_add_entry("from_fits", "PASS")
 
     def to_fits(self, fn):
         """
