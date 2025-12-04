@@ -14,7 +14,7 @@ from rvdata.core.tools import stitch_spectrum
 
 # NEID specific utility functions
 from rvdata.instruments.neid.utils import make_neid_primary_header
-
+from rvdata.instruments.neid.level2 import NEIDRV2
 
 # NEID Level3 Reader
 class NEIDRV3(RV3):
@@ -58,22 +58,22 @@ class NEIDRV3(RV3):
     """
 
     def _read(self, hdul2: fits.HDUList, **kwargs) -> None:
-        # TODO: read NEID Level 2 and create the Level 2 data standard
+        # TODO: read NEID Level 2 and create the Level 2 data standard #DONE
 
+        l2obj = NEIDRV2()
+        l2obj.read(hdul2, instrument="NEID")
         # Set up the primary header
-        l3prihdr = make_neid_primary_header.make_base_primary_header(hdul2[0].header)
+        l3prihdr = l2obj.headers["PRIMARY"]
         l3phead = self.headers["PRIMARY"]
         l3prihdr.extend(l3phead)
         l3prihdr["DATALVL"] = 3
 
-        # Instrument header
-        # self.set_header("INSTRUMENT_HEADER", hdul2["PRIMARY"].header)
-
         # TODO iterate over traces
         # read the wavelength, flux, and blaze data
-        sci_flx = hdul2["SCIFLUX"].data  # 4-116 order in NEID out of 122
-        sci_wav = hdul2["SCIWAVE"].data
-        sci_blz = hdul2["SCIBLAZE"].data
+
+        sci_flx = l2obj.data["TRACE1_FLUX"].astype(np.float64)
+        sci_wav = l2obj.data["TRACE1_WAVE"].astype(np.float64)
+        sci_blz = l2obj.data["TRACE1_BLAZE"].astype(np.float64)
 
         # stitch the orders
         try:
