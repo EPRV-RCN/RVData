@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 import rvdata.core.models.base
-import rvdata.core.models.level2
 from rvdata.core.models.definitions import LEVEL3_EXTENSIONS, LEVEL3_PRIMARY_KEYWORDS
 
 
@@ -54,7 +53,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 elif row["Data type"].lower() == "double":
                     self.headers["PRIMARY"][key] = np.float64(value)
                 elif row["Data type"].lower() == "boolean":
-                    self.headers["PRIMARY"][key] = value.upper() == 'TRUE'
+                    self.headers["PRIMARY"][key] = value.upper() == "TRUE"
                 else:
                     print(f"Unknown type {row['Data type']} for keyword {key}")
             except (TypeError, AttributeError, ValueError):

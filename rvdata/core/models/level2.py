@@ -31,8 +31,9 @@ class RV2(rvdata.core.models.base.RVDataModel):
                 self.create_extension(row["Name"], row["DataType"])
 
         # Add EXT_DESCRIPT as a DataFrame, dropping the Comments column
-        ext_descript = LEVEL2_EXTENSIONS.copy().query('Required == True')\
-            .reset_index(drop=True)
+        ext_descript = (
+            LEVEL2_EXTENSIONS.copy().query("Required == True").reset_index(drop=True)
+        )
         if "Comments" in ext_descript.columns:
             ext_descript = ext_descript.drop(columns=["Comments"])
         self.set_data("EXT_DESCRIPT", ext_descript)
@@ -45,9 +46,9 @@ class RV2(rvdata.core.models.base.RVDataModel):
                 t1 = "TRACE1_" + hdu.name.split("_")[1]
                 fits_type = l2_ext.loc[t1]["DataType"]
             elif "IMAGE" in hdu.name:
-                fits_type = l2_ext.loc['IMAGE']['DataType']
-            elif 'DRIFT' in hdu.name:
-                fits_type = l2_ext.loc['DRIFT']['DataType']
+                fits_type = l2_ext.loc["IMAGE"]["DataType"]
+            elif "DRIFT" in hdu.name:
+                fits_type = l2_ext.loc["DRIFT"]["DataType"]
             else:
                 fits_type = l2_ext.loc[hdu.name]["DataType"]
             if hdu.name not in self.extensions.keys():
@@ -95,12 +96,10 @@ class RV2(rvdata.core.models.base.RVDataModel):
 
             ext = self.data[name]
             if isinstance(ext, np.ndarray):
-                row = "|{:20s} |{:20s} |{:20s}\n"\
-                    .format(name, "array", str(ext.shape))
+                row = "|{:20s} |{:20s} |{:20s}\n".format(name, "array", str(ext.shape))
                 head += row
             elif isinstance(ext, pd.DataFrame):
-                row = "|{:20s} |{:20s} |{:20s}\n"\
-                    .format(name, "table", str(len(ext)))
+                row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
                 head += row
         print(head)
 

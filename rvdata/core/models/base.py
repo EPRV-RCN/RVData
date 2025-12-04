@@ -111,7 +111,7 @@ class RVDataModel(object):
             for chunk in iter(lambda: f.read(4096), b""):
                 md5.update(chunk)
         this_data.receipt_add_entry("from_fits", "PASS")
-        
+
         # Return this instance
         return this_data
 
@@ -226,7 +226,6 @@ class RVDataModel(object):
                     warnings.warn(
                         f"Cannot convert value {value} for keyword {key} to type {row['Data type']}"
                     )
-
 
     def to_fits(self, fn):
         """

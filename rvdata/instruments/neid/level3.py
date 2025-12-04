@@ -1,20 +1,14 @@
 from astropy.io import fits
-
-# from astropy.table import Table
 import numpy as np
-
-# from collections import OrderedDict
 
 # import base class
 from rvdata.core.models.level3 import RV3
 
-# from rvdata.core.models.definitions import LEVEL3_EXTENSIONS
-from rvdata.core.models.definitions import LEVEL3_PRIMARY_KEYWORDS
 from rvdata.core.tools import stitch_spectrum
 
 # NEID specific utility functions
-from rvdata.instruments.neid.utils import make_neid_primary_header
 from rvdata.instruments.neid.level2 import NEIDRV2
+
 
 # NEID Level3 Reader
 class NEIDRV3(RV3):
