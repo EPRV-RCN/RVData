@@ -3,6 +3,8 @@ from astropy import units as u
 from specutils import SpectrumCollection
 from specutils.manipulation import FluxConservingResampler
 from scipy.interpolate import interp1d
+from astropy import constants
+import bindensity
 
 # TODO: clean up functions
 
@@ -111,6 +113,16 @@ def calculate_spectral_envelope(
     return (waveout, fluxout)
 
 
+def get_wavelength_grid_with_constant_velocity(wavegrid_start, wavegrid_end, velpix):
+    sl = constants.c.value  # 299792458. m/s
+    avg_dlwavegrid = velpix / sl
+    lwavegrid = np.arange(
+        np.log(wavegrid_start), np.log(wavegrid_end) + avg_dlwavegrid, avg_dlwavegrid
+    )
+    wavegrid = np.exp(lwavegrid)
+    return wavegrid
+
+
 def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
     """flux-conserving rebinning and stitching of spectral orders
 
@@ -136,9 +148,9 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
     """
 
     # Create SpectrumCollection from the science data
-    
-    flux = u.Quantity(sci_dflx, unit='photon')
-    wave = u.Quantity(sci_wav, unit='AA')
+
+    flux = u.Quantity(sci_dflx, unit="photon")
+    wave = u.Quantity(sci_wav, unit="AA")
     spec_coll = SpectrumCollection(flux=flux, spectral_axis=wave, mask=spec_mask)
 
     # Define a common output grid
@@ -159,7 +171,9 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
     # Combine overlapping orders
 
     # Stack the flux arrays and take a nan-mean
-    flux_stack = np.vstack([specrb_order.flux.value for specrb_order in rebinned_orders])
+    flux_stack = np.vstack(
+        [specrb_order.flux.value for specrb_order in rebinned_orders]
+    )
     combined_flux = np.nanmean(flux_stack, axis=0) * rebinned_orders[0].flux.unit
 
     st_wave = new_wave.value
@@ -168,7 +182,62 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
     return st_wave, st_flux
 
 
-# TODO: detach level3 instrument config from function into config file with instrument configs entries
+def resample_flux_conserving_with_bindensity(
+    sci_wav, sci_dflx, spec_mask, inst_stitch_config=None
+):
+    """
+    flux-conserving rebinning and stitching of spectral orders
+
+    Parameters
+    ----------
+    sci_wav : 2D numpy array
+        Wavelengths of the science spectrum, shape (norders, npixels).
+    sci_dflx : 2D numpy array
+        Fluxes of the science spectrum, shape (norders, npixels).
+    spec_mask : 2D boolean numpy array
+        Mask for the science spectrum, shape (norders, npixels).
+    nbins : int
+        Number of bins for the stitched spectrum.
+
+    Returns
+    -------
+    st_wave : 1D numpy array
+        Wavelengths of the stitched spectrum.
+    st_flux : 1D numpy array
+        Fluxes of the stitched spectrum.
+
+    2025-06-21, LPA
+    """
+
+    # Read the unmasked data
+
+    flux = sci_dflx[~spec_mask]
+    wave = sci_wav[~spec_mask]
+
+    # Define a common output grid
+
+    wavegrid = get_wavelength_grid_with_constant_velocity(
+        inst_stitch_config["wavegrid_start"],
+        inst_stitch_config["wavegrid_end"],
+        inst_stitch_config["velpix"],
+    )
+
+    # Rebin each order (flux-conserving with bindensity package)
+
+    flux_stack = []
+    for iord in range(flux.shape[0]):
+        flux_stack.append(bindensity.resampling(wavegrid, wave[iord], flux[iord][:-1], kind="cubic"))
+    flux_stack = np.array(flux_stack)
+
+    # Combine overlapping orders
+
+    # Stack the flux arrays and take a nan-mean
+    st_wave = wavegrid[:-1]
+    st_flux = np.nanmean(flux_stack, axis=0)
+
+    return st_wave, st_flux
+
+
 def stitch_orders(sci_wav, sci_flx, sci_blz, inst_stitch_config=None):
     """Stitch the spectral orders of a science spectrum.
 
@@ -237,12 +306,20 @@ def stitch_orders(sci_wav, sci_flx, sci_blz, inst_stitch_config=None):
     # Normalize the science data by the spectral envelope, correcting the lamp SED
     sci_dblzed_flx = sci_dflxm[iordermin:iordermax, :] * sci_bzenvn
 
-    # Resample the flux-conserving and stitch the orders
-    st_wave, st_flux = resample_flux_conserving(
+    # Resample the flux-conserving and stitch the orders with specutils
+    # st_wave, st_flux = resample_flux_conserving(
+    #     sci_wav[iordermin:iordermax, :],
+    #     sci_dblzed_flx,
+    #     spec_mask[iordermin:iordermax, :],
+    #     nbins,
+    # )
+
+    # Resample the flux-conserving and stitch the orders with bindensity
+    st_wave, st_flux = resample_flux_conserving_with_bindensity(
         sci_wav[iordermin:iordermax, :],
         sci_dblzed_flx,
         spec_mask[iordermin:iordermax, :],
-        nbins,
+        inst_stitch_config,
     )
 
     return st_wave, st_flux
