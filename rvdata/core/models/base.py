@@ -91,10 +91,6 @@ class RVDataModel(object):
         if not os.path.isfile(fn):
             raise IOError(f"{fn} does not exist.")
 
-        if not fn.endswith(".fits"):
-            # Can only read .fits files
-            raise IOError("input files must be FITS files")
-
         # populate it with self.read()
         with fits.open(fn) as hdul:
             this_data.filename = os.path.basename(fn)
