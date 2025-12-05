@@ -61,7 +61,7 @@ class NEIDRV4(RV4):
 
         # Set up the primary header
         phead = make_neid_primary_header.make_base_primary_header(hdul[0].header)
-        phead["DATALVL"] = "L4"
+        phead["DATALVL"] = 4
 
         # Add RV specific entries to the primary header
         phead["BJDTDB"] = hdul["CCFS"].header["CCFJDMOD"]
