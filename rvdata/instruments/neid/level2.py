@@ -125,6 +125,12 @@ class NEIDRV2(RV2):
             wave_array = hdul[wave_ext].data
             wave_meta = hdul[wave_ext].header
 
+            # Replace 0-values with nans for NEID orders that do not have wavelength solutions
+            neid_no_wave_orders = [0, 1, 2, 119, 120, 121]
+            wave_array[neid_no_wave_orders] = np.full(
+                (len(neid_no_wave_orders), wave_array.shape[1]), np.nan
+            )
+
             # Variance
             var_array = hdul[var_ext].data
             var_meta = hdul[var_ext].header

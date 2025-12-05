@@ -17,6 +17,7 @@ Documentation for EPRV Data Standardization Project!
    units.rst
    instrumentoverviews.rst
    api.rst
+   faq.rst
 
 Indices and tables
 ==================

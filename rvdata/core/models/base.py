@@ -13,7 +13,6 @@ import git
 from git.exc import InvalidGitRepositoryError
 
 import pandas as pd
-import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
@@ -26,6 +25,7 @@ from rvdata.core.models.definitions import (
 )
 from rvdata.core.models.receipt_columns import RECEIPT_COL
 from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
+from rvdata.core.tools.headers import parse_value_to_datatype
 
 
 class RVDataModel(object):
@@ -199,33 +199,16 @@ class RVDataModel(object):
             raise IOError("cannot recognize data type {}".format(instrument))
 
         # check and recast the headers into appropriate types
-        for i, row in pd.concat(
+        for _, row in pd.concat(
             [LEVEL2_PRIMARY_KEYWORDS, LEVEL3_PRIMARY_KEYWORDS, LEVEL4_PRIMARY_KEYWORDS]
         ).iterrows():
             key = row["Keyword"]
             if key in self.headers["PRIMARY"]:
                 value = self.headers["PRIMARY"][key]
-                if value is None:
-                    continue
-                try:
-                    if row["Data type"].lower() == "uint":
-                        self.headers["PRIMARY"][key] = int(value)
-                    elif row["Data type"].lower() == "float":
-                        self.headers["PRIMARY"][key] = float(value)
-                    elif row["Data type"].lower() == "string":
-                        self.headers["PRIMARY"][key] = str(value)
-                    elif row["Data type"].lower() == "double":
-                        self.headers["PRIMARY"][key] = np.float64(value)
-                    elif row["Data type"].lower() == "boolean":
-                        self.headers["PRIMARY"][key] = value.upper() == "TRUE"
-                    else:
-                        warnings.warn(
-                            f"Unknown type {row['Data type']} for keyword {key}"
-                        )
-                except (TypeError, AttributeError, ValueError):
-                    warnings.warn(
-                        f"Cannot convert value {value} for keyword {key} to type {row['Data type']}"
-                    )
+                parsed_value = parse_value_to_datatype(
+                    key, row["Data type"], value
+                )
+                self.headers["PRIMARY"][key] = parsed_value
 
     def to_fits(self, fn):
         """

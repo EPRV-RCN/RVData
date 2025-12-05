@@ -29,9 +29,10 @@ def convert_RAW(RV2: RV2, file_path: str) -> None:
     extensions, and adds or updates them in the given RV2 object. It supports both
     image (IMAGEHDU) and binary table (BINTABLEHDU) extensions.
 
-    Parameters:
+    Args:
         RV2 (RV2): The RV2 object where the converted data will be stored.
         file_path (str): Path to the FITS file to be processed.
+
     Returns:
         None : The function modifies the RV2 object in place by adding or
             updating the extnames_raw extensions.
@@ -93,7 +94,7 @@ def fix_tunit_keywords(hdu) -> None:
     Corrects non-standard TUNIT keywords in a FITS HDU header using values
     from config.py.
 
-    Parameters:
+    Args:
         hdu (fits.BinTableHDU or fits.ImageHDU): The FITS HDU to process.
 
     Returns:

@@ -107,7 +107,9 @@ class KPFRV2(RV2):
                     blaze_data = hdul1[blaze_ext].data
                     blaze_meta = OrderedDict(hdul1[blaze_ext].header)
                 else:
-                    warnings.warn("Blaze extensions not found in KPF L1 file, using default.")
+                    warnings.warn(
+                        "Blaze extensions not found in KPF L1 file, using default."
+                    )
                     blaze_data = blazeHDU[flux_ext].data
                     blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
 

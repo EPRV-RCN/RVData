@@ -1,4 +1,4 @@
-HDU,Name,DataType,MinBetDepth,Multiplicity,Required,Description,Comments
+HDU,Name,DataType,MinBitDepth,Multiplicity,Required,Description,Comments
 0,PRIMARY,PrimaryHDU,,False,True,EPRV Standard FITS HEADER (no data),
 1,INSTRUMENT_HEADER,ImageHDU,,False,True,Inherited instrument header
 2,RECEIPT,BinTableHDU,,False,True,Table of operations that have been performed on this file,

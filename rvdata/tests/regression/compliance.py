@@ -72,6 +72,7 @@ def check_l4_extensions(inpfile):
             if req:
                 assert ext in hdul, f"Required extension {ext} not found in {inpfile}"
 
+    # TODO: add this check back
     # commented out because EXT_DESCRIPT is not used in L4 but I suspect we might add it later
     # ext_table = pd.DataFrame(hdul["EXT_DESCRIPT"].data)
     # for i, row in ext_table.iterrows():
@@ -82,6 +83,7 @@ def check_l4_extensions(inpfile):
     #             extname in hdul
     #         ), f"Extension {extname} not found in data but present in EXT_DESCRIPT table."
 
+    # TODO: add this check back
     # Check every extension in the data (except PRIMARY) has an entry in EXT_DESCRIPT
     # ext_names_in_table = ext_table["Name"].tolist()
     # for hdu in hdul:

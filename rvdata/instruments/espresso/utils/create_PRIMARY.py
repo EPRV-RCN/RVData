@@ -55,7 +55,7 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int, lev
     to translate, copy, or compute header keywords for the L2 file. It then
     constructs a `PrimaryHDU` with the appropriate metadata.
 
-    Parameters:
+    Args:
         RV2 (RV2): An instance of the RV2 class containing metadata and headers
             required for processing.
         names (list[str]): A dictionary mapping different file types (e.g., raw file)
@@ -67,7 +67,7 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int, lev
         None : The function modifies the RV2 object in place by adding or
             updating the extnames_raw extensions.
 
-    Notes:
+    Note:
     - If a keyword has `skip = True` in `header_map.csv`, it is not copied
       automatically but requires a specific computation.
     - If a keyword value is missing in the source file, it is set to `Null`.
@@ -574,7 +574,7 @@ def get_simbad_data(obj: str) -> dict:
         # Configure Simbad with custom settings
         custom_simbad = Simbad()
         custom_simbad.TIMEOUT = config.timeout  # Increase timeout if needed
-        custom_simbad.add_votable_fields("ids", "plx")
+        custom_simbad.add_votable_fields("ids", "plx_value")
 
         # Query Simbad for the object
         result = custom_simbad.query_object(obj)

@@ -158,7 +158,7 @@ def add_nan_row(matrix: np.ndarray, row_index: int) -> np.ndarray:
     """
     Inserts a row of NaN values at a specified index in a 2D NumPy array.
 
-    Parameters:
+    Args:
         matrix (np.ndarray): The original 2D array.
         row_index (int): The index at which the NaN row should be inserted.
 
