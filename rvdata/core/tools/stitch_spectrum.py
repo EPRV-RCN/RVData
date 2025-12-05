@@ -226,7 +226,9 @@ def resample_flux_conserving_with_bindensity(
 
     flux_stack = []
     for iord in range(flux.shape[0]):
-        flux_stack.append(bindensity.resampling(wavegrid, wave[iord], flux[iord][:-1], kind="cubic"))
+        flux_stack.append(
+            bindensity.resampling(wavegrid, wave[iord], flux[iord][:-1], kind="cubic")
+        )
     flux_stack = np.array(flux_stack)
 
     # Combine overlapping orders
