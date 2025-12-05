@@ -19,7 +19,8 @@ dependencies = [
     "GitPython",
     "specutils",
     "astroquery",
-    "jplephem"
+    "jplephem",
+    "bindensity"
 ]
 
 # Optional dependencies
