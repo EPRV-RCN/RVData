@@ -144,15 +144,17 @@ class RVDataModel(object):
                     t = Table.read(hdu)
                     # Table contains the RECEIPT
                     df: pd.DataFrame = t.to_pandas()
-                    # TODO: get receipt columns from core.models.config.BASE-RECEIPT-columns.csv
+                    receipt_columns = BASE_RECEIPT_COLUMNS["Name"].tolist()
                     if df.empty:
-                        df = pd.DataFrame(columns=BASE_RECEIPT_COLUMNS)
+                        df = pd.DataFrame(columns=receipt_columns)
                     else:
-                        df = df.reindex(
-                            df.columns.union(BASE_RECEIPT_COLUMNS, sort=False),
-                            axis=1,
-                            fill_value="",
-                        )
+                        # Reindex to include all receipt_columns
+                        # Avoid using fill_value in reindex() due to pandas bug
+                        # with string dtype when there are multiple columns
+                        all_cols = df.columns.union(receipt_columns, sort=False)
+                        df = df.reindex(columns=all_cols)
+                        # Fill missing columns (NaN values) with empty strings
+                        df = df.fillna("")
                     setattr(self, hdu.name, df)
                     setattr(self, hdu.name.lower(), getattr(self, hdu.name))
                     self.headers[hdu.name] = hdu.header
