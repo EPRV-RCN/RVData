@@ -9,7 +9,14 @@ import numpy as np
 import pandas as pd
 
 import rvdata.core.models.base
-from rvdata.core.models.definitions import LEVEL2_EXTENSIONS
+from rvdata.core.models.definitions import (
+    LEVEL2_PRIMARY_KEYWORDS,
+    LEVEL2_EXTENSIONS,
+    BASE_DRP_CONFIG_COLUMNS,
+    BASE_ORDER_TABLE_COLUMNS,
+    BASE_RECEIPT_COLUMNS,
+)
+from rvdata.core.tools.headers import parse_value_to_datatype
 
 
 class RV2(rvdata.core.models.base.RVDataModel):
@@ -23,20 +30,49 @@ class RV2(rvdata.core.models.base.RVDataModel):
         super().__init__()
         self.level = 2
 
-        # TODO: initialize header keywords for each extension
-
-        for i, row in LEVEL2_EXTENSIONS.iterrows():
-            if row["Required"]:
-                # TODO: set description and comment
+        for _, row in LEVEL2_EXTENSIONS.iterrows():
+            if row["Required"] and row["Name"] not in self.extensions.keys():
                 self.create_extension(row["Name"], row["DataType"])
 
-        # Add EXT_DESCRIPT as a DataFrame, dropping the Comments column
+        # initialize PRIMARY header keywords to defaults with units and descriptions
+        for _, row in LEVEL2_PRIMARY_KEYWORDS.iterrows():
+            if row["Required"]:
+                keyword = row["Keyword"].split()[0]
+                datatype = row["DataType"]
+                default = row["Default"]
+                description = row["Description"]
+                units = row["Units"]
+                if pd.isna(units) or units == "" or units.lower() == "N/A".lower():
+                    unitstr = ""
+                else:
+                    unitstr = f"[{units}] "
+                self.headers["PRIMARY"][keyword] = parse_value_to_datatype(
+                    keyword, datatype, (default, f"{unitstr}{description}")
+                )
+
+        # Add EXT_DESCRIPT as a DataFrame
+        # Only use the Name and Description columns
         ext_descript = (
-            LEVEL2_EXTENSIONS.copy().query("Required == True").reset_index(drop=True)
+            LEVEL2_EXTENSIONS.copy()
+            .query("Required == True")[["Name", "Description"]]
+            .reset_index(drop=True)
         )
-        if "Comments" in ext_descript.columns:
-            ext_descript = ext_descript.drop(columns=["Comments"])
         self.set_data("EXT_DESCRIPT", ext_descript)
+
+        # Initialize INSTRUMENT_HEADER with a dummy zero image
+        self.set_data("INSTRUMENT_HEADER", np.zeros((1,), dtype=np.float32))
+
+        # Initialize RECEIPT with receipt columns
+        receipt_columns = BASE_RECEIPT_COLUMNS["Name"].tolist()
+        self.set_data("RECEIPT", pd.DataFrame(columns=receipt_columns))
+
+        # Initialize DRP_CONFIG with columns from definition
+        drp_config_columns = BASE_DRP_CONFIG_COLUMNS["Name"].tolist()
+        self.set_data("DRP_CONFIG", pd.DataFrame(columns=drp_config_columns))
+
+        # Initialize ORDER_TABLE with columns from definition
+        order_table_columns = BASE_ORDER_TABLE_COLUMNS["Name"].tolist()
+        self.set_data("ORDER_TABLE", pd.DataFrame(columns=order_table_columns))
 
     def _read(self, hdul: fits.HDUList) -> None:
         l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
@@ -113,7 +149,9 @@ class RV2(rvdata.core.models.base.RVDataModel):
         for key, value in hdu_definitions:
             hduname = key
             if value == "PrimaryHDU":
-                head = fits.Header(self.headers[key])
+                head = fits.Header()
+                for keyword, content in self.headers[key].items():
+                    head[keyword] = content
                 hdu = fits.PrimaryHDU(header=head)
                 hdu_list.insert(0, hdu)
             elif value == "ImageHDU":

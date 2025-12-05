@@ -192,6 +192,7 @@ class KPFRV2(RV2):
 
                 self.set_header(out_prefix + "BLAZE", flux_meta)
                 self.set_data(out_prefix + "BLAZE", blaze_array)
+
             else:
                 self.create_extension(
                     out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
@@ -255,21 +256,26 @@ class KPFRV2(RV2):
         hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
         headmap = pd.read_csv(hmap_path, header=0)
 
-        phead = fits.PrimaryHDU().header
+        phead = RV2().headers["PRIMARY"]
         ihead = self.headers["INSTRUMENT_HEADER"]
         for i, row in headmap.iterrows():
             skey = row["STANDARD"]
             kpfkey = row["INSTRUMENT"]
+            content = phead.get(skey, '')
+            if len(content) == 2:
+                description = content[1]
+            else:
+                description = ''
             if pd.notnull(kpfkey) and kpfkey in ihead.keys():
                 kpfval = ihead[kpfkey]
             else:
                 kpfval = row["DEFAULT"]
             if pd.notnull(kpfval):
-                phead[skey] = kpfval
+                phead[skey] = (kpfval, description)
             else:
-                phead[skey] = None
+                phead[skey] = (None, description)
 
-        phead["ISSOLAR"] = ihead["OBJECT"].lower() == "socal"
+        phead["ISSOLAR"] = (ihead["OBJECT"].lower() == "socal", "Is this the Sun?")
         self.set_header("PRIMARY", phead)
 
         # overwrite EXT_DESCRIPT as a DataFrame, dropping the Comments column

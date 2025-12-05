@@ -1,4 +1,4 @@
-Keyword,Description,Units,Data type,Example Value,Default,Population Required for EPRV Standard Compliance,Notes
+Keyword,Description,Units,DataType,Example Value,Default,Population Required for EPRV Standard Compliance,Notes
 XTENSION,,,,,,,
 BITPIX,,,,,,,
 NAXIS,Number of array dimensions,N/A,int,2,UNDEFINED,Y,Autopopulated by astropy

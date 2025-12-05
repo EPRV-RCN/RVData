@@ -17,7 +17,7 @@ def to_ascii_safe(input_string):
     return ascii_string
 
 
-def parse_value_to_datatype(keyword: str, datatype: str, value):
+def parse_value_to_datatype(keyword: str, datatype: str, in_value):
     """
     Parse a value into a target datatype used for FITS header fields.
 
@@ -25,33 +25,44 @@ def parse_value_to_datatype(keyword: str, datatype: str, value):
     - keyword (str): Header keyword name (used only for warning messages).
     - datatype (str): Target datatype. Supported types:
         'uint', 'float', 'double', 'string', 'boolean'.
-    - value: The value to convert
+    - value: The value to convert; if it's a tuple, handle it
 
     Returns
-    - Converted value of the requested type
+    - Converted value of the requested type as (value, comment) tuple.
     """
+
+    out_value = None
+    comment = ""
+
+    if isinstance(in_value, tuple):
+        value = in_value[0]
+        comment = in_value[1]
+    else:
+        value = in_value
 
     try:
         if value is None:
-            return None
-        if isinstance(value, str) and value.lower() == "undefined":
-            return None
-        if datatype.lower() == "uint":
-            return int(value)
+            out_value = None
+        elif isinstance(value, str) and value.lower() == "undefined":
+            out_value = None
+        elif datatype.lower() == "uint":
+            out_value = int(value)
         elif datatype.lower() == "float":
-            return float(value)
+            out_value = float(value)
         elif datatype.lower() == "string":
-            return str(value)
+            out_value = str(value)
         elif datatype.lower() == "double":
-            return np.float64(value)
+            out_value = np.float64(value)
         elif datatype.lower() == "boolean":
             if isinstance(value, bool):
-                return value
+                out_value = value
             elif isinstance(value, str):
-                return value[0].lower() == "t"
+                out_value = value[0].lower() == "t"
         else:
             warnings.warn(f"Unknown type {datatype} for keyword {keyword}")
     except (TypeError, AttributeError, ValueError):
         warnings.warn(
             f"Cannot convert value {value} for keyword {keyword} to type {datatype}"
         )
+
+    return (out_value, comment)

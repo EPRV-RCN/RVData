@@ -1,0 +1,7 @@
+Name,Description
+BJD_TDB,BJD in barycentric dynamical time
+RV,radial velocity
+RV_ERR,uncertainty in radial velocity
+BERV,barycentric earth radial velocity
+WAVE_START,start wavelength of RV
+WAVE_END,end wavelength of RV

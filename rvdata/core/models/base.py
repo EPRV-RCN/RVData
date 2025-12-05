@@ -22,8 +22,8 @@ from rvdata.core.models.definitions import (
     LEVEL2_PRIMARY_KEYWORDS,
     LEVEL3_PRIMARY_KEYWORDS,
     LEVEL4_PRIMARY_KEYWORDS,
+    BASE_RECEIPT_COLUMNS,
 )
-from rvdata.core.models.receipt_columns import RECEIPT_COL
 from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 from rvdata.core.tools.headers import parse_value_to_datatype
 
@@ -65,7 +65,9 @@ class RVDataModel(object):
         self.read_methods = INSTRUMENT_READERS
 
         self.extensions = OrderedDict()  # map name to FITS type
-        self.headers = OrderedDict()  # map name to extension header
+        self.headers = (
+            OrderedDict()
+        )  # map name to extension header; the dict is keyword to (value, comment)
         self.data = OrderedDict()  # map name to extension data
         self.receipt = pd.DataFrame([])
 
@@ -154,45 +156,64 @@ class RVDataModel(object):
                     setattr(self, hdu.name, df)
                     setattr(self, hdu.name.lower(), getattr(self, hdu.name))
                     self.headers[hdu.name] = hdu.header
-                    setattr(self, hdu.name, t.to_pandas())
+                elif isinstance(hdu, fits.BinTableHDU):
+                    if "RECEIPT" in hdu.name:
+                        t = Table.read(hdu)
+                        # Table contains the RECEIPT
+                        df: pd.DataFrame = t.to_pandas()
+                        receipt_columns = BASE_RECEIPT_COLUMNS["Name"].tolist()
+                        if df.empty:
+                            df = pd.DataFrame(columns=receipt_columns)
+                        else:
+                            # Reindex to include all receipt_columns
+                            # Avoid using fill_value in reindex() due to pandas bug
+                            # with string dtype when there are multiple columns
+                            all_cols = df.columns.union(receipt_columns, sort=False)
+                            df = df.reindex(columns=all_cols)
+                            # Fill missing columns (NaN values) with empty strings
+                            df = df.fillna("")
+                        setattr(self, hdu.name, df)
+                        setattr(self, hdu.name.lower(), getattr(self, hdu.name))
+                        self.headers[hdu.name] = hdu.header
+                        setattr(self, hdu.name, t.to_pandas())
 
-        # Leave the rest of HDUs to level specific readers
-        # assume reader method and class names folow RV2 conventions
-        lvl = self.level
-        if instrument is None:
-            if lvl == 2:
-                import rvdata.core.models.level2
+            # Leave the rest of HDUs to level specific readers
+            # assume reader method and class names folow RV2 conventions
+            lvl = self.level
+            if instrument is None:
+                if lvl == 2:
+                    import rvdata.core.models.level2
 
-                method = rvdata.core.models.level2.RV2._read
-                method(self, hdu_list)
-            elif lvl == 3:
-                import rvdata.core.models.level3
+                    method = rvdata.core.models.level2.RV2._read
+                    method(self, hdu_list)
+                elif lvl == 3:
+                    import rvdata.core.models.level3
 
-                method = rvdata.core.models.level3.RV3._read
-                method(self, hdu_list)
-            elif lvl == 4:
-                import rvdata.core.models.level4
+                    method = rvdata.core.models.level3.RV3._read
+                    method(self, hdu_list)
+                elif lvl == 4:
+                    import rvdata.core.models.level4
 
-                method = rvdata.core.models.level4.RV4._read
-                method(self, hdu_list)
-        elif instrument in self.read_methods.keys():
-            clsname = self.read_methods[instrument]["class"]
-            methname = self.read_methods[instrument]["method"]
-            modname = self.read_methods[instrument]["module"]
-            if lvl != 2:
-                modname = modname.replace("level2", "level{}".format(lvl))
-                clsname = clsname.replace("RV2", "RV{}".format(lvl))
-                methname = methname.replace("level2", "level{}".format(lvl))
+                    method = rvdata.core.models.level4.RV4._read
+                    method(self, hdu_list)
+            elif instrument in self.read_methods.keys():
+                clsname = self.read_methods[instrument]["class"]
+                methname = self.read_methods[instrument]["method"]
+                modname = self.read_methods[instrument]["module"]
+                if lvl != 2:
+                    modname = modname.replace("level2", "level{}".format(lvl))
+                    clsname = clsname.replace("RV2", "RV{}".format(lvl))
+                    methname = methname.replace("level2", "level{}".format(lvl))
 
-            module = importlib.import_module(modname)
+                module = importlib.import_module(modname)
 
-            cls = getattr(module, clsname)
-            method = getattr(cls, methname)
-            method(self, hdu_list, **kwargs)
-        else:
-            # the provided data_type is not recognized, ie.
-            # not in the self.read_methods list
-            raise IOError("cannot recognize data type {}".format(instrument))
+                cls = getattr(module, clsname)
+                method = getattr(cls, methname)
+                method(self, hdu_list, **kwargs)
+            else:
+                # the provided data_type is not recognized, ie.
+                # not in the self.read_methods list
+                raise IOError("cannot recognize data type {}".format(instrument))
 
         # check and recast the headers into appropriate types
         for _, row in pd.concat(
@@ -201,9 +222,7 @@ class RVDataModel(object):
             key = row["Keyword"]
             if key in self.headers["PRIMARY"]:
                 value = self.headers["PRIMARY"][key]
-                parsed_value = parse_value_to_datatype(
-                    key, row["Data type"], value
-                )
+                parsed_value = parse_value_to_datatype(key, row["DataType"], value)
                 self.headers["PRIMARY"][key] = parsed_value
 
     def to_fits(self, fn):
@@ -221,15 +240,12 @@ class RVDataModel(object):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
 
-        gen_hdul = getattr(self, "_create_hdul", None)
-        if gen_hdul is None:
-            raise TypeError("Write method not found. Is this the base class?")
-        else:
-            hdu_list = gen_hdul()
+        hdu_list = self._create_hdul()
         # finish up writing
         hdul = fits.HDUList(hdu_list)
-        if not os.path.isdir(os.path.dirname(fn)):
-            os.makedirs(os.path.dirname(fn), exist_ok=True)
+        dirname = os.path.dirname(fn)
+        if dirname != "" and not os.path.isdir(dirname):
+            os.makedirs(dirname, exist_ok=True)
         hdul.writeto(fn, overwrite=True, output_verify="silentfix")
         hdul.close()
 
@@ -392,3 +408,62 @@ class RVDataModel(object):
                 )
         else:
             raise NameError("Name {} does not exist as extension".format(ext_name))
+
+    def _create_hdul(self):
+        """
+        Create an hdul in FITS format.
+        This is used by the base model for writing data context to file
+        """
+        hdu_list = []
+        hdu_definitions = self.extensions.items()
+        for key, value in hdu_definitions:
+            hduname = key
+            if value == "PrimaryHDU":
+                head = fits.Header()
+                for keyword, content in self.headers[key].items():
+                    head[keyword] = content
+                hdu = fits.PrimaryHDU(header=head)
+                hdu_list.insert(0, hdu)
+            elif value == "ImageHDU":
+                data = self.data[key]
+                if data is None:
+                    ndim = 0
+                else:
+                    ndim = len(data.shape)
+                self.headers[key]["NAXIS"] = ndim
+                if ndim == 0:
+                    self.headers[key]["NAXIS1"] = 0
+                else:
+                    for d in range(ndim):
+                        self.headers[key]["NAXIS{}".format(d + 1)] = data.shape[d]
+                head = fits.Header(self.headers[key])
+                try:
+                    hdu = fits.ImageHDU(data=data, header=head)
+                    hdu.name = hduname
+                    hdu_list.append(hdu)
+                except KeyError as ke:
+                    print("KeyError exception raised: -->ke=" + str(ke))
+                    print("Attempting to handle it...")
+                    if str(ke) == "'bool'":
+                        data = data.astype(float)
+                        print("------>SHAPE=" + str(data.shape))
+                        hdu = fits.ImageHDU(data=data, header=head)
+                        hdu_list.append(hdu)
+                    else:
+                        raise KeyError("A different error...")
+            elif value == "BinTableHDU":
+                table = Table.from_pandas(self.data[key])
+                self.headers[key]["NAXIS1"] = len(table)
+                head = fits.Header(self.headers[key])
+                hdu = fits.BinTableHDU(data=table, header=head)
+                hdu.name = hduname
+                hdu_list.append(hdu)
+            else:
+                print(
+                    "Can't translate {} into a valid FITS format.".format(
+                        type(self.data[key])
+                    )
+                )
+                continue
+
+        return hdu_list

@@ -11,6 +11,7 @@ def check_l2_extensions(inpfile):
     reference_extensions = pd.read_csv(l2_csv)
     extdf = reference_extensions
     with fits.open(inpfile) as hdul:
+        # check that all required extensions exist
         hdul = fits.open(inpfile)
         for i, row in extdf.iterrows():
             ext = row["Name"]
@@ -18,14 +19,13 @@ def check_l2_extensions(inpfile):
             if req:
                 assert ext in hdul, f"Required extension {ext} not found in {inpfile}"
 
+        # check that all extensions from the EXT_DESCRIPT table exist
         ext_table = pd.DataFrame(hdul["EXT_DESCRIPT"].data)
         for i, row in ext_table.iterrows():
             extname = row["Name"]
-            req = row["Required"]
-            if req:
-                assert (
-                    extname in hdul
-                ), f"Extension {extname} not found in data but present in EXT_DESCRIPT table."
+            assert (
+                extname in hdul
+            ), f"Extension {extname} not found in data but present in EXT_DESCRIPT table."
 
         # Check every extension in the data (except PRIMARY) has an entry in EXT_DESCRIPT
         ext_names_in_table = ext_table["Name"].tolist()
@@ -44,11 +44,8 @@ def check_l2_header(header):
     )
     reference_header = pd.read_csv(ref_csv)
     for i, row in reference_header.iterrows():
-        key = row["Keyword"]
-        req = row["Required"] == "Y"
-        if "#" in key or "..." in key:
-            # print(f"Stripping multi keyword: {key}")
-            key = key.split("...")[0].strip()
+        key = row["Keyword"].split()[0]
+        req = row["Required"]
         if req and (key not in header):
             print(key, req)
             assert key in header, f"Keyword {key} not found in header"
@@ -60,48 +57,52 @@ def check_l2_header(header):
 
 
 def check_l4_extensions(inpfile):
-    l2_csv = (
+    l4_csv = (
         importlib.resources.files("rvdata.core.models.config") / "L4-extensions.csv"
     )
-    reference_extensions = pd.read_csv(l2_csv)
+    reference_extensions = pd.read_csv(l4_csv)
     extdf = reference_extensions
     with fits.open(inpfile) as hdul:
+        # check that all required extensions exist
         for i, row in extdf.iterrows():
             ext = row["Name"]
             req = row["Required"]
             if req:
                 assert ext in hdul, f"Required extension {ext} not found in {inpfile}"
 
-    # TODO: add this check back
-    # commented out because EXT_DESCRIPT is not used in L4 but I suspect we might add it later
-    # ext_table = pd.DataFrame(hdul["EXT_DESCRIPT"].data)
-    # for i, row in ext_table.iterrows():
-    #     extname = row["Name"]
-    #     req = row["Required"]
-    #     if req:
-    #         assert (
-    #             extname in hdul
-    #         ), f"Extension {extname} not found in data but present in EXT_DESCRIPT table."
+        # check that all extensions from the EXT_DESCRIPT table exist
+        ext_table = pd.DataFrame(hdul["EXT_DESCRIPT"].data)
+        for i, row in ext_table.iterrows():
+            extname = row["Name"]
+            assert (
+                extname in hdul
+            ), f"Extension {extname} not found in data but present in EXT_DESCRIPT table."
 
-    # TODO: add this check back
-    # Check every extension in the data (except PRIMARY) has an entry in EXT_DESCRIPT
-    # ext_names_in_table = ext_table["Name"].tolist()
-    # for hdu in hdul:
-    #     if hdu.name == "PRIMARY":
-    #         continue
-    #     assert (
-    #         hdu.name in ext_names_in_table
-    #     ), f"Extension {hdu.name} present in data but missing from EXT_DESCRIPT table."
+        # Check every extension in the data (except PRIMARY) has an entry in EXT_DESCRIPT
+        ext_names_in_table = ext_table["Name"].tolist()
+        for hdu in hdul:
+            if hdu.name == "PRIMARY":
+                continue
+            assert (
+                hdu.name in ext_names_in_table
+            ), f"Extension {hdu.name} present in data but missing from EXT_DESCRIPT table."
 
     hdul.close()
 
 
 def check_l4_header(header):
-    ref_csv = (
+    ref_csv_l2 = (
+        importlib.resources.files("rvdata.core.models.config")
+        / "L2-PRIMARY-keywords.csv"
+    )
+    ref_csv_l4 = (
         importlib.resources.files("rvdata.core.models.config")
         / "L4-PRIMARY-keywords.csv"
     )
-    reference_header = pd.read_csv(ref_csv)
+    reference_header = pd.concat([
+        pd.read_csv(ref_csv_l2),
+        pd.read_csv(ref_csv_l4)
+    ], ignore_index=True)
     for i, row in reference_header.iterrows():
         key = row["Keyword"]
         req = row["Required"] == "Y"

@@ -3,7 +3,6 @@ import os
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level4 import RV4
 
-# from rvdata.instruments.kpf.level2 import KPFRV2
 from rvdata.tests.regression.compliance import check_l2_extensions, check_l2_header
 from rvdata.tests.regression.compliance import check_l4_extensions, check_l4_header
 
