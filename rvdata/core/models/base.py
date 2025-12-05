@@ -97,9 +97,9 @@ class RVDataModel(object):
 
         # populate it with self.read()
         with fits.open(fn) as hdul:
-            this_data.read(hdul, instrument, **kwargs)
             this_data.filename = os.path.basename(fn)
             this_data.dirname = os.path.dirname(fn)
+            this_data.read(hdul, instrument, **kwargs)
 
         # compute MD5 sum of source file and write it into a receipt entry for tracking.
         # Note that MD5 sum has known security vulnerabilities, but we are only using
