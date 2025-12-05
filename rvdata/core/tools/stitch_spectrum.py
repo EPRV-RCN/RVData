@@ -183,7 +183,7 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
 
 
 def resample_flux_conserving_with_bindensity(
-    sci_wav, sci_dflx, spec_mask, inst_stitch_config=None
+    sci_wav, sci_dflx, spec_mask, inst_stitch_config
 ):
     """
     flux-conserving rebinning and stitching of spectral orders
@@ -211,8 +211,8 @@ def resample_flux_conserving_with_bindensity(
 
     # Read the unmasked data
 
-    flux = sci_dflx[~spec_mask]
-    wave = sci_wav[~spec_mask]
+    flux = np.where(spec_mask, sci_dflx, float("nan"))
+    wave = np.where(spec_mask, sci_wav, float("nan"))
 
     # Define a common output grid
 
