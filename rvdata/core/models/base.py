@@ -146,10 +146,10 @@ class RVDataModel(object):
                     df: pd.DataFrame = t.to_pandas()
                     # TODO: get receipt columns from core.models.config.BASE-RECEIPT-columns.csv
                     if df.empty:
-                        df = pd.DataFrame(columns=RECEIPT_COL)
+                        df = pd.DataFrame(columns=BASE_RECEIPT_COLUMNS)
                     else:
                         df = df.reindex(
-                            df.columns.union(RECEIPT_COL, sort=False),
+                            df.columns.union(BASE_RECEIPT_COLUMNS, sort=False),
                             axis=1,
                             fill_value="",
                         )

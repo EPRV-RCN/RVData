@@ -17,7 +17,10 @@ from rvdata.core.models.definitions import (
     LEVEL3_EXTENSIONS,
     LEVEL3_PRIMARY_KEYWORDS,
 )
+
+import rvdata.core.tools.stitch_spectrum as stitch_spectrum
 from rvdata.core.tools.headers import parse_value_to_datatype
+from rvdata.core.tools.utils import create_configdict_from_file
 
 
 class RV3(rvdata.core.models.base.RVDataModel):
