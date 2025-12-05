@@ -1,6 +1,6 @@
 import numpy as np
 from astropy import units as u
-from specutils import Spectrum
+from specutils import SpectrumCollection
 from specutils.manipulation import FluxConservingResampler
 from scipy.interpolate import interp1d
 
@@ -134,33 +134,32 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
 
     2025-06-21, LPA
     """
-    norders = sci_wav.shape[0]
-    orders = []
-    for iorder in range(norders):
-        wave = sci_wav[iorder, :] * u.AA
-        flux = sci_dflx[iorder, :] * u.Unit("adu")  # or the correct unit
-        mask = spec_mask[iorder, :]  # boolean mask for NaNs or bad pixels
-        orders.append(Spectrum(spectral_axis=wave, flux=flux, mask=mask))
+
+    # Create SpectrumCollection from the science data
+    
+    flux = u.Quantity(sci_dflx, unit='photon')
+    wave = u.Quantity(sci_wav, unit='AA')
+    spec_coll = SpectrumCollection(flux=flux, spectral_axis=wave, mask=spec_mask)
 
     # Define a common output grid
 
-    min_wave = min(spec.spectral_axis.min() for spec in orders)
-    max_wave = max(spec.spectral_axis.max() for spec in orders)
-    new_wave = np.linspace(min_wave.value, max_wave.value, nbins) * min_wave.unit
+    min_wave = spec_coll.spectral_axis.min().value
+    max_wave = spec_coll.spectral_axis.max().value
+    new_wave = np.linspace(min_wave, max_wave, nbins) * spec_coll.spectral_axis.unit
 
     # Rebin each order (flux-conserving)
 
     resampler = FluxConservingResampler()
 
     rebinned_orders = []
-    for spec in orders:
-        rebinned = resampler(spec, new_wave)
+    for iorder in range(spec_coll.shape[0]):
+        rebinned = resampler(spec_coll[iorder], new_wave)
         rebinned_orders.append(rebinned)
 
     # Combine overlapping orders
 
     # Stack the flux arrays and take a nan-mean
-    flux_stack = np.vstack([spec.flux.value for spec in rebinned_orders])
+    flux_stack = np.vstack([specrb_order.flux.value for specrb_order in rebinned_orders])
     combined_flux = np.nanmean(flux_stack, axis=0) * rebinned_orders[0].flux.unit
 
     st_wave = new_wave.value
