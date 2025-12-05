@@ -267,7 +267,6 @@ def stitch_orders(sci_wav, sci_flx, sci_blz, inst_stitch_config=None):
     iordermin = inst_stitch_config["iordermin"]
     iorderflatbreak = inst_stitch_config["iorderflatbreak"]
     iordermax = inst_stitch_config["iordermax"]
-    nbins = inst_stitch_config["nbins"]
 
     # Prepare the science data
     sci_dflx = sci_flx / (

@@ -88,7 +88,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
         """
 
         l3obj = RV3()
-        
+
         # Set up the primary header
         l3prihdr = l2obj.headers["PRIMARY"]
         l3prihdr["DATALVL"] = 3
@@ -102,7 +102,9 @@ class RV3(rvdata.core.models.base.RVDataModel):
 
         # get instrument stitching config
         inst = l3prihdr["INSTRUME"].lower()
-        stitch_config = create_configdict_from_file(f"rvdata/instruments/{inst}/config/{inst}_level3.config")
+        stitch_config = create_configdict_from_file(
+            f"rvdata/instruments/{inst}/config/{inst}_level3.config"
+        )
 
         # stitch the orders
         try:
@@ -132,7 +134,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
         l3obj.set_data("STITCHED_CORR_SCI_FLUX", st_flux)
 
         return l3obj
-    
+
     def info(self):
         """
         Pretty print information about this data to stdout

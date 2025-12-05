@@ -3,9 +3,6 @@ from astropy.io import fits
 # import base class
 from rvdata.core.models.level3 import RV3
 
-from rvdata.core.tools import stitch_spectrum
-from rvdata.core.tools.headers import parse_value_to_datatype
-
 # NEID specific utility functions
 from rvdata.instruments.neid.level2 import NEIDRV2
 
