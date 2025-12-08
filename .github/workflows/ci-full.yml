@@ -1,4 +1,4 @@
-name: Continuous Integration and Tests
+name: Full CI - All Tests and Benchmarks
 
 on:
   push:
