@@ -37,9 +37,6 @@ dev = [
     "sphinx-autodoc-typehints",
 ]
 
-[tool.black]
-line-length = 88
-target-version = ["py313"]
 
 [tool.flake8]
 max-line-length = 88
@@ -73,7 +70,6 @@ addopts = [
 ]
 
 [tool.coverage]
-
     [tool.coverage.run]
         omit = [
             "rvdata/core/models/config/*",

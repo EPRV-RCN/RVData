@@ -3,7 +3,6 @@ name: Continuous Integration and Tests
 on:
   push:
     branches:
-      - release
       - main
       - develop
   pull_request:
@@ -51,7 +50,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-ver: ['12', '13', '14']
-        tox-env: [test, test-oldestdeps, test-devdeps]
+        tox-env: [test, test-olddeps, test-predeps]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -73,13 +72,13 @@ jobs:
   benchmark:
     name: Benchmark Tests - Python 3.${{ matrix.python-ver }}
     runs-on: ${{ matrix.os }}
-    needs: codestyle, regression
+    needs: regression
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
         python-ver: ['13']
-        tox-env: [benchmark, benchmark-devdeps]
+        tox-env: [benchmark]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
