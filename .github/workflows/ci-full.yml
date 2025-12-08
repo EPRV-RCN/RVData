@@ -32,12 +32,12 @@ jobs:
         with:
           python-version: '3.13'
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install tox
-      
+
       - name: Run flake8 checks
         run: tox -e codestyle
 
@@ -54,18 +54,18 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      
+
       - name: Set up Python 3.${{ matrix.python-ver }}
         uses: actions/setup-python@v5
         with:
           python-version: '3.${{ matrix.python-ver }}'
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install tox
-      
+
       - name: Run tests
         run: tox -e py3${{ matrix.python-ver }}-${{ matrix.tox-env }}
 
@@ -82,21 +82,21 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      
+
       - name: Set up Python 3.${{ matrix.python-ver }}
         uses: actions/setup-python@v5
         with:
           python-version: '3.${{ matrix.python-ver }}'
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install tox
-      
+
       - name: Run benchmark tests
         run: tox -e py3${{ matrix.python-ver }}-${{ matrix.tox-env }} -- --benchmark-json ${{ runner.temp }}/output.json
-      
+
       - name: Upload benchmark results
         if: always()
         uses: actions/upload-artifact@v4
