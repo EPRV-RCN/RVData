@@ -32,20 +32,20 @@ FILE_URLS = {
 def download_instrument_files(instrument: str = "ESPRESSO") -> Dict[str, Path]:
     """Download all files for the specified instrument."""
     local_files = {}
-    
+
     for key, url in FILE_URLS[instrument].items():
         # Extract filename from URL and sanitize for Windows
         filename = Path(urlparse(url).path).name
         filename = filename.replace(":", "_")  # Windows-safe
         filepath = Path(filename)
-        
+
         if not filepath.exists():
             response = requests.get(url, verify=False)
             response.raise_for_status()
             filepath.write_bytes(response.content)
-        
+
         local_files[key] = filepath
-    
+
     return local_files
 
 
