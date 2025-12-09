@@ -257,7 +257,7 @@ def stitch_orders(sci_wav, sci_flx, sci_blz, inst_stitch_config=None):
         sci_wav[iordermin:iordermax, :],
         sci_dblzed_flx,
         spec_mask[iordermin:iordermax, :],
-        nbins,
+        inst_stitch_config,
     )
 
     return st_wave, st_flux
