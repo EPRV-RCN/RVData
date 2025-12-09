@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import requests
@@ -37,7 +38,10 @@ def download_instrument_files(instrument: str = "ESPRESSO") -> dict[str, Path]:
     local_files = {}
 
     for key, url in FILE_URLS[instrument].items():
-        filename = url.rsplit("/", 1)[-1].replace(":", "_")
+        filename = url.rsplit("/", 1)[-1] # get the file name from the URL
+        if os.name == "nt":
+            # For Windows: Replace ":" with "_" in file names
+            filename = filename.replace(":", "_")
         filepath = Path(filename)
 
         if not filepath.exists():
