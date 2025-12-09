@@ -18,6 +18,8 @@ from rvdata.core.models.definitions import (
     LEVEL3_PRIMARY_KEYWORDS,
 )
 from rvdata.core.tools.headers import parse_value_to_datatype
+from rvdata.core.tools.utils import create_configdict_from_file
+import rvdata.core.tools.stitch_spectrum as stitch_spectrum
 
 
 class RV3(rvdata.core.models.base.RVDataModel):
@@ -132,3 +134,56 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
                 head += row
         print(head)
+
+    @staticmethod
+    def convert_level2_to_level3(l2obj) -> None:
+        """
+        Read data from a Level 2 RVDataModel object and populate Level 3 fields
+        """
+
+        l3obj = RV3()
+
+        # Set up the primary header
+        l3prihdr = l2obj.headers["PRIMARY"]
+        l3prihdr["DATALVL"] = "L3"
+        # TODO iterate over traces
+
+        # read the wavelength, flux, and blaze data
+        sci_flx = l2obj.data["TRACE1_FLUX"].astype(np.float64)
+        sci_wav = l2obj.data["TRACE1_WAVE"].astype(np.float64)
+        sci_blz = l2obj.data["TRACE1_BLAZE"].astype(np.float64)
+
+        # get instrument stitching config
+        inst = l3prihdr["INSTRUME"].lower()
+        stitch_config = create_configdict_from_file(
+            f"rvdata/instruments/{inst}/config/{inst}_level3.config"
+        )
+
+        # stitch the orders
+        try:
+            st_wave, st_flux = stitch_spectrum.stitch_orders(
+                sci_wav, sci_flx, sci_blz, inst_stitch_config=stitch_config
+            )
+            # save the stitched spectrum
+            l3prihdr["BLZCORR"] = True
+            l3prihdr["LMPCORR"] = True
+            l3prihdr["SEDCORR"] = False
+            l3prihdr["INTERPMD"] = "BINDENSITY"
+            l3prihdr["FLXNRMMD"] = "None"
+            l3prihdr["DISPCORR"] = True
+
+        except Exception as e:
+            print(f"Error stitching orders: {e}")
+            l3prihdr["BLZCORR"] = False
+            l3prihdr["LMPCORR"] = False
+            l3prihdr["SEDCORR"] = False
+            l3prihdr["INTERPMD"] = "None"
+            l3prihdr["FLXNRMMD"] = "None"
+            l3prihdr["DISPCORR"] = False
+
+        l3obj.set_header("PRIMARY", l3prihdr)
+        l3obj.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
+        l3obj.set_data("STITCHED_CORR_SCI_WAVE", st_wave)
+        l3obj.set_data("STITCHED_CORR_SCI_FLUX", st_flux)
+
+        return l3obj
