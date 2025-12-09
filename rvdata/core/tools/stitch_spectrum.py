@@ -104,7 +104,7 @@ def calculate_spectral_envelope(
     return (waveout, fluxout)
 
 
-def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
+def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, inst_stitch_config):
     """flux-conserving rebinning and stitching of spectral orders
 
     Parameters
@@ -115,8 +115,8 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
         Fluxes of the science spectrum, shape (norders, npixels).
     spec_mask : 2D boolean numpy array
         Mask for the science spectrum, shape (norders, npixels).
-    nbins : int
-        Number of bins for the stitched spectrum.
+    inst_stitch_config : dict
+        Instrument-specific stitching configuration parameters.
 
     Returns
     -------
@@ -127,11 +127,13 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
 
     2025-06-21, LPA
     """
+
+    nbins = inst_stitch_config["nbins"]
     norders = sci_wav.shape[0]
     orders = []
     for iorder in range(norders):
         wave = sci_wav[iorder, :] * u.AA
-        flux = sci_dflx[iorder, :] * u.Unit("adu")  # or the correct unit
+        flux = sci_dflx[iorder, :] * u.photon
         mask = spec_mask[iorder, :]  # boolean mask for NaNs or bad pixels
         orders.append(Spectrum(spectral_axis=wave, flux=flux, mask=mask))
 
@@ -163,7 +165,7 @@ def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, nbins):
 
 
 def stitch_orders(
-    sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
+    sci_wav, sci_flx, sci_blz, inst_stitch_config=None
 ):  # , inst_stitch_config=stitch_config['NEID']):
     """Stitch the spectral orders of a science spectrum.
 
@@ -189,17 +191,6 @@ def stitch_orders(
     2025-06-21, LPA
     """
     # instrument configuration parameters
-    stitch_config = {
-        "NEID": {
-            "iordermin": 4,  # First order to include in stitching # TODO use wav limits instead
-            "iorderflatbreak": 78,  # Order where the flat breaks # TODO make function for flat break
-            "iordermax": 116,  # Last order to include in stitching # TODO use wav limits instead
-            "nbins": 50000,  # Number of bins for the stitched spectrum
-            # TODO Specify wavstart and waveend and derive nbins from the input data itself
-        }
-    }
-    inst_stitch_config = stitch_config[inst_stitch_config_sel]
-
     iordermin = inst_stitch_config["iordermin"]
     iorderflatbreak = inst_stitch_config["iorderflatbreak"]
     iordermax = inst_stitch_config["iordermax"]
