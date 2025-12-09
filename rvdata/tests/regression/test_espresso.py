@@ -1,7 +1,6 @@
-import requests
 from pathlib import Path
-from typing import Dict
-from urllib.parse import urlparse
+
+import requests
 
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level4 import RV4
@@ -29,18 +28,20 @@ FILE_URLS = {
 }
 
 
-def download_instrument_files(instrument: str = "ESPRESSO") -> Dict[str, Path]:
+def download_instrument_files(instrument: str = "ESPRESSO") -> dict[str, Path]:
     """Download all files for the specified instrument."""
+
+    # CA bundle path relative to this test file
+    CA_BUNDLE_PATH = Path(__file__).parent / "fixtures" / "dace-unige-ch-chain.pem"
+
     local_files = {}
 
     for key, url in FILE_URLS[instrument].items():
-        # Extract filename from URL and sanitize for Windows
-        filename = Path(urlparse(url).path).name
-        filename = filename.replace(":", "_")  # Windows-safe
+        filename = url.rsplit("/", 1)[-1].replace(":", "_")
         filepath = Path(filename)
 
         if not filepath.exists():
-            response = requests.get(url, verify=False)
+            response = requests.get(url, verify=str(CA_BUNDLE_PATH), timeout=30)
             response.raise_for_status()
             filepath.write_bytes(response.content)
 

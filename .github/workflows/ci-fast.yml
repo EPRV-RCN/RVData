@@ -1,4 +1,4 @@
-name: Fast CI - Code Style and Basic Tests
+name: Fast CI - Code Style and Standard Regression Tests
 
 on:
   push:
