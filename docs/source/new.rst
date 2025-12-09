@@ -2,6 +2,7 @@
 
 .. |missing| replace:: **TBD**
 
+.. _new-reader:
 Adding a New Instrument Reader
 ==============================
 

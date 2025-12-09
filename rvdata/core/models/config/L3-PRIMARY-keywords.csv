@@ -1,4 +1,8 @@
 Keyword,Description,Units,DataType,Example Value,Default,Required,Notes
+XTENSION,Name of the extension type,N/A,,IMAGE,UNKNOWN,True,
+EXTNAME,Extension contents,N/A,string,traceN_RV,UNKNOWN,True,Description of what is in the extension
+CTYPE1,Name of axis 1,N/A,string,X,UNKNOWN,True,Generally pixel dimension
+CTYPE2,Name of axis 2,N/A,string,Order-63,UNKNOWN,True,Generally order dimension
 BLZCORR,Has stellar SED been removed?,N/A,Boolean,True,False,True,default is to do this in L3
 LMPCORR,Has lamp SED been removed?,N/A,Boolean,False,False,True,default is NOT to do this in L3
 SEDCORR,Has stellar SED been removed?,N/A,Boolean,False,False,True,default is NOT to do this in L3

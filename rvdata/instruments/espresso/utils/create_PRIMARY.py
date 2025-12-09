@@ -75,7 +75,7 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int, lev
     """
     # We create an empty HDU to store the L2 Primary header
     l2_hdu = fits.PrimaryHDU(data=None)
-    l2_hdu.header["EXTNAME"] = "PRIMARY"
+    # l2_hdu.header["EXTNAME"] = "PRIMARY"
 
     # Get the parent directory of the "utils" folder
     base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
