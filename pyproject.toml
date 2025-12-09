@@ -31,7 +31,7 @@ dev = [
     "tox",         # Testing
     "pytest-benchmark", # Benchmarking
     "coverage",    # Code coverage
-    "sphinx",            # Documentation
+    "sphinx<9",            # Documentation
     "sphinx-rtd-theme",  # ReadTheDocs theme for Sphinx
     "sphinxcontrib-napoleon",
     "sphinx-autodoc-typehints",
