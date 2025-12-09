@@ -1,5 +1,6 @@
 import numpy as np
 from astropy import units as u
+from astropy import constants
 from specutils import Spectrum
 from specutils.manipulation import FluxConservingResampler
 from scipy.interpolate import interp1d
@@ -107,6 +108,16 @@ def calculate_spectral_envelope(
         )
 
     return (waveout, fluxout)
+
+
+def get_wavelength_grid_with_constant_velocity(wavegrid_start, wavegrid_end, velpix):
+    sl = constants.c.value  # 299792458. m/s
+    avg_dlwavegrid = velpix / sl
+    lwavegrid = np.arange(
+        np.log(wavegrid_start), np.log(wavegrid_end) + avg_dlwavegrid, avg_dlwavegrid
+    )
+    wavegrid = np.exp(lwavegrid)
+    return wavegrid
 
 
 def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, inst_stitch_config):
