@@ -135,13 +135,10 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 head += row
         print(head)
 
-    @staticmethod
-    def convert_level2_to_level3(l2obj) -> None:
+    def convert_level2_to_level3(self, l2obj) -> None:
         """
         Read data from a Level 2 RVDataModel object and populate Level 3 fields
         """
-
-        l3obj = RV3()
 
         # Set up the primary header
         l3prihdr = l2obj.headers["PRIMARY"]
@@ -181,9 +178,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
             l3prihdr["FLXNRMMD"] = "None"
             l3prihdr["DISPCORR"] = False
 
-        l3obj.set_header("PRIMARY", l3prihdr)
-        l3obj.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
-        l3obj.set_data("STITCHED_CORR_SCI_WAVE", st_wave)
-        l3obj.set_data("STITCHED_CORR_SCI_FLUX", st_flux)
-
-        return l3obj
+        self.set_header("PRIMARY", l3prihdr)
+        self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
+        self.set_data("STITCHED_CORR_SCI_WAVE", st_wave)
+        self.set_data("STITCHED_CORR_SCI_FLUX", st_flux)
