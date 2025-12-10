@@ -50,6 +50,25 @@ def make_base_primary_header(inst_pri_hdr):
         The standardized data format primary header
     """
 
+    # Header key fix
+    for in_hdrkeynam in ("DQLEVEL0", "DQLEVEL1", "DQLEVEL2"):
+        if in_hdrkeynam not in inst_pri_hdr.keys():
+            continue
+        in_hdrkeyval = inst_pri_hdr[in_hdrkeynam]
+        if isinstance(in_hdrkeyval, str):
+            try:
+                out_hdrkeyval = int(in_hdrkeyval.strip())
+            except:
+                out_hdrkeyval = None
+        elif isinstance(in_hdrkeyval, (int)):
+            if in_hdrkeyval <= 0:
+                out_hdrkeyval = None
+            else:
+                out_hdrkeyval = int(in_hdrkeyval)
+        else:
+            out_hdrkeyval = None
+        inst_pri_hdr[in_hdrkeynam] = out_hdrkeyval
+
     # Set up for obs-mode dependent primary header entries
     mode_dep_phead = {}
 
