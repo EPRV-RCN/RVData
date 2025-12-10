@@ -234,7 +234,7 @@ class NEIDRV2(RV2):
 
         # Standardized primary header
         phead = make_neid_primary_header.make_base_primary_header(hdul[0].header)
-        phead["DATALVL"] = 2
+        phead["DATALVL"] = "L2"
 
         self.set_header("PRIMARY", phead)
 
