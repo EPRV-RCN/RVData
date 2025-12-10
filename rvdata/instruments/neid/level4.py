@@ -59,8 +59,8 @@ class NEIDRV4(RV4):
         }
 
         # Set up the primary header
-        phead = make_neid_primary_header.make_base_primary_header(hdul[0].header)
-        phead["DATALVL"] = 4
+        phead = make_neid_primary_header.make_base_primary_header(hdul["PRIMARY"].header)
+        phead["DATALVL"] = "L4"
 
         # Add RV specific entries to the primary header
         phead["BJDTDB"] = hdul["CCFS"].header["CCFJDMOD"]
@@ -90,7 +90,7 @@ class NEIDRV4(RV4):
         rv_table_data = OrderedDict(
             {
                 "BJD_TDB": np.array(
-                    [hdul[0].header[f"SSBJD{173-order:03d}"] for order in range(122)]
+                    [hdul["PRIMARY"].header[f"SSBJD{173-order:03d}"] for order in range(122)]
                 ),
                 "RV": np.array(
                     [
@@ -104,7 +104,7 @@ class NEIDRV4(RV4):
                 ),
                 "RV_error": np.full(122, np.nan),
                 "BC_vel": np.array(
-                    [hdul[0].header[f"SSBRV{173-order:03d}"] for order in range(122)]
+                    [hdul["PRIMARY"].header[f"SSBRV{173-order:03d}"] for order in range(122)]
                 ),
                 "wave_start": np.full(122, np.nan),
                 "wave_end": np.full(122, np.nan),
