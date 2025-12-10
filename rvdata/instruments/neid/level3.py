@@ -26,7 +26,7 @@ class NEIDRV3(RV3):
     ----------
     extensions : dict
         Dictionary of all created extensions
-        (e.g., 'STITCHED_CORR_TRACE1_FLUX', 'STITCHED_CORR_TRACE1_WAVE', etc.),
+        (e.g., 'STITCHED_CORR_SCI_FLUX', 'STITCHED_CORR_SCI_WAVE', etc.),
         mapping extension names to their data arrays.
     headers : dict
         Dictionary of headers for each extension, mapping extension names to
