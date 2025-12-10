@@ -75,7 +75,7 @@ class NEIDRV2(RV2):
         ext_table = pd.read_csv(
             os.path.join(os.path.dirname(__file__), "config", "neid_l2_ext_table.csv")
         )
-
+        
         # Instrument header
         self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
 
@@ -93,15 +93,15 @@ class NEIDRV2(RV2):
         # Prepare fiber-related extensions
 
         # Check observation mode to set fiber list
-        if hdul[0].header["OBS-MODE"] == "HR":
+        if hdul["PRIMARY"].header["OBS-MODE"] == "HR":
             fiber_list = ["SCI", "SKY", "CAL"]
             expmeter_index = 4
-        elif hdul[0].header["OBS-MODE"] == "HE":
+        elif hdul["PRIMARY"].header["OBS-MODE"] == "HE":
             fiber_list = ["SCI", "SKY"]
             expmeter_index = 3
 
         # Change the observation mode in the extension description table
-        ext_table.replace("MODE", hdul[0].header["OBS-MODE"], regex=True, inplace=True)
+        ext_table.replace("MODE", hdul["PRIMARY"].header["OBS-MODE"], regex=True, inplace=True)
 
         for i_fiber, fiber in enumerate(fiber_list):
 
@@ -176,13 +176,13 @@ class NEIDRV2(RV2):
 
         # Extract barycentric velocities, redshifts, and JDs from NEID primary header
         bary_kms = np.array(
-            [hdul[0].header[f"SSBRV{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBRV{173-order:03d}"] for order in range(122)]
         )
         bary_z = np.array(
-            [hdul[0].header[f"SSBZ{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBZ{173-order:03d}"] for order in range(122)]
         )
         bjd = np.array(
-            [hdul[0].header[f"SSBJD{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBJD{173-order:03d}"] for order in range(122)]
         )
 
         # Output (these currently do not have headers to inherit from the NEID data format)
@@ -193,7 +193,7 @@ class NEIDRV2(RV2):
         # Drift
 
         # Just set the value of driftrv0 from the header in km/s
-        drift_data = np.array([hdul[0].header["driftrv0"] / 1e3])
+        drift_data = np.array([hdul["PRIMARY"].header["driftrv0"] / 1e3])
         drift_meta = fits.Header(
             {"COMMENT": "NEID drift relative to start of observing session"}
         )
@@ -233,7 +233,7 @@ class NEIDRV2(RV2):
         # Images - Nothing for now
 
         # Standardized primary header
-        phead = make_neid_primary_header.make_base_primary_header(hdul[0].header)
+        phead = make_neid_primary_header.make_base_primary_header(hdul["PRIMARY"].header)
         phead["DATALVL"] = "L2"
 
         self.set_header("PRIMARY", phead)
