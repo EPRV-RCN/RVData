@@ -6,7 +6,7 @@ import configparser
 def parse_str_to_types(string):
     """
     Converts string to different object types they represent.
-    Supported formats: True,Flase,None,int,float,list,tuple
+    Supported formats: True,False,None,int,float,list,tuple
 
     Parameters
     ----------

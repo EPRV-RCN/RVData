@@ -113,6 +113,26 @@ def calculate_spectral_envelope(
 
 
 def get_wavelength_grid_with_constant_velocity(wavegrid_start, wavegrid_end, velpix):
+    """
+    Generate a wavelength grid with constant velocity spacing.
+
+    Parameters
+    ----------
+    wavegrid_start : float
+        Starting wavelength of the grid.
+    wavegrid_end : float
+        Ending wavelength of the grid.
+    velpix : float
+        Velocity spacing per pixel (in m/s).
+
+    Returns
+    -------
+    wavegrid : 1D numpy array
+        Wavelength grid with constant velocity spacing.
+
+    2025-12-04, LPA
+    """
+
     sl = constants.c.value  # 299792458. m/s
     avg_dlwavegrid = velpix / sl
     lwavegrid = np.arange(
@@ -175,6 +195,8 @@ def resample_flux_conserving_with_bindensity(
     # Combine overlapping orders
 
     # Stack the flux arrays and take a nan-mean
+    # Note: bindensity.resampling returns flux arrays of length len(wavegrid) - 1,
+    # so we slice wavegrid[:-1] to ensure st_wave and st_flux have matching lengths.
     st_wave = wavegrid[:-1]
     st_flux = np.nanmean(flux_stack, axis=0)
 
@@ -269,7 +291,7 @@ def stitch_orders(sci_wav, sci_flx, sci_blz, inst_stitch_config=None):
     2025-06-21, LPA
     2025-12-04, LPA: switched to bindensity-based resampling
     """
-    
+
     # instrument configuration parameters
     iordermin = inst_stitch_config["iordermin"]
     iorderflatbreak = inst_stitch_config["iorderflatbreak"]

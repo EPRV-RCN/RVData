@@ -138,6 +138,16 @@ class RV3(rvdata.core.models.base.RVDataModel):
     def convert_level2_to_level3(self, l2obj) -> None:
         """
         Read data from a Level 2 RVDataModel object and populate Level 3 fields
+
+        Parameters
+        ----------
+        l2obj : RV2, RVDataModel
+            A Level 2 RVDataModel object containing spectral data and headers to convert.
+        
+        Returns
+        -------
+        None
+            This method modifies the current RV3 object in place.
         """
 
         # Set up the primary header
