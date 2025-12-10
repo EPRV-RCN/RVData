@@ -3,13 +3,8 @@ from astropy.io import fits
 # import base class
 from rvdata.core.models.level3 import RV3
 
-# from rvdata.core.models.definitions import LEVEL3_EXTENSIONS
-from rvdata.core.models.definitions import LEVEL3_PRIMARY_KEYWORDS
-from rvdata.core.tools import stitch_spectrum
-from rvdata.core.tools.headers import parse_value_to_datatype
-
-# NEID specific utility functions
-from rvdata.instruments.neid.utils import make_neid_primary_header
+# import NEID Level2 reader
+from rvdata.instruments.neid.level2 import NEIDRV2
 
 
 # NEID Level3 Reader
@@ -54,62 +49,6 @@ class NEIDRV3(RV3):
     """
 
     def _read(self, hdul2: fits.HDUList, **kwargs) -> None:
-
-        # Set up the primary header
-        phead = make_neid_primary_header.make_base_primary_header(hdul2[0].header)
-        phead["DATALVL"] = 3
-
-        # Add L3 specific entries to the primary header
-
-        for _, row in LEVEL3_PRIMARY_KEYWORDS.iterrows():
-            key = row["Keyword"]
-            value = row["Default"]
-            phead[key] = parse_value_to_datatype(key, row["Data type"], value)
-
-        self.set_header("PRIMARY", phead)
-
-        # Instrument header
-        self.set_header("INSTRUMENT_HEADER", hdul2["PRIMARY"].header)
-
-        # TODO iterate over traces
-        # read the wavelength, flux, and blaze data
-        sci_flx = hdul2["SCIFLUX"].data  # 4-116 order in NEID out of 122
-        sci_wav = hdul2["SCIWAVE"].data
-        sci_blz = hdul2["SCIBLAZE"].data
-
-        # stitch the orders
-        try:
-            st_wave, st_flux = stitch_spectrum.stitch_orders(
-                sci_wav, sci_flx, sci_blz, inst_stitch_config_sel="NEID"
-            )
-            # save the stitched spectrum
-            self.set_data("STITCHED_CORR_TRACE1_FLUX", st_flux)
-            self.set_data("STITCHED_CORR_TRACE1_WAVE", st_wave)
-            phead["BLZCORR"] = True
-            phead["LMPCORR"] = True
-            phead["SEDCORR"] = False
-            phead["INTERPMD"] = "BINDENSITY"
-            phead["FLXNRMMD"] = "None"
-            phead["DISPCORR"] = True
-            self.set_header("PRIMARY", phead)
-
-        except Exception as e:
-            print(f"Error stitching orders: {e}")
-            phead["BLZCORR"] = False
-            phead["LMPCORR"] = False
-            phead["SEDCORR"] = False
-            phead["INTERPMD"] = "None"
-            phead["FLXNRMMD"] = "None"
-            phead["DISPCORR"] = False
-            self.set_header("PRIMARY", phead)
-
-        # self.set_header("DRP_CONFIG", OrderedDict(hdul2["CONFIG"].header))
-        # self.set_data("DRP_CONFIG", Table(hdul2["CONFIG"].data).to_pandas())
-
-        # self.set_header("RECEIPT", OrderedDict(hdul2["RECEIPT"].header))
-        # self.set_data("RECEIPT", Table(hdul2["RECEIPT"].data).to_pandas())
-
-        # all_exts = list(self.extensions.keys())
-        # for ext_name in all_exts:
-        #     if ext_name not in LEVEL3_EXTENSIONS["Name"].values:
-        #         self.del_extension(ext_name)
+        l2obj = NEIDRV2()
+        l2obj.read(hdul2, instrument="NEID")
+        self.convert_level2_to_level3(l2obj)
