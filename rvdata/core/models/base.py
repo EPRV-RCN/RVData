@@ -44,13 +44,27 @@ class RVDataModel(object):
     Attributes
     ----------
     extensions : dict
-        A dictionary of extensions. This maps extension name to their FITS data type, e.g. PrimaryHDU, ImageHDU, BinTableHDU.
+        A dictionary of extensions. This maps extension name to their FITS data type,
+        e.g. PrimaryHDU, ImageHDU, BinTableHDU.
     headers : dict
-        A dictionary of headers of each extension (HDU). This stores all header information from the FITS file as a dictionary with extension name as the keys and the header content as the values. Headers are stored as OrderedDict types.
+        A dictionary of headers of each extension (HDU). This stores all header information
+        from the FITS file as a dictionary with extension name as the keys and the header
+        content as the values. Headers are stored as OrderedDict types.
     data : dict
-        A dictionary of data of each extension (HDU). This stores all extension data from the FITS file as a dictionary with extension name as the keys and the data content as the values. Data type is translated from the FITS type to an appropriate Python data type by core.model.definitions.FITS_TYPE_MAP.
+        A dictionary of data of each extension (HDU). This stores all extension data from
+        the FITS file as a dictionary with extension name as the keys and the data content
+        as the values. Data type is translated from the FITS type to an appropriate Python
+        data type by core.model.definitions.FITS_TYPE_MAP.
     receipt : pandas.DataFrame
-        A table that records the history of this data. The receipt keeps track of the data process history, so that the information stored by this instance can be reproduced from the original data. It is structured as a pandas.DataFrame table, with each row as an entry. Anything that modifies the content of a data product are expected to also write to the receipt. Three string inputs from the primitive are required: name, any relevant parameters, and a status. The receipt will also automatically fill in additional information, such as the time of execution, code release version, current branch, ect. It is not recommended to modify the receipt Dataframe directly. Use the provided methods to make any adjustments, such as:
+        A table that records the history of this data. The receipt keeps track of the data
+        process history, so that the information stored by this instance can be reproduced
+        from the original data. It is structured as a pandas.DataFrame table, with each row
+        as an entry. Anything that modifies the content of a data product are expected to
+        also write to the receipt. Three string inputs from the primitive are required: name,
+        any relevant parameters, and a status. The receipt will also automatically fill in
+        additional information, such as the time of execution, code release version, current
+        branch, ect. It is not recommended to modify the receipt Dataframe directly. Use the
+        provided methods to make any adjustments, such as:
             >>> from core.models.level1 import RV1
             >>> data = RV1()
             >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
@@ -120,13 +134,14 @@ class RVDataModel(object):
         # Return this instance
         return this_data
 
+    # TODO: overwrite is not yet used
     def read(self, hdu_list, instrument=None, overwrite=False, **kwargs):
         """
         Read the content of a RVData standard .fits file and populate this
         data structure.
 
         Args:
-            fn (str): file path (relative to the repository)
+            hdu_list (fits.HDUList): list of HDUs read from a FITS file
             instrument (str): instrument name. None implies FITS file is in EPRV standard format.
             overwrite (bool): if this instance is not empty, specifies whether to overwrite
 
@@ -159,10 +174,16 @@ class RVDataModel(object):
                         df = df.reindex(columns=all_cols)
                         # Fill missing columns (NaN values) with empty strings
                         df = df.fillna("")
-                    setattr(self, hdu.name, df)
-                    setattr(self, hdu.name.lower(), getattr(self, hdu.name))
+                    self.receipt = df
+                else:
+                    t = Table.read(hdu)
                     self.headers[hdu.name] = hdu.header
-                    setattr(self, hdu.name, t.to_pandas())
+                    self.data[hdu.name] = t.to_pandas()
+
+            # TODO: we can fill in all the object headers and data, not just tables
+            #       It's confusing because here we're using Astropy Tables,
+            #       but the FITS_TYPE_MAP is calling for Pandas DataFrames.
+            # TODO: really we should be using create_extension()
 
         # Leave the rest of HDUs to level specific readers
         # assume reader method and class names folow RV2 conventions
