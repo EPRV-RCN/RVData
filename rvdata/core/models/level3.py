@@ -143,7 +143,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
         ----------
         l2obj : RV2, RVDataModel
             A Level 2 RVDataModel object containing spectral data and headers to convert.
-        
+
         Returns
         -------
         None
@@ -153,12 +153,6 @@ class RV3(rvdata.core.models.base.RVDataModel):
         # Set up the primary header
         l3prihdr = l2obj.headers["PRIMARY"]
         l3prihdr["DATALVL"] = "L3"
-        # TODO iterate over traces
-
-        # read the wavelength, flux, and blaze data
-        sci_flx = l2obj.data["TRACE1_FLUX"].astype(np.float64)
-        sci_wav = l2obj.data["TRACE1_WAVE"].astype(np.float64)
-        sci_blz = l2obj.data["TRACE1_BLAZE"].astype(np.float64)
 
         # get instrument stitching config
         inst = l3prihdr["INSTRUME"].lower()
@@ -166,19 +160,20 @@ class RV3(rvdata.core.models.base.RVDataModel):
             f"rvdata/instruments/{inst}/config/{inst}_level3.config"
         )
 
-        # stitch the orders
+        n_traces = l2obj.data["NUMTRACE"]
+        st_wave: dict[int, np.ndarray] = {}
+        st_flux: dict[int, np.ndarray] = {}
+        # stitch the orders for each trace
         try:
-            st_wave, st_flux = stitch_spectrum.stitch_orders(
-                sci_wav, sci_flx, sci_blz, inst_stitch_config=stitch_config
-            )
-            # save the stitched spectrum
-            l3prihdr["BLZCORR"] = True
-            l3prihdr["LMPCORR"] = True
-            l3prihdr["SEDCORR"] = False
-            l3prihdr["INTERPMD"] = "BINDENSITY"
-            l3prihdr["FLXNRMMD"] = "None"
-            l3prihdr["DISPCORR"] = True
+            for trace_num in range(1, n_traces + 1):
+                # read the wavelength, flux, and blaze data
+                sci_flx = l2obj.data[f"TRACE{trace_num}_FLUX"].astype(np.float64)
+                sci_wav = l2obj.data[f"TRACE{trace_num}_WAVE"].astype(np.float64)
+                sci_blz = l2obj.data[f"TRACE{trace_num}_BLAZE"].astype(np.float64)
 
+                st_wave[trace_num], st_flux[trace_num] = stitch_spectrum.stitch_orders(
+                    sci_wav, sci_flx, sci_blz, inst_stitch_config=stitch_config
+                )
         except Exception as e:
             print(f"Error stitching orders: {e}")
             l3prihdr["BLZCORR"] = False
@@ -187,8 +182,22 @@ class RV3(rvdata.core.models.base.RVDataModel):
             l3prihdr["INTERPMD"] = "None"
             l3prihdr["FLXNRMMD"] = "None"
             l3prihdr["DISPCORR"] = False
+        else:
+            # all good, set the header keywords
+            l3prihdr["BLZCORR"] = True
+            l3prihdr["LMPCORR"] = True
+            l3prihdr["SEDCORR"] = False
+            l3prihdr["INTERPMD"] = "BINDENSITY"
+            l3prihdr["FLXNRMMD"] = "None"
+            l3prihdr["DISPCORR"] = True
+
+        # TODO: if there are multiple traces, co-add all traces to produce the "SCI" extensions
+        #       For now, just copy the first trace
+        self.set_data("STITCHED_CORR_SCI_WAVE", st_wave[1])
+        self.set_data("STITCHED_CORR_SCI_FLUX", st_flux[1])
+        # TODO: populate variance matrix if available
+        self.set_data("STITCHED_CORR_SCI_VAR", np.zeros_like(st_flux[1]))
+        # TODO set data for STICHED_CORR_TRACE{n}_WAVE/FLUX/VAR if multiple traces
 
         self.set_header("PRIMARY", l3prihdr)
         self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
-        self.set_data("STITCHED_CORR_SCI_WAVE", st_wave)
-        self.set_data("STITCHED_CORR_SCI_FLUX", st_flux)
