@@ -163,7 +163,7 @@ class ESPRESSORV2(RV2):
                         trace_ind_start,
                         slice_nb,
                     )
-                    print("TRACEi_TELLURIC_x extensions " "have been generated.")
+                    print("TRACEi_TELLURIC_x extensions have been generated.")
                 except Exception:
                     print(
                         "No TELLURIC file found, TRACEi_TELLURIC_x extensions "
@@ -177,7 +177,7 @@ class ESPRESSORV2(RV2):
                         trace_ind_start,
                         slice_nb,
                     )
-                    print("TRACEi_SKYSUB_x extensions " "have been generated.")
+                    print("TRACEi_SKYSUB_x extensions have been generated.")
                 except Exception:
                     print(
                         "No SKYSUB file found, TRACEi_SKYSUB_x extensions "
