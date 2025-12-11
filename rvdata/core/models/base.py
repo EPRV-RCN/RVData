@@ -175,10 +175,10 @@ class RVDataModel(object):
                         # Fill missing columns (NaN values) with empty strings
                         df = df.fillna("")
                     self.receipt = df
-                else:
-                    t = Table.read(hdu)
-                    self.headers[hdu.name] = hdu.header
-                    self.data[hdu.name] = t.to_pandas()
+                # else:
+                #     t = Table.read(hdu)
+                #     self.headers[hdu.name] = hdu.header
+                #     self.data[hdu.name] = t.to_pandas()
 
             # TODO: we can fill in all the object headers and data, not just tables
             #       It's confusing because here we're using Astropy Tables,
