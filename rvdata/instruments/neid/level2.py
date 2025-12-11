@@ -75,7 +75,7 @@ class NEIDRV2(RV2):
         ext_table = pd.read_csv(
             os.path.join(os.path.dirname(__file__), "config", "neid_l2_ext_table.csv")
         )
-        
+
         # Instrument header
         self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
 
@@ -101,10 +101,11 @@ class NEIDRV2(RV2):
             expmeter_index = 3
 
         # Change the observation mode in the extension description table
-        ext_table.replace("MODE", hdul["PRIMARY"].header["OBS-MODE"], regex=True, inplace=True)
+        ext_table.replace(
+            "MODE", hdul["PRIMARY"].header["OBS-MODE"], regex=True, inplace=True
+        )
 
         for i_fiber, fiber in enumerate(fiber_list):
-
             # Set the input extension names for this fiber
             flux_ext = f"{fiber}FLUX"
             wave_ext = f"{fiber}WAVE"
@@ -112,10 +113,10 @@ class NEIDRV2(RV2):
             blaze_ext = f"{fiber}BLAZE"
 
             # Change the fiber name in the extension description table
-            ext_table.replace(f"FIBER{i_fiber+1}", fiber, regex=True, inplace=True)
+            ext_table.replace(f"FIBER{i_fiber + 1}", fiber, regex=True, inplace=True)
 
             # Set the output extension name prefix for this fiber (1-indexed)
-            out_prefix = f"TRACE{i_fiber+1}_"
+            out_prefix = f"TRACE{i_fiber + 1}_"
 
             # Flux
             flux_array = hdul[flux_ext].data
@@ -176,13 +177,13 @@ class NEIDRV2(RV2):
 
         # Extract barycentric velocities, redshifts, and JDs from NEID primary header
         bary_kms = np.array(
-            [hdul["PRIMARY"].header[f"SSBRV{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBRV{173 - order:03d}"] for order in range(122)]
         )
         bary_z = np.array(
-            [hdul["PRIMARY"].header[f"SSBZ{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBZ{173 - order:03d}"] for order in range(122)]
         )
         bjd = np.array(
-            [hdul["PRIMARY"].header[f"SSBJD{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBJD{173 - order:03d}"] for order in range(122)]
         )
 
         # Output (these currently do not have headers to inherit from the NEID data format)
@@ -233,7 +234,9 @@ class NEIDRV2(RV2):
         # Images - Nothing for now
 
         # Standardized primary header
-        phead = make_neid_primary_header.make_base_primary_header(hdul["PRIMARY"].header)
+        phead = make_neid_primary_header.make_base_primary_header(
+            hdul["PRIMARY"].header
+        )
         phead["DATALVL"] = "L2"
 
         self.set_header("PRIMARY", phead)
