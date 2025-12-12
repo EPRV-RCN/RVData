@@ -19,6 +19,7 @@ from rvdata.core.models.definitions import (
 )
 from rvdata.core.tools.headers import parse_value_to_datatype
 from rvdata.core.tools.utils import create_configdict_from_file
+from rvdata.core.tools.utils import parse_intsel
 import rvdata.core.tools.stitch_spectrum as stitch_spectrum
 
 
@@ -160,12 +161,12 @@ class RV3(rvdata.core.models.base.RVDataModel):
             f"rvdata/instruments/{inst}/config/{inst}_level3.config"
         )
 
-        n_traces = l2obj.data["NUMTRACE"]
+        traces2stitch = parse_intsel(stitch_config["trace_selection"])
         st_wave: dict[int, np.ndarray] = {}
         st_flux: dict[int, np.ndarray] = {}
         # stitch the orders for each trace
         try:
-            for trace_num in range(1, n_traces + 1):
+            for trace_num in traces2stitch:
                 # read the wavelength, flux, and blaze data
                 sci_flx = l2obj.data[f"TRACE{trace_num}_FLUX"].astype(np.float64)
                 sci_wav = l2obj.data[f"TRACE{trace_num}_WAVE"].astype(np.float64)

@@ -3,6 +3,57 @@ import configparser
 # --- Utility functions for configuration file parsing ---
 
 
+def parse_intsel(str_range):
+    """
+    Parse comma-separated positive integers and ascending inclusive ranges.
+    Returns None if spec is None or "" (after stripping).
+    Examples: "1-3,7,10-12" -> [1, 2, 3, 7, 10, 11, 12]
+    Raises ValueError for anything else (non-positive, descending range, bad format).
+
+    Parameters
+    ----------
+    str_range : str
+        Comma-separated integers and ranges (e.g., "1-3,5,7-9").
+
+    Returns
+    -------
+    list of int or None
+        List of parsed integers, or None if input is None or empty.
+    """
+    if str_range is None:
+        return None
+    str_range = str(str_range).strip()
+    if str_range == "":
+        return None
+
+    out = []
+    for token in str_range.split(","):
+        token = token.strip()
+        if not token:
+            continue
+
+        if "-" in token:
+            parts = token.split("-")
+            if len(parts) != 2:
+                raise ValueError(f"Invalid range token: {token!r}")
+            a_s, b_s = parts[0].strip(), parts[1].strip()
+            if not (a_s.isdigit() and b_s.isdigit()):
+                raise ValueError(f"Invalid range token: {token!r}")
+            a, b = int(a_s), int(b_s)
+            if a <= 0 or b <= 0 or a > b:
+                raise ValueError(f"Range must be positive and ascending: {token!r}")
+            out.extend(range(a, b + 1))
+        else:
+            if not token.isdigit():
+                raise ValueError(f"Invalid integer token: {token!r}")
+            n = int(token)
+            if n <= 0:
+                raise ValueError(f"Integer must be positive: {token!r}")
+            out.append(n)
+
+    return out
+
+
 def parse_str_to_types(string):
     """
     Converts string to different object types they represent.
