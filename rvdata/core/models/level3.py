@@ -160,10 +160,11 @@ class RV3(rvdata.core.models.base.RVDataModel):
             f"rvdata/instruments/{inst}/config/{inst}_level3.config"
         )
 
+        # determine which traces need to be stitched
         traces = np.arange(1, l3prihdr["NUMTRACE"] + 1)
         traces2stitch = []
         for trace_num in traces:
-            if l3prihdr[f"CLSRC{trace_num}"] is None:
+            if (l3prihdr[f"CLSRC{trace_num}"] is None) and (l3prihdr[f"TRACE{trace_num}"].lower() != 'sky'):
                 traces2stitch.append(trace_num)
             else:
                 continue
@@ -234,7 +235,9 @@ class RV3(rvdata.core.models.base.RVDataModel):
         self.set_data("STITCHED_CORR_SCI_WAVE", st_wav[1])
         self.set_data("STITCHED_CORR_SCI_FLUX", st_flx[1])
         self.set_data("STITCHED_CORR_SCI_VAR", st_var[1])
+        self.set_data("ORDER_TABLE", order_table)
         # TODO set data for STICHED_CORR_TRACE{n}_WAVE/FLUX/VAR if multiple traces
 
         self.set_header("PRIMARY", l3prihdr)
         self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
+        self.set_header("ORDER_TABLE", l2obj.headers["ORDER_TABLE"])
