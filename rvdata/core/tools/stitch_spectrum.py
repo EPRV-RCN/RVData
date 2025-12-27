@@ -1,10 +1,31 @@
 import numpy as np
-from astropy import units as u
 from astropy import constants
-from specutils import SpectrumCollection
-from specutils.manipulation import FluxConservingResampler
-from scipy.interpolate import interp1d
+from scipy.signal import savgol_filter
+from scipy.interpolate import PchipInterpolator
 import bindensity
+
+
+def echelle_order_to_order_index(echelle_order, order_table):
+    """
+    Convert echelle order number to order index using the order table DataFrame.
+    Parameters:
+    -----------
+    echelle_order : int
+        The echelle order number to convert.
+    order_table : pandas.DataFrame
+        DataFrame containing 'echelle_order' and 'order_index' columns.
+    Returns:
+    --------
+    int or None
+        The corresponding order index, or None if not found.
+    """
+
+    try:
+        return order_table.loc[order_table["echelle_order"] == echelle_order][
+            "order_index"
+        ].values[0]
+    except IndexError:
+        return None
 
 
 def calculate_spectral_envelope(
@@ -142,203 +163,326 @@ def get_wavelength_grid_with_constant_velocity(wavegrid_start, wavegrid_end, vel
     return wavegrid
 
 
-def resample_flux_conserving_with_bindensity(sci_wav, sci_dflx, inst_stitch_config):
-    """
-    flux-conserving rebinning and stitching of spectral orders using
-    bindensity by JB Delisle
+def _clean_sort_unique(wave, flux, mask=None, use_logwave=True):
+    """Filter finite points, apply optional mask, sort by wavelength, and merge duplicate x."""
+    wave = np.asarray(wave, dtype=float)
+    flux = np.asarray(flux, dtype=float)
 
-    Parameters
-    ----------
-    sci_wav : 2D numpy array
-        Wavelengths of the science spectrum, shape (norders, npixels).
-    sci_dflx : 2D numpy array
-        Fluxes of the science spectrum, shape (norders, npixels).
-    spec_mask : 2D boolean numpy array
-        Mask for the science spectrum, shape (norders, npixels).
-    inst_stitch_config : dict
-        Instrument-specific stitching configuration parameters.
-
-    Returns
-    -------
-    st_wave : 1D numpy array
-        Wavelengths of the stitched spectrum.
-    st_flux : 1D numpy array
-        Fluxes of the stitched spectrum.
-
-    2025-12-04, LPA
-    UPDATED 2025-12-11, LPA
-    """
-
-    # Define a common output grid
-
-    wavegrid = get_wavelength_grid_with_constant_velocity(
-        inst_stitch_config["wavegrid_start"],
-        inst_stitch_config["wavegrid_end"],
-        inst_stitch_config["velpix"],
-    )
-
-    # Rebin each order (flux-conserving with bindensity package)
-
-    flux_stack = []
-    for iord in range(sci_dflx.shape[0]):
-        flux_stack.append(
-            bindensity.resampling(
-                wavegrid, sci_wav[iord], sci_dflx[iord][:-1], kind="cubic"
-            )
+    if wave.ndim != 1 or flux.ndim != 1 or wave.shape != flux.shape:
+        raise ValueError(
+            "wave_order and flux_order must be 1D arrays with the same shape"
         )
-    flux_stack = np.ma.array(flux_stack, mask=~np.isfinite(flux_stack))
 
-    # Combine overlapping orders
+    good = np.isfinite(wave) & np.isfinite(flux)
+    if mask is not None:
+        good &= np.asarray(mask, dtype=bool)
 
-    # Stack the flux arrays and take a nan-mean
-    # Note: bindensity.resampling returns flux arrays of length len(wavegrid) - 1,
-    # so we slice wavegrid[:-1] to ensure st_wave and st_flux have matching lengths.
-    st_wave = wavegrid[:-1]
-    st_flux = flux_stack.mean(axis=0).filled(np.nan)
+    wave = wave[good]
+    flux = flux[good]
 
-    return st_wave, st_flux
+    if wave.size < 2:
+        raise ValueError(
+            "Need at least 2 valid (wave, flux) points to build an envelope"
+        )
+
+    # Sort by wavelength
+    s = np.argsort(wave)
+    wave = wave[s]
+    flux = flux[s]
+
+    x = np.log(wave) if use_logwave else wave
+
+    # Merge duplicate x (can happen if orders share same representative wavelength)
+    xu, inv = np.unique(x, return_inverse=True)
+    if xu.size != x.size:
+        # average flux for duplicates
+        fsum = np.zeros_like(xu, dtype=float)
+        cnt = np.zeros_like(xu, dtype=int)
+        np.add.at(fsum, inv, flux)
+        np.add.at(cnt, inv, 1)
+        flux = fsum / cnt
+        x = xu
+
+        # reconstruct wave for range checks (only needed for meta; keep consistent)
+        wave = np.exp(x) if use_logwave else x
+
+    return wave, x, flux
 
 
-def resample_flux_conserving(sci_wav, sci_dflx, spec_mask, inst_stitch_config):
+def sed_envelope_pchip(
+    wave_order,
+    flux_order,
+    use_logwave=True,
+    use_logflux=False,
+    extrapolate=False,
+    mask=None,
+):
     """
-    flux-conserving rebinning and stitching of spectral orders
-
-    Parameters
-    ----------
-    sci_wav : 2D numpy array
-        Wavelengths of the science spectrum, shape (norders, npixels).
-    sci_dflx : 2D numpy array
-        Fluxes of the science spectrum, shape (norders, npixels).
-    spec_mask : 2D boolean numpy array
-        Mask for the science spectrum, shape (norders, npixels).
-    inst_stitch_config : dict
-        Instrument-specific stitching configuration parameters.
+    Shape-preserving PCHIP envelope through one (wave, flux) point per order.
 
     Returns
     -------
-    st_wave : 1D numpy array
-        Wavelengths of the stitched spectrum.
-    st_flux : 1D numpy array
-        Fluxes of the stitched spectrum.
-
-    2025-06-21, LPA
-    UPDATED 2025-12-04, LPA
+    evaluate : callable
+        evaluate(wave_grid) -> envelope flux on wave_grid
+    meta : dict
+        Basic info about the fit.
     """
-
-    nbins = inst_stitch_config["nbins"]
-
-    # Create SpectrumCollection from the science data
-
-    flux = u.Quantity(sci_dflx, unit="photon")
-    wave = u.Quantity(sci_wav, unit="AA")
-    spec_coll = SpectrumCollection(flux=flux, spectral_axis=wave, mask=spec_mask)
-
-    # Define a common output grid
-
-    min_wave = spec_coll.spectral_axis.min().value
-    max_wave = spec_coll.spectral_axis.max().value
-    new_wave = np.linspace(min_wave, max_wave, nbins) * spec_coll.spectral_axis.unit
-
-    # Rebin each order (flux-conserving)
-
-    resampler = FluxConservingResampler()
-
-    rebinned_orders = []
-    for iorder in range(spec_coll.shape[0]):
-        rebinned = resampler(spec_coll[iorder], new_wave)
-        rebinned_orders.append(rebinned)
-
-    # Combine overlapping orders
-
-    # Stack the flux arrays and take a nan-mean
-    flux_stack = np.vstack(
-        [specrb_order.flux.value for specrb_order in rebinned_orders]
+    wave, x, flux = _clean_sort_unique(
+        wave_order, flux_order, mask=mask, use_logwave=use_logwave
     )
-    combined_flux = np.nanmean(flux_stack, axis=0) * rebinned_orders[0].flux.unit
 
-    st_wave = new_wave.value
-    st_flux = combined_flux.value
+    if use_logflux:
+        if np.any(flux <= 0):
+            raise ValueError("use_logflux=True requires all used flux points to be > 0")
+        y = np.log(flux)
+    else:
+        y = flux
 
-    return st_wave, st_flux
+    interp = PchipInterpolator(x, y, extrapolate=extrapolate)
+    x_min, x_max = x.min(), x.max()
+
+    def evaluate(wave_grid):
+        lg = np.asarray(wave_grid, dtype=float)
+        xg = np.log(lg) if use_logwave else lg
+        yg = interp(xg)
+
+        if not extrapolate:
+            inside = np.isfinite(xg) & (xg >= x_min) & (xg <= x_max)
+            yg = np.where(inside, yg, np.nan)
+
+        return np.exp(yg) if use_logflux else yg
+
+    meta = {
+        "method": "pchip",
+        "use_logwave": bool(use_logwave),
+        "use_logflux": bool(use_logflux),
+        "extrapolate": bool(extrapolate),
+        "n_points": int(x.size),
+    }
+    return evaluate, meta
 
 
-def stitch_orders(sci_wav, sci_flx, sci_blz, inst_stitch_config=None):
-    """Stitch the spectral orders of a science spectrum.
-
-    Parameters
-    ----------
-    sci_wav : 2D numpy array
-        Wavelengths of the science spectrum, shape (norders, npixels).
-    sci_flx : 2D numpy array
-        Fluxes of the science spectrum, shape (norders, npixels).
-    sci_blz : 2D numpy array
-        Blaze function of the science spectrum, shape (norders, npixels).
-    inst_stitch_config : dict, optional
-        Instrument-specific stitching configuration parameters.
-        Default is for NEID.
-
-    Returns
-    -------
-    st_wave : 1D numpy array
-        Wavelengths of the stitched spectrum.
-    st_flux : 1D numpy array
-        Fluxes of the stitched spectrum.
-
-    2025-06-21, LPA
-    2025-12-04, LPA: switched to bindensity-based resampling
-    2025-12-11, LPA: improved missing data handling
+def mask_bad_spectrum_data(sci_flx, sci_wav, sci_blz, sci_var):
     """
+    Mask bad data in the science flux, wavelength, blaze, and variance arrays.
 
-    # instrument configuration parameters
-    iordermin = inst_stitch_config["iordermin"]
-    iorderflatbreak = inst_stitch_config["iorderflatbreak"]
-    iordermax = inst_stitch_config["iordermax"]
+    Parameters:
+    -----------
+    sci_flx : np.ndarray
+        Science flux array.
+    sci_wav : np.ndarray
+        Science wavelength array.
+    sci_blz : np.ndarray
+        Science blaze array.
+    sci_var : np.ndarray
+        Science variance array.
+
+    Returns:
+    --------
+    tuple
+        Masked science flux, wavelength, blaze, variance arrays, and the combined bad data mask
+    """
 
     # Create masks for bad data
-    sciflx_mask = (sci_flx <= 0.0) | np.isnan(sci_flx)
+    sciflx_mask = (sci_flx <= 1.0) | np.isnan(sci_flx)
     sciwav_mask = (sci_wav <= 0.0) | np.isnan(sci_wav)
-    sciblz_mask = (sci_blz <= 0.0) | np.isnan(sci_blz)
+    sciblz_mask = (sci_blz <= 1.0) | np.isnan(sci_blz)
     spec_mask = np.logical_or(sciflx_mask, sciwav_mask, sciblz_mask)
 
     # Mask data where the spectrum is bad or missing
     sci_flxm = np.where(spec_mask, float("nan"), sci_flx)
     sci_wavm = np.where(spec_mask, float("nan"), sci_wav)
     sci_blzm = np.where(spec_mask, float("nan"), sci_blz)
+    sci_varm = np.where(spec_mask, float("nan"), sci_var)
 
-    # Normalize the science data by the blaze function
-    sci_maxblz_ = np.nanmax(sci_blzm, axis=1, keepdims=True, initial=float("-inf"))
-    sci_maxblz = np.where(np.isfinite(sci_maxblz_), sci_maxblz_, float("nan"))
-    sci_nblzm = np.divide(sci_blzm, sci_maxblz)
-    sci_dflxm = np.divide(sci_flxm, sci_nblzm)
+    return sci_flxm, sci_wavm, sci_blzm, sci_varm, spec_mask
+
+
+def calculate_blaze_envelope(sci_wav, sci_blz, smooth_blaze_envelope=True):
+    """
+    Calculate the blaze envelope for the given wavelength and blaze arrays.
+
+    Parameters:
+    -----------
+    sci_wav : np.ndarray
+        Science wavelength array.
+    sci_blz : np.ndarray
+        Science blaze array.
+    smooth_blaze_envelope : bool, optional
+        Whether to apply Savitzky-Golay smoothing to the blaze envelope. Default is True.
+
+    Returns:
+    --------
+    np.ndarray
+        The calculated blaze envelope array.
+    """
 
     # Calculate the spectral envelope for the blaze extension
-    sci_bzewavb, sci_bzbeenvb = calculate_spectral_envelope(
-        sci_wavm[iordermin:iorderflatbreak, :], sci_blzm[iordermin:iorderflatbreak, :]
-    )
-    sci_bzewavr, sci_bzbeenvr = calculate_spectral_envelope(
-        sci_wavm[iorderflatbreak:iordermax, :], sci_blzm[iorderflatbreak:iordermax, :]
-    )
-    # sci_bzewav = np.concatenate((sci_bzewavb, sci_bzewavr), axis=0)
-    # sci_bzbeenv = np.concatenate((sci_bzbeenvb, sci_bzbeenvr), axis=0)
-
-    # Interpolate the spectral envelope to the wavelength grid of the science data
-    sci_bzenvb = interp1d(
-        sci_bzewavb, sci_bzbeenvb, bounds_error=False, fill_value=float("nan")
-    )(sci_wavm[iordermin:iorderflatbreak, :])
-    sci_bzenvr = interp1d(
-        sci_bzewavr, sci_bzbeenvr, bounds_error=False, fill_value=float("nan")
-    )(sci_wavm[iorderflatbreak:iordermax, :])
-    sci_bzenv = np.concatenate((sci_bzenvb, sci_bzenvr), axis=0)
-    sci_bzenvn = sci_bzenv / np.nanmax(sci_bzenv, axis=1, keepdims=True)
-
-    # Normalize the science data by the spectral envelope, correcting the lamp SED
-    sci_dblzed_flx = sci_dflxm[iordermin:iordermax, :] * sci_bzenvn
-
-    # Resample the flux-conserving and stitch the orders using bindensity
-    st_wave, st_flux = resample_flux_conserving_with_bindensity(
-        sci_wav[iordermin:iordermax, :],
-        sci_dblzed_flx,
-        inst_stitch_config,
+    sci_wavenv, sci_blzenv = calculate_spectral_envelope(
+        sci_wav, sci_blz
     )
 
-    return st_wave, st_flux
+    # (Optional) smooth the blaze envelope using Savitzky-Golay filter
+    if smooth_blaze_envelope:
+        sci_blzenvs = savgol_filter(sci_blzenv, window_length=5, polyorder=2, axis=0)
+    else:
+        sci_blzenvs = sci_blzenv.copy()
+
+    # Resample the blaze envelope into each order wavelength axis using PCHIP interpolation
+    eval_sedenv, meta_sedenv = sed_envelope_pchip(
+        sci_wavenv,
+        sci_blzenvs,
+        use_logwave=True,
+        use_logflux=True,  # True -> if envelope varies over orders of magnitude (and flux>0)
+        extrapolate=True,
+    )
+    return eval_sedenv(sci_wav)
+
+
+def calculate_normalized_blaze_function(
+    sci_wav, sci_blz, inst_stitch_config, order_table
+):
+    """
+    Calculate the normalized blaze function for the science data.
+    Handles blue and red segments separately if specified.
+    Blue and red segments are defined in the instrument stitching configuration.
+    Blue and red are defined by the flat calibration sources used to create the blaze.
+    Ex. LDLS for blue, Quartz lamp for red.
+
+    Parameters:
+    -----------
+    sci_wav : np.ndarray
+        Science wavelength array.
+    sci_blz : np.ndarray
+        Science blaze array.
+    inst_stitch_config : dict
+        Instrument stitching configuration dictionary.
+    order_table : pandas.DataFrame
+        DataFrame containing 'echelle_order' and 'order_index' columns.
+
+    Returns:
+    --------
+    np.ndarray
+        The normalized blaze function array.
+    """
+    # Initialize normalized blaze array
+    sci_blze = np.full_like(sci_blz, fill_value=np.nan)
+
+    # Determine order index ranges for blue and red segments
+    # if any of the echorder start/end values are None, pass
+
+    orderib_start = echelle_order_to_order_index(
+        inst_stitch_config["echorder_blue_start"], order_table
+    )
+    orderib_end = echelle_order_to_order_index(
+        inst_stitch_config["echorder_blue_end"], order_table
+    )
+    orderir_start = echelle_order_to_order_index(
+        inst_stitch_config["echorder_red_start"], order_table
+    )
+    orderir_end = echelle_order_to_order_index(
+        inst_stitch_config["echorder_red_end"], order_table
+    )
+
+    if None in [orderib_end, orderir_start]:
+        # Calculate the blaze envelope for the entire range
+        sci_blzenv = calculate_blaze_envelope(
+            sci_wav[orderib_start : orderir_end + 1, :],
+            sci_blz[orderib_start : orderir_end + 1, :],
+            smooth_blaze_envelope=True,
+        )
+        # Calculate the normalized blaze function for the entire range
+        sci_blze[orderib_start : orderib_end + 1, :] = (
+            sci_blz[orderib_start : orderib_end + 1, :] / sci_blzenv
+        )
+        return sci_blze
+    else:
+        # Calculate the blaze envelope for blue and red segments
+        sci_blzenvb = calculate_blaze_envelope(
+            sci_wav[orderib_start : orderib_end + 1, :],
+            sci_blz[orderib_start : orderib_end + 1, :],
+            smooth_blaze_envelope=True,
+        )
+        sci_blzenvr = calculate_blaze_envelope(
+            sci_wav[orderir_start : orderir_end + 1, :],
+            sci_blz[orderir_start : orderir_end + 1, :],
+            smooth_blaze_envelope=True,
+        )
+
+        # Calculate the normalized blaze function and join blue and red segments
+        sci_blze[orderib_start : orderib_end + 1, :] = (
+            sci_blz[orderib_start : orderib_end + 1, :] / sci_blzenvb
+        )
+        sci_blze[orderir_start : orderir_end + 1, :] = (
+            sci_blz[orderir_start : orderir_end + 1, :] / sci_blzenvr
+        )
+        return sci_blze
+
+
+def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov):
+    """
+    Stitch deblazed spectrum from multiple echelle orders onto a common wavelength grid.
+
+    Parameters:
+    -----------
+    wavegrid : np.ndarray
+        Common wavelength grid to stitch onto.
+    sci_wav : np.ndarray
+        Science wavelength array for each order.
+    sci_dflx : np.ndarray
+        Deblazed science flux array for each order.
+    sci_dcov : np.ndarray
+        Deblazed science covariance array for each order.
+
+    Returns:
+    --------
+    tuple
+        Stitched wavelength array, stitched flux array, stitched variance array.
+    """
+    # Rebin each order (flux-conserving with bindensity package)
+    flx_stack = []
+    var_stack = []
+    for iord in range(sci_dflx.shape[0]):
+        flx_var_grid = bindensity.resampling(
+            wavegrid,
+            sci_wav[iord, :],
+            sci_dflx[iord, :-1],
+            cov=sci_dcov[:, iord, :-1],
+            kind="cubic",
+        )
+        flx_stack.append(flx_var_grid[0])
+        var_stack.append(flx_var_grid[1][0])
+
+    flx_stack = np.ma.array(flx_stack, mask=~np.isfinite(flx_stack), fill_value=np.nan)
+    var_stack = np.ma.array(var_stack, mask=~np.isfinite(var_stack), fill_value=np.nan)
+
+    # Combine overlapping orders using inverse-variance weighting
+    # Note: bindensity.resampling returns flux arrays of length len(wavegrid) - 1,
+    # so slice wavegrid[:-1] to ensure st_wav and st_flx have matching lengths.
+
+    st_wav = wavegrid[:-1]
+    valid = (
+        np.isfinite(flx_stack.filled())
+        & ~flx_stack.mask
+        & np.isfinite(var_stack.filled())
+        & ~var_stack.mask
+        & (var_stack.filled() > 0)
+    )
+    w = np.divide(
+        1.0, var_stack.filled(), where=valid, out=np.zeros_like(var_stack.filled())
+    )
+
+    wsum = w.sum(axis=0)
+    fwsum = np.nansum(w * flx_stack.filled(), axis=0, where=~flx_stack.mask)
+    st_flx = np.divide(fwsum, wsum, where=wsum > 0, out=np.full_like(fwsum, np.nan))
+    st_var = np.divide(1.0, wsum, where=wsum > 0, out=np.full_like(wsum, np.nan))
+
+    # Mask regions with fewer than min_orders contributing orders
+    min_orders = 1
+    n_contrib = valid.sum(axis=0)
+    if min_orders > 1:
+        bad = n_contrib < min_orders
+        st_flx[bad] = np.nan
+        st_var[bad] = np.nan
+
+    return st_wav, st_flx, st_var
