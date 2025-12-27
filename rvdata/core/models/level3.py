@@ -19,7 +19,6 @@ from rvdata.core.models.definitions import (
 )
 from rvdata.core.tools.headers import parse_value_to_datatype
 from rvdata.core.tools.utils import create_configdict_from_file
-from rvdata.core.tools.utils import parse_intsel
 import rvdata.core.tools.stitch_spectrum as stitch_spectrum
 
 
@@ -157,13 +156,21 @@ class RV3(rvdata.core.models.base.RVDataModel):
 
         # get instrument stitching config
         inst = l3prihdr["INSTRUME"].lower()
-        stitch_config = create_configdict_from_file(
+        inst_stitch_config = create_configdict_from_file(
             f"rvdata/instruments/{inst}/config/{inst}_level3.config"
         )
 
-        traces2stitch = parse_intsel(stitch_config["trace_selection"])
-        st_wave: dict[int, np.ndarray] = {}
-        st_flux: dict[int, np.ndarray] = {}
+        traces = np.arange(1, l3prihdr["NUMTRACE"] + 1)
+        traces2stitch = []
+        for trace_num in traces:
+            if l3prihdr[f"CLSRC{trace_num}"] is None:
+                traces2stitch.append(trace_num)
+            else:
+                continue
+
+        st_wav: dict[int, np.ndarray] = {}
+        st_flx: dict[int, np.ndarray] = {}
+        st_var: dict[int, np.ndarray] = {}
         # stitch the orders for each trace
         try:
             for trace_num in traces2stitch:
@@ -171,10 +178,40 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 sci_flx = l2obj.data[f"TRACE{trace_num}_FLUX"].astype(np.float64)
                 sci_wav = l2obj.data[f"TRACE{trace_num}_WAVE"].astype(np.float64)
                 sci_blz = l2obj.data[f"TRACE{trace_num}_BLAZE"].astype(np.float64)
+                sci_var = l2obj.data[f"TRACE{trace_num}_VAR"].astype(np.float64)
+                order_table = l2obj.data["ORDER_TABLE"]
 
-                st_wave[trace_num], st_flux[trace_num] = stitch_spectrum.stitch_orders(
-                    sci_wav, sci_flx, sci_blz, inst_stitch_config=stitch_config
+                # Masking invalid data
+                sci_flxm, sci_wavm, sci_blzm, sci_varm, spec_mask = (
+                    stitch_spectrum.mask_bad_spectrum_data(
+                        sci_flx, sci_wav, sci_blz, sci_var
+                    )
                 )
+
+                # Calculate the normalized blaze function
+                sci_blzme = stitch_spectrum.calculate_normalized_blaze_function(
+                    sci_wavm, sci_blzm, inst_stitch_config, order_table
+                )
+
+                # Deblazed science flux and deblazed science variance
+                sci_dflxm = np.divide(sci_flxm, sci_blzme)
+                sci_dvarm = np.divide(sci_varm, sci_blzme**2)
+                sci_dcovm = sci_dvarm[None, :]
+
+                # Define a common wavelength grid with constant velocity spacing
+                wavegrid = stitch_spectrum.get_wavelength_grid_with_constant_velocity(
+                    inst_stitch_config["wavegrid_start"],
+                    inst_stitch_config["wavegrid_end"],
+                    inst_stitch_config["velpix"],
+                )
+
+                # Stitch the deblazed spectrum into wavelength grid using inverse-variance weighting
+                st_wav[trace_num], st_flx[trace_num], st_var[trace_num] = (
+                    stitch_spectrum.stitch_deblazed_spectrum(
+                        wavegrid, sci_wavm, sci_dflxm, sci_dcovm
+                    )
+                )
+
         except Exception as e:
             print(f"Error stitching orders: {e}")
             l3prihdr["BLZCORR"] = False
@@ -194,10 +231,9 @@ class RV3(rvdata.core.models.base.RVDataModel):
 
         # TODO: if there are multiple traces, co-add all traces to produce the "SCI" extensions
         #       For now, just copy the first trace
-        self.set_data("STITCHED_CORR_SCI_WAVE", st_wave[1])
-        self.set_data("STITCHED_CORR_SCI_FLUX", st_flux[1])
-        # TODO: populate variance matrix if available
-        self.set_data("STITCHED_CORR_SCI_VAR", np.zeros_like(st_flux[1]))
+        self.set_data("STITCHED_CORR_SCI_WAVE", st_wav[1])
+        self.set_data("STITCHED_CORR_SCI_FLUX", st_flx[1])
+        self.set_data("STITCHED_CORR_SCI_VAR", st_var[1])
         # TODO set data for STICHED_CORR_TRACE{n}_WAVE/FLUX/VAR if multiple traces
 
         self.set_header("PRIMARY", l3prihdr)
