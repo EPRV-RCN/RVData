@@ -6,7 +6,7 @@ import configparser
 def parse_intsel(str_range):
     """
     Parse comma-separated positive integers and ascending inclusive ranges.
-    Returns None if spec is None or "" (after stripping).
+    Returns None if str_range is None or "" (after stripping).
     Examples: "1-3,7,10-12" -> [1, 2, 3, 7, 10, 11, 12]
     Raises ValueError for anything else (non-positive, descending range, bad format).
 

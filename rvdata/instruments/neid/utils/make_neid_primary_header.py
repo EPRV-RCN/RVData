@@ -58,10 +58,10 @@ def make_base_primary_header(inst_pri_hdr):
         if isinstance(in_hdrkeyval, str):
             try:
                 out_hdrkeyval = int(in_hdrkeyval.strip())
-            except Exception:
+            except ValueError:
                 out_hdrkeyval = None
-        elif isinstance(in_hdrkeyval, (int)):
-            if in_hdrkeyval <= 0:
+        elif isinstance(in_hdrkeyval, int):
+            if in_hdrkeyval < 0:
                 out_hdrkeyval = None
             else:
                 out_hdrkeyval = int(in_hdrkeyval)

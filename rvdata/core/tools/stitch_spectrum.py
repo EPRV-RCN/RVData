@@ -287,7 +287,7 @@ def mask_bad_spectrum_data(sci_flx, sci_wav, sci_blz, sci_var):
     sciflx_mask = (sci_flx <= 1.0) | np.isnan(sci_flx)
     sciwav_mask = (sci_wav <= 0.0) | np.isnan(sci_wav)
     sciblz_mask = (sci_blz <= 1.0) | np.isnan(sci_blz)
-    spec_mask = np.logical_or(sciflx_mask, sciwav_mask, sciblz_mask)
+    spec_mask = sciflx_mask | sciwav_mask | sciblz_mask
 
     # Mask data where the spectrum is bad or missing
     sci_flxm = np.where(spec_mask, float("nan"), sci_flx)
@@ -392,8 +392,8 @@ def calculate_normalized_blaze_function(
             smooth_blaze_envelope=True,
         )
         # Calculate the normalized blaze function for the entire range
-        sci_blze[orderib_start : orderib_end + 1, :] = (
-            sci_blz[orderib_start : orderib_end + 1, :] / sci_blzenv
+        sci_blze[orderib_start : orderir_end + 1, :] = (
+            sci_blz[orderib_start : orderir_end + 1, :] / sci_blzenv
         )
         return sci_blze
     else:
@@ -419,7 +419,7 @@ def calculate_normalized_blaze_function(
         return sci_blze
 
 
-def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov):
+def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1):
     """
     Stitch deblazed spectrum from multiple echelle orders onto a common wavelength grid.
 
@@ -446,8 +446,8 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov):
         flx_var_grid = bindensity.resampling(
             wavegrid,
             sci_wav[iord, :],
-            sci_dflx[iord, :-1],
-            cov=sci_dcov[:, iord, :-1],
+            sci_dflx[iord, :-1], # bindensity expects flux array pixel dimension to be length N-1
+            cov=sci_dcov[:, iord, :-1], # bindensity expects cov array pixel dimension to be length N-1
             kind="cubic",
         )
         flx_stack.append(flx_var_grid[0])
@@ -478,7 +478,6 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov):
     st_var = np.divide(1.0, wsum, where=wsum > 0, out=np.full_like(wsum, np.nan))
 
     # Mask regions with fewer than min_orders contributing orders
-    min_orders = 1
     n_contrib = valid.sum(axis=0)
     if min_orders > 1:
         bad = n_contrib < min_orders

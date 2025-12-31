@@ -2,11 +2,11 @@
 Level 3 Data Model for RV spectral data
 """
 
-# External dependencies
-from astropy.io import fits
-from astropy.table import Table
 import numpy as np
 import pandas as pd
+import importlib.resources
+from astropy.io import fits
+from astropy.table import Table
 
 import rvdata.core.models.base
 from rvdata.core.models.definitions import (
@@ -154,17 +154,25 @@ class RV3(rvdata.core.models.base.RVDataModel):
         l3prihdr = l2obj.headers["PRIMARY"]
         l3prihdr["DATALVL"] = "L3"
 
+        # get the order table from level 2 data
+        order_table = l2obj.data["ORDER_TABLE"]
+
         # get instrument stitching config
         inst = l3prihdr["INSTRUME"].lower()
         inst_stitch_config = create_configdict_from_file(
-            f"rvdata/instruments/{inst}/config/{inst}_level3.config"
+            importlib.resources.files("rvdata").joinpath(
+                f"instruments/{inst}/config/{inst}_level3.config"
+            )
         )
 
         # determine which traces need to be stitched
         traces = np.arange(1, l3prihdr["NUMTRACE"] + 1)
         traces2stitch = []
         for trace_num in traces:
-            if (l3prihdr[f"CLSRC{trace_num}"] is None) and (l3prihdr[f"TRACE{trace_num}"].lower() != 'sky'):
+            this_trace = str(l3prihdr[f"TRACE{trace_num}"]).strip()
+            if (l3prihdr[f"CLSRC{trace_num}"] is None) and (
+                this_trace.lower() != "sky"
+            ):
                 traces2stitch.append(trace_num)
             else:
                 continue
@@ -180,7 +188,6 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 sci_wav = l2obj.data[f"TRACE{trace_num}_WAVE"].astype(np.float64)
                 sci_blz = l2obj.data[f"TRACE{trace_num}_BLAZE"].astype(np.float64)
                 sci_var = l2obj.data[f"TRACE{trace_num}_VAR"].astype(np.float64)
-                order_table = l2obj.data["ORDER_TABLE"]
 
                 # Masking invalid data
                 sci_flxm, sci_wavm, sci_blzm, sci_varm, spec_mask = (
@@ -230,14 +237,36 @@ class RV3(rvdata.core.models.base.RVDataModel):
             l3prihdr["FLXNRMMD"] = "None"
             l3prihdr["DISPCORR"] = True
 
-        # TODO: if there are multiple traces, co-add all traces to produce the "SCI" extensions
-        #       For now, just copy the first trace
-        self.set_data("STITCHED_CORR_SCI_WAVE", st_wav[1])
-        self.set_data("STITCHED_CORR_SCI_FLUX", st_flx[1])
-        self.set_data("STITCHED_CORR_SCI_VAR", st_var[1])
-        self.set_data("ORDER_TABLE", order_table)
-        # TODO set data for STICHED_CORR_TRACE{n}_WAVE/FLUX/VAR if multiple traces
+        # Set the STITCHED_CORR_SCI_WAVE/FLUX/VAR extensions
+        # if only one trace to stitch, set SCI extension as that trace
+        if len(traces2stitch) == 1:
+            sci_trace_num = traces2stitch[0]
+            try:
+                self.set_data("STITCHED_CORR_SCI_WAVE", st_wav[sci_trace_num])
+                self.set_data("STITCHED_CORR_SCI_FLUX", st_flx[sci_trace_num])
+                self.set_data("STITCHED_CORR_SCI_VAR", st_var[sci_trace_num])
+            except KeyError:
+                pass
+        elif len(traces2stitch) > 1:
+            # set STITCHED_CORR_TRACE{n}_WAVE/FLUX/VAR for each trace
+            for trace_num in traces2stitch:
+                try:
+                    self.set_data(
+                        f"STITCHED_CORR_TRACE{trace_num}_WAVE", st_wav[trace_num]
+                    )
+                    self.set_data(
+                        f"STITCHED_CORR_TRACE{trace_num}_FLUX", st_flx[trace_num]
+                    )
+                    self.set_data(
+                        f"STITCHED_CORR_TRACE{trace_num}_VAR", st_var[trace_num]
+                    )
+                except KeyError:
+                    pass
+            # TODO: if there are multiple traces, co-add all traces to produce the "SCI" extensions
 
+        # set the order table from level 2 data into level 3 object
+        self.set_data("ORDER_TABLE", order_table)
+        # set the headers into the level 3 object
         self.set_header("PRIMARY", l3prihdr)
         self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
         self.set_header("ORDER_TABLE", l2obj.headers["ORDER_TABLE"])
