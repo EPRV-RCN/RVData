@@ -17,7 +17,6 @@ dependencies = [
     "numpy",
     "pandas",
     "GitPython",
-    "specutils",
     "astroquery",
     "jplephem",
     "bindensity"
