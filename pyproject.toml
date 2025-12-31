@@ -15,6 +15,7 @@ requires-python = ">=3.12"
 dependencies = [
     "astropy",
     "numpy",
+    "scipy",
     "pandas",
     "GitPython",
     "astroquery",
