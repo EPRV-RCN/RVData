@@ -318,9 +318,7 @@ def calculate_blaze_envelope(sci_wav, sci_blz, smooth_blaze_envelope=True):
     """
 
     # Calculate the spectral envelope for the blaze extension
-    sci_wavenv, sci_blzenv = calculate_spectral_envelope(
-        sci_wav, sci_blz
-    )
+    sci_wavenv, sci_blzenv = calculate_spectral_envelope(sci_wav, sci_blz)
 
     # (Optional) smooth the blaze envelope using Savitzky-Golay filter
     if smooth_blaze_envelope:
@@ -446,8 +444,12 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1
         flx_var_grid = bindensity.resampling(
             wavegrid,
             sci_wav[iord, :],
-            sci_dflx[iord, :-1], # bindensity expects flux array pixel dimension to be length N-1
-            cov=sci_dcov[:, iord, :-1], # bindensity expects cov array pixel dimension to be length N-1
+            sci_dflx[
+                iord, :-1
+            ],  # bindensity expects flux array pixel dimension to be length N-1
+            cov=sci_dcov[
+                :, iord, :-1
+            ],  # bindensity expects cov array pixel dimension to be length N-1
             kind="cubic",
         )
         flx_stack.append(flx_var_grid[0])
