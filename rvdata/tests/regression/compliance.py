@@ -64,7 +64,6 @@ def check_l3_extensions(inpfile):
     extdf = reference_extensions
     with fits.open(inpfile) as hdul:
         # check that all required extensions exist
-        hdul = fits.open(inpfile)
         for i, row in extdf.iterrows():
             ext = row["Name"]
             req = row["Required"]
@@ -88,16 +87,27 @@ def check_l3_extensions(inpfile):
                 hdu.name in ext_names_in_table
             ), f"Extension {hdu.name} present in data but missing from EXT_DESCRIPT table."
 
+    hdul.close()
+
 
 def check_l3_header(header):
-    ref_csv = (
+    ref_csv_l2 = (
+        importlib.resources.files("rvdata.core.models.config")
+        / "L2-PRIMARY-keywords.csv"
+    )
+    ref_csv_l3 = (
         importlib.resources.files("rvdata.core.models.config")
         / "L3-PRIMARY-keywords.csv"
     )
-    reference_header = pd.read_csv(ref_csv)
+    reference_header = pd.concat(
+        [pd.read_csv(ref_csv_l2), pd.read_csv(ref_csv_l3)], ignore_index=True
+    )
     for i, row in reference_header.iterrows():
-        key = row["Keyword"].split()[0]
-        req = row["Required"]
+        key = row["Keyword"]
+        req = row["Required"] == "Y"
+        if "#" in key or "..." in key:
+            # print(f"Stripping multi keyword: {key}")
+            key = key.split("...")[0].strip()
         if req and (key not in header):
             print(key, req)
             assert key in header, f"Keyword {key} not found in header"
