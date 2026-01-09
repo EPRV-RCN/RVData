@@ -4,6 +4,167 @@ from scipy.signal import savgol_filter
 from scipy.interpolate import PchipInterpolator
 import bindensity
 
+from bindensity import libbindensity
+
+
+def bindensity_resampling_fixed(new_x, x, y, cov=None, kind="cubic"):
+    r"""
+    Resample data on new bins using a linear or cubic
+    interpolation of the cumulative.
+
+    The linear interpolation of the cumulative corresponds to
+    a uniform density on the bins.
+    The only rule necessary to compute the interpolation is
+    the conservation of the integral over each original bin
+    (the value of the cumulative is fixed at each edge of a bin)
+    This rule allows to determine the 2 coefficients of the interpolation.
+
+    The cubic interpolation of the cumulative corresponds to
+    a quadratic density on the bins.
+    In order to minimize the correlation between new bins,
+    the cubic interpolation is much simplified compared to
+    a cubic spline interpolation.
+    In particular, the interpolation is not C2 but only C1,
+    which means that the density is continuous but not derivable.
+    The rules to compute the interpolation are:
+    - Conservation of the integral over each original bin
+    (the value of the cumulative is fixed at each edge of a bin)
+    - The derivative at an edge between two bins is fixed at
+    the mean between the densities over each of the two bins.
+    Those two rules allow to determine the 4 coefficients of the interpolation.
+
+    Parameters
+    ----------
+    new_x : (new_n+1,) ndarray
+      Edges of the new bins.
+    x : (n+1,) ndarray
+      Edges of the original bins.
+    y : (n,) ndarray
+      Density over each original bin.
+    cov : (nd+1, n) ndarray, optional
+      Covariance matrix of the density over original bins in lower banded form.
+    kind : str, optional
+      Kind of interpolation to use ('linear' or 'cubic').
+      Default is 'cubic'.
+
+    Returns
+    -------
+    new_y : (new_n,) ndarray
+      The density resampled on the new bins.
+    new_cov : (new_nd+1, new_n) ndarray
+      The covariance of the new bins in lower banded form (if cov is provided).
+
+    Notes
+    -----
+    bindensity_resampling_fixed is adapted from bindensity.resampling to prevent
+    libbindensity.resampling_covariance function getting stuck in an inifinite
+    loop for certain inputs.
+    2025-01, Leonardo A. Paredes
+    """
+
+    # Check shapes
+    new_n = new_x.size - 1
+    n = y.size
+    if x.size != n + 1:
+        raise ValueError(
+            "Incompatible sizes. "
+            + "For n bins, x should be of size n+1 and y of size n."
+        )
+    if cov is not None:
+        if cov.shape[1] != n:
+            raise ValueError("The shape of cov should be (nd+1, n).")
+        nd = cov.shape[0] - 1
+    dx = x[1:] - x[:-1]
+    if np.any(dx <= 0):
+        raise ValueError(
+            "The bin edges should be provided " + "in strictly increasing order."
+        )
+    # Check nans
+    isdef = (y == y).astype(int)
+    # Find the original bins in which the new bin edges are.
+    ix = np.searchsorted(x, new_x, "right").astype(int) - 1
+    # Added condition to handle case where size of y is larger than max of ix
+    if n == 0 or ix.min() < 0 or ix.max() > n:
+        n = int(ix.max())
+    # Restrict to new bins that fall inside the original range.
+    kstart = np.searchsorted(ix, 0, "left").astype(int)
+    kend = np.searchsorted(ix, n, "left").astype(int)
+    new_n_in = kend - kstart - 1
+    new_x_in = new_x[kstart:kend]
+    ix_in = ix[kstart:kend]
+    new_dx_in = new_x_in[1:] - new_x_in[:-1]
+    if np.any(new_dx_in <= 0):
+        raise ValueError(
+            "The bin edges should be provided " + "in strictly increasing order."
+        )
+    # Position on each original bin
+    delta = new_x_in - x[ix_in]
+    # Range of original bins on which explicitly depends each new bin
+    if kind == "linear":
+        istart = ix_in[:-1]
+        iend = ix_in[1:] + 1
+    elif kind == "cubic":
+        isdefleft = np.insert(isdef[:-1], 0, 0)
+        isdefright = np.append(isdef[1:], 0)
+        dl = isdefleft[ix_in]
+        dr = isdefright[ix_in]
+        istart = (ix_in - dl)[:-1]
+        iend = (ix_in + dr + 1)[1:]
+        # Precompute useful quantities for cubic weights
+        t = delta / dx[ix_in]
+        t2 = t * t
+        t3 = t2 * t
+        # t = 0 on the left border of the original bin and 1 on the right
+        # Cubic Hermite basis
+        # For a cubic polynomial f
+        # f(t) = f(0)*h00(t) + f(1)*h01(t) + f'(0)*h10(t) + f'(1)*h11(t)
+        h01 = 3 * t2 - 2 * t3
+        h10 = t3 - 2 * t2 + t
+        h11 = t3 - t2
+        # Integral between the original bin left edge
+        # and the position of the new edge,
+        # as a function of the density over the 3 consecutive original bins.
+        Fkcenter = (h01 + 0.5 * (h10 + h11)) * dx[ix_in]
+        Fkleft = 0.5 * h10 * dx[ix_in]
+        Fkright = 0.5 * h11 * dx[ix_in]
+    else:
+        raise Exception("The interpolation kind must be 'linear' or 'cubic'.")
+
+    # Avoid to compute undefined bins
+    libbindensity.resampling_check_def(new_n_in, isdef, istart, iend)
+    isize = iend - istart
+
+    # Weight of each original bin density to compute the new bins
+    w = np.empty(np.sum(isize))
+    if kind == "linear":
+        libbindensity.resampling_linear_weights(
+            new_n_in, dx, new_dx_in, delta, istart, isize, w
+        )
+    else:
+        libbindensity.resampling_cubic_weights(
+            new_n_in, dl, dr, dx, new_dx_in, Fkleft, Fkcenter, Fkright, istart, isize, w
+        )
+
+    # Compute new bins density
+    new_y = np.full(new_n, np.nan)
+    libbindensity.resampling_y(new_n_in, kstart, istart, iend, isize, y, w, new_y)
+
+    if cov is None:
+        return new_y
+
+    # Compute new covariance shape
+    new_nd = np.empty(1, dtype=int)
+    libbindensity.resampling_covariance_nd(nd, new_n_in, istart, iend, new_nd)
+    new_nd = new_nd[0]
+
+    # Compute new covariance
+    new_cov = np.zeros((new_nd + 1, new_n))
+    libbindensity.resampling_covariance(
+        n, nd, new_n, kstart, new_n_in, cov, istart, iend, isize, w, new_cov
+    )
+
+    return (new_y, new_cov)
+
 
 def echelle_order_to_order_index(echelle_order, order_table):
     """
@@ -441,7 +602,8 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1
     flx_stack = []
     var_stack = []
     for iord in range(sci_dflx.shape[0]):
-        flx_var_grid = bindensity.resampling(
+        # temporary replacement of bindensity.resampling until fixed in bindensity package
+        flx_var_grid = bindensity_resampling_fixed(
             wavegrid,
             sci_wav[iord, :],
             sci_dflx[
