@@ -2,8 +2,6 @@ import numpy as np
 from astropy import constants
 from scipy.signal import savgol_filter
 from scipy.interpolate import PchipInterpolator
-import bindensity
-
 from bindensity import libbindensity
 
 
