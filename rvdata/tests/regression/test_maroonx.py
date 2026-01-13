@@ -9,15 +9,18 @@ from rvdata.core.models.level4 import RV4
 from rvdata.instruments.maroonx.level2 import MAROONXRV2
 from rvdata.instruments.maroonx.level4 import MAROONXRV4
 
-from rvdata.tests.regression.compliance import check_l2_extensions, check_l2_header
-from rvdata.tests.regression.compliance import check_l4_extensions, check_l4_header
+from rvdata.tests.regression.compliance import (
+    check_l2_extensions, check_l2_header)
+from rvdata.tests.regression.compliance import (
+    check_l4_extensions, check_l4_header)
 
+pathname = "http://grinnell.as.arizona.edu/~rvdata/maroonx/"
 file_urls = {
     "MAROONX": {
-        "MX_OP": "http://grinnell.as.arizona.edu/~rvdata/maroonx/20240923T092056Z_SOOOE_x_0040.hd5",
-        "FLAT": "http://grinnell.as.arizona.edu/~rvdata/maroonx/20240916T19_masterflat__FFFFF_x__blaze.hd5",
-        "SERVAL_BLUE": "http://grinnell.as.arizona.edu/~rvdata/maroonx/tauCet_activity_results_blue.pkl",
-        "SERVAL_RED": "http://grinnell.as.arizona.edu/~rvdata/maroonx/tauCet_activity_results_red.pkl"
+        "MX_OP": pathname + "20240923T092056Z_SOOOE_x_0040.hd5",
+        "FLAT": pathname + "20240916T19_masterflat__FFFFF_x__blaze.hd5",
+        "SERVAL_BLUE": pathname + "tauCet_activity_results_blue.pkl",
+        "SERVAL_RED": pathname + "tauCet_activity_results_red.pkl"
     }
 }
 
