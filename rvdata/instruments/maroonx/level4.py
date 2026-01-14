@@ -100,7 +100,7 @@ class MAROONXRV4(RV4):
         erv_ord = np.array(data["e_rv"])  # orderwise
 
         bjd_fits = float(hdul["BJD_TDB"].data[0])
-        order_tab = hdul["ORDER_TABLE"].data         
+        order_tab = hdul["ORDER_TABLE"].data
         phdr = hdul["PRIMARY"].header
         ihdr = hdul[1].header
         berv = float(ihdr['HIERARCH BERV_FLUXWEIGHTED_FRD'])/1000.0
