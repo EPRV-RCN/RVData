@@ -82,7 +82,18 @@ class RV3(rvdata.core.models.base.RVDataModel):
     def _read(self, hdul: fits.HDUList) -> None:
         l3_ext = LEVEL3_EXTENSIONS.set_index("Name")
         for hdu in hdul:
-            fits_type = l3_ext.loc[hdu.name]["DataType"]
+            # Get DataType from predefined extensions, or infer from HDU type
+            if hdu.name in l3_ext.index:
+                fits_type = l3_ext.loc[hdu.name]["DataType"]
+            elif isinstance(hdu, fits.PrimaryHDU):
+                fits_type = "PrimaryHDU"
+            elif isinstance(hdu, fits.ImageHDU):
+                fits_type = "ImageHDU"
+            elif isinstance(hdu, fits.BinTableHDU):
+                fits_type = "BinTableHDU"
+            else:
+                continue  # Skip unknown HDU types
+
             if hdu.name not in self.extensions.keys():
                 self.create_extension(hdu.name, fits_type)
 
@@ -269,6 +280,18 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 except KeyError:
                     pass
             # TODO: if there are multiple traces, co-add all traces to produce the "SCI" extensions
+
+            # Update EXT_DESCRIPT table with new trace extensions
+            ext_descript = self.data["EXT_DESCRIPT"]
+            for trace_num in traces2stitch:
+                for suffix in ["WAVE", "FLUX", "VAR"]:
+                    ext_name = f"STITCHED_CORR_TRACE{trace_num}_{suffix}"
+                    if ext_name not in ext_descript["Name"].values:
+                        new_row = pd.DataFrame(
+                            {"Name": [ext_name], "Description": [f"Stitched trace {trace_num} {suffix.lower()}"]}
+                        )
+                        ext_descript = pd.concat([ext_descript, new_row], ignore_index=True)
+            self.set_data("EXT_DESCRIPT", ext_descript)
 
         # set the order table from level 2 data into level 3 object
         self.set_data("ORDER_TABLE", order_table)
