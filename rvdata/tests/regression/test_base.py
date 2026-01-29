@@ -1,9 +1,12 @@
 from rvdata.core.models.level2 import RV2
+from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
 
 from rvdata.tests.regression.compliance import (
     check_l2_extensions,
     check_l2_header,
+    check_l3_extensions,
+    check_l3_header,
     check_l4_extensions,
     check_l4_header,
 )
@@ -17,6 +20,14 @@ def test_base():
 
     check_l2_extensions(l2_standard)
     check_l2_header(l2_obj.headers["PRIMARY"])
+
+    l3 = RV3()
+    l3_standard = "./base_L3_standard.fits"
+    l3.to_fits(l3_standard)
+    l3_obj = RV3.from_fits(l3_standard)
+
+    check_l3_extensions(l3_standard)
+    check_l3_header(l3_obj.headers["PRIMARY"])
 
     l4 = RV4()
     l4_standard = "./base_L4_standard.fits"

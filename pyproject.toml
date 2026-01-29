@@ -15,11 +15,12 @@ requires-python = ">=3.12"
 dependencies = [
     "astropy",
     "numpy",
+    "scipy",
     "pandas",
     "GitPython",
-    "specutils",
     "astroquery",
-    "jplephem"
+    "jplephem",
+    "bindensity"
 ]
 
 # Optional dependencies

@@ -1,9 +1,11 @@
 import requests
 import os
 from rvdata.core.models.level2 import RV2
+from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
 
 from rvdata.tests.regression.compliance import check_l2_extensions, check_l2_header
+from rvdata.tests.regression.compliance import check_l3_extensions, check_l3_header
 from rvdata.tests.regression.compliance import check_l4_extensions, check_l4_header
 
 file_urls = {
@@ -39,6 +41,15 @@ def test_neid():
 
     check_l2_extensions(standard_l2_file)
     check_l2_header(neidl2_obj.headers["PRIMARY"])
+
+    # Check L3
+    neidl3 = RV3.from_fits(native_l2_file, instrument="NEID")
+    standard_l3_file = "./neid_L3_standard.fits"
+    neidl3.to_fits(standard_l3_file)
+    neidl3_obj = RV3.from_fits(standard_l3_file)
+
+    check_l3_extensions(standard_l3_file)
+    check_l3_header(neidl3_obj.headers["PRIMARY"])
 
     # Check L4
     neidl4 = RV4.from_fits(native_l2_file, instrument="NEID")
