@@ -170,9 +170,10 @@ class RV3(rvdata.core.models.base.RVDataModel):
         traces2stitch = []
         for trace_num in traces:
             this_trace = str(l3prihdr[f"TRACE{trace_num}"]).strip()
-            if (l3prihdr[f"CLSRC{trace_num}"] is None) and (
-                this_trace.lower() != "sky"
-            ):
+            clsrc = l3prihdr[f"CLSRC{trace_num}"]
+            # Check for None (Python) or "None" (string from FITS header)
+            clsrc_is_none = (clsrc is None) or (str(clsrc).strip().lower() == "none")
+            if clsrc_is_none and (this_trace.lower() != "sky"):
                 traces2stitch.append(trace_num)
             else:
                 continue
@@ -251,6 +252,11 @@ class RV3(rvdata.core.models.base.RVDataModel):
             # set STITCHED_CORR_TRACE{n}_WAVE/FLUX/VAR for each trace
             for trace_num in traces2stitch:
                 try:
+                    # Create extensions if they don't exist (they're optional)
+                    for suffix in ["WAVE", "FLUX", "VAR"]:
+                        ext_name = f"STITCHED_CORR_TRACE{trace_num}_{suffix}"
+                        if ext_name not in self.extensions:
+                            self.create_extension(ext_name, "ImageHDU")
                     self.set_data(
                         f"STITCHED_CORR_TRACE{trace_num}_WAVE", st_wav[trace_num]
                     )

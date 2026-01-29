@@ -443,9 +443,11 @@ def mask_bad_spectrum_data(sci_flx, sci_wav, sci_blz, sci_var):
     """
 
     # Create masks for bad data
+    # Note: blaze threshold is set to 0 to handle both raw (counts) and
+    # normalized (0-1) blaze functions from different instruments
     sciflx_mask = (sci_flx <= 1.0) | np.isnan(sci_flx)
     sciwav_mask = (sci_wav <= 0.0) | np.isnan(sci_wav)
-    sciblz_mask = (sci_blz <= 1.0) | np.isnan(sci_blz)
+    sciblz_mask = (sci_blz <= 0.0) | np.isnan(sci_blz)
     spec_mask = sciflx_mask | sciwav_mask | sciblz_mask
 
     # Mask data where the spectrum is bad or missing
@@ -585,7 +587,8 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1
     wavegrid : np.ndarray
         Common wavelength grid to stitch onto.
     sci_wav : np.ndarray
-        Science wavelength array for each order.
+        Science wavelength array for each order. Can be in increasing or
+        decreasing order along the pixel axis.
     sci_dflx : np.ndarray
         Deblazed science flux array for each order.
     sci_dcov : np.ndarray
@@ -596,6 +599,16 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1
     tuple
         Stitched wavelength array, stitched flux array, stitched variance array.
     """
+    # Check wavelength direction and flip if decreasing
+    # bindensity requires strictly increasing wavelengths
+    sample_order = sci_wav.shape[0] // 2
+    wav_diff = np.nanmean(np.diff(sci_wav[sample_order, :]))
+    if wav_diff < 0:
+        # Wavelengths are decreasing, flip all arrays along pixel axis
+        sci_wav = sci_wav[:, ::-1]
+        sci_dflx = sci_dflx[:, ::-1]
+        sci_dcov = sci_dcov[:, :, ::-1]
+
     # Rebin each order (flux-conserving with bindensity package)
     flx_stack = []
     var_stack = []
