@@ -51,7 +51,6 @@ class NEIDRV4(RV4):
     """
 
     def _read(self, hdul: fits.HDUList, **kwargs) -> None:
-
         # Set up extension Description table
         ext_table = {
             "Name": [],
@@ -59,8 +58,10 @@ class NEIDRV4(RV4):
         }
 
         # Set up the primary header
-        phead = make_neid_primary_header.make_base_primary_header(hdul[0].header)
-        phead["DATALVL"] = 4
+        phead = make_neid_primary_header.make_base_primary_header(
+            hdul["PRIMARY"].header
+        )
+        phead["DATALVL"] = "L4"
 
         # Add RV specific entries to the primary header
         phead["BJDTDB"] = hdul["CCFS"].header["CCFJDMOD"]
@@ -79,7 +80,9 @@ class NEIDRV4(RV4):
 
         # Receipt
         ext_table["Name"].append("RECEIPT")
-        ext_table["Description"].append("Table of operations that have been performed on this file")
+        ext_table["Description"].append(
+            "Table of operations that have been performed on this file"
+        )
 
         # RV1 - turn the CCFS extension header into a table
 
@@ -90,12 +93,15 @@ class NEIDRV4(RV4):
         rv_table_data = OrderedDict(
             {
                 "BJD_TDB": np.array(
-                    [hdul[0].header[f"SSBJD{173-order:03d}"] for order in range(122)]
+                    [
+                        hdul["PRIMARY"].header[f"SSBJD{173 - order:03d}"]
+                        for order in range(122)
+                    ]
                 ),
                 "RV": np.array(
                     [
                         (
-                            hdul["CCFS"].header[f"CCFRV{173-order:03d}"]
+                            hdul["CCFS"].header[f"CCFRV{173 - order:03d}"]
                             if not (hdul["CCFS"].data[order] == 0).all()
                             else np.nan
                         )
@@ -104,7 +110,10 @@ class NEIDRV4(RV4):
                 ),
                 "RV_error": np.full(122, np.nan),
                 "BC_vel": np.array(
-                    [hdul[0].header[f"SSBRV{173-order:03d}"] for order in range(122)]
+                    [
+                        hdul["PRIMARY"].header[f"SSBRV{173 - order:03d}"]
+                        for order in range(122)
+                    ]
                 ),
                 "wave_start": np.full(122, np.nan),
                 "wave_end": np.full(122, np.nan),
@@ -115,8 +124,9 @@ class NEIDRV4(RV4):
                 "weight": np.array(
                     [
                         (
-                            hdul["CCFS"].header[f"CCFWT{173-order:03d}"]
-                            if hdul["CCFS"].header[f"CCFWT{173-order:03d}"] is not None
+                            hdul["CCFS"].header[f"CCFWT{173 - order:03d}"]
+                            if hdul["CCFS"].header[f"CCFWT{173 - order:03d}"]
+                            is not None
                             else np.nan
                         )
                         for order in range(122)
@@ -134,9 +144,8 @@ class NEIDRV4(RV4):
 
         # Add information about the wavelength/pixel extents of the RV computation per order
         for order in range(122):
-            if (
-                np.isfinite(neid_fsr["fsr_start"].values[order])
-                and np.isfinite(rv_table_data["RV"][order])
+            if np.isfinite(neid_fsr["fsr_start"].values[order]) and np.isfinite(
+                rv_table_data["RV"][order]
             ):
                 fsr_pixel_start = int(neid_fsr["fsr_start"].values[order])
                 fsr_pixel_end = int(neid_fsr["fsr_end"].values[order])
