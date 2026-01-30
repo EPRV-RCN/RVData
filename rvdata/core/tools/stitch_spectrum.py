@@ -443,9 +443,13 @@ def mask_bad_spectrum_data(sci_flx, sci_wav, sci_blz, sci_var):
     """
 
     # Create masks for bad data
+    # Note on blaze threshold: Set to 0 (not 1.0) to handle both raw blaze
+    # functions (counts, can be >1e6) and normalized blaze functions (0-1).
+    # This global threshold works for all supported instruments (NEID, KPF,
+    # ESPRESSO, HARPS, HARPSN, EXPRES) since valid blaze values are always > 0.
     sciflx_mask = (sci_flx <= 1.0) | np.isnan(sci_flx)
     sciwav_mask = (sci_wav <= 0.0) | np.isnan(sci_wav)
-    sciblz_mask = (sci_blz <= 1.0) | np.isnan(sci_blz)
+    sciblz_mask = (sci_blz <= 0.0) | np.isnan(sci_blz)
     spec_mask = sciflx_mask | sciwav_mask | sciblz_mask
 
     # Mask data where the spectrum is bad or missing
@@ -511,7 +515,10 @@ def calculate_normalized_blaze_function(
     sci_wav : np.ndarray
         Science wavelength array.
     sci_blz : np.ndarray
-        Science blaze array.
+        Science blaze array. Can be raw (counts) or pre-normalized.
+        The function normalizes by dividing by an envelope fit to the
+        blaze peaks, so the output will have maximum values near 1.0
+        regardless of the input scale.
     inst_stitch_config : dict
         Instrument stitching configuration dictionary.
     order_table : pandas.DataFrame
@@ -520,7 +527,9 @@ def calculate_normalized_blaze_function(
     Returns:
     --------
     np.ndarray
-        The normalized blaze function array.
+        The normalized blaze function array with maximum values near 1.0.
+        Each order's blaze is divided by an envelope fit through the
+        blaze peaks across orders.
     """
     # Initialize normalized blaze array
     sci_blze = np.full_like(sci_blz, fill_value=np.nan)
@@ -585,7 +594,8 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1
     wavegrid : np.ndarray
         Common wavelength grid to stitch onto.
     sci_wav : np.ndarray
-        Science wavelength array for each order.
+        Science wavelength array for each order. Can be in increasing or
+        decreasing order along the pixel axis.
     sci_dflx : np.ndarray
         Deblazed science flux array for each order.
     sci_dcov : np.ndarray
@@ -596,6 +606,29 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1
     tuple
         Stitched wavelength array, stitched flux array, stitched variance array.
     """
+    # Check wavelength direction and flip if decreasing
+    # bindensity requires strictly increasing wavelengths
+    # Try multiple orders to find one with sufficient valid data for direction check
+    n_orders = sci_wav.shape[0]
+    wav_diff = np.nan
+    for offset in [0, 1, -1, 2, -2]:
+        sample_order = n_orders // 2 + offset
+        if 0 <= sample_order < n_orders:
+            order_wav = sci_wav[sample_order, :]
+            valid_mask = np.isfinite(order_wav)
+            if np.sum(valid_mask) > 10:  # Need at least 10 valid points
+                wav_diff = np.nanmean(np.diff(order_wav))
+                if np.isfinite(wav_diff):
+                    break
+    # Fallback: if no order has enough valid data, assume increasing
+    if not np.isfinite(wav_diff):
+        wav_diff = 1.0  # Assume increasing wavelengths
+    if wav_diff < 0:
+        # Wavelengths are decreasing, flip all arrays along pixel axis
+        sci_wav = sci_wav[:, ::-1]
+        sci_dflx = sci_dflx[:, ::-1]
+        sci_dcov = sci_dcov[:, :, ::-1]
+
     # Rebin each order (flux-conserving with bindensity package)
     flx_stack = []
     var_stack = []
