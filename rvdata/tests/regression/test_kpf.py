@@ -50,6 +50,8 @@ def test_kpf():
     check_l2_header(l2_obj.headers['PRIMARY'])
 
     # Check L3
+    # Note: L3 creation requires an RVData-standard L2 file (created above).
+    # Native KPF L2 files must first be converted using KPFRV2.from_fits().
     kpf3 = RV3.from_fits(l2_standard, instrument="KPF")
     l3_standard = "./kpf_L3_standard.fits"
     kpf3.to_fits(l3_standard)

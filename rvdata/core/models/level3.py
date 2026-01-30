@@ -80,6 +80,8 @@ class RV3(rvdata.core.models.base.RVDataModel):
         self.set_data("ORDER_TABLE", pd.DataFrame(columns=order_table_columns))
 
     def _read(self, hdul: fits.HDUList) -> None:
+        import warnings
+
         l3_ext = LEVEL3_EXTENSIONS.set_index("Name")
         for hdu in hdul:
             # Get DataType from predefined extensions, or infer from HDU type
@@ -89,8 +91,21 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 fits_type = "PrimaryHDU"
             elif isinstance(hdu, fits.ImageHDU):
                 fits_type = "ImageHDU"
+                # Warn about non-standard extensions (except dynamic TRACE extensions)
+                if not hdu.name.startswith("STITCHED_CORR_TRACE"):
+                    warnings.warn(
+                        f"Non-standard extension '{hdu.name}' found in L3 file. "
+                        "This may indicate a malformed file.",
+                        UserWarning,
+                    )
             elif isinstance(hdu, fits.BinTableHDU):
                 fits_type = "BinTableHDU"
+                if hdu.name not in ["EXT_DESCRIPT", "RECEIPT", "DRP_CONFIG", "ORDER_TABLE"]:
+                    warnings.warn(
+                        f"Non-standard table extension '{hdu.name}' found in L3 file. "
+                        "This may indicate a malformed file.",
+                        UserWarning,
+                    )
             else:
                 continue  # Skip unknown HDU types
 
@@ -182,8 +197,8 @@ class RV3(rvdata.core.models.base.RVDataModel):
         for trace_num in traces:
             this_trace = str(l3prihdr[f"TRACE{trace_num}"]).strip()
             clsrc = l3prihdr[f"CLSRC{trace_num}"]
-            # Check for None (Python) or "None" (string from FITS header)
-            clsrc_is_none = (clsrc is None) or (str(clsrc).strip().lower() == "none")
+            # Check for None (Python None or string "None" from FITS header)
+            clsrc_is_none = clsrc is None or (isinstance(clsrc, str) and clsrc.strip().lower() == "none")
             if clsrc_is_none and (this_trace.lower() != "sky"):
                 traces2stitch.append(trace_num)
             else:
@@ -261,6 +276,10 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 pass
         elif len(traces2stitch) > 1:
             # set STITCHED_CORR_TRACE{n}_WAVE/FLUX/VAR for each trace
+            # Note: The L3 standard defines STITCHED_CORR_TRACE1_* as optional extensions.
+            # For multi-trace instruments (e.g., KPF with 3 science fibers), we dynamically
+            # create TRACE{n} extensions for each science trace. This is an intentional
+            # extension of the standard to support instruments with multiple science fibers.
             for trace_num in traces2stitch:
                 try:
                     # Create extensions if they don't exist (they're optional)

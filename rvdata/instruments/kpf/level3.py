@@ -22,7 +22,11 @@ class KPFRV3(RV3):
 
     The three science traces (TRACE2, TRACE3, TRACE4) are stitched individually.
     When multiple traces are present, they are stored in STITCHED_CORR_TRACE{n}_*
-    extensions.
+    extensions (e.g., STITCHED_CORR_TRACE2_FLUX, STITCHED_CORR_TRACE3_FLUX, etc.).
+
+    Note: The STITCHED_CORR_SCI_* extensions are currently not populated when
+    multiple traces are present. A future enhancement will co-add all science
+    traces to produce these combined "SCI" extensions.
 
     Parameters
     ----------
@@ -42,10 +46,12 @@ class KPFRV3(RV3):
 
     Notes
     -----
-    To construct an RVData Level 3 object, a KPF Level 2 standard FITS file
-    is required. The classmethod `from_fits` should be used to
-    instantiate the object from these files. The `_read` method is not intended
-    to be called directly by users.
+    To construct an RVData Level 3 object, an RVData-standard Level 2 FITS file
+    is required. Native KPF Level 2 files are not directly supported; they must
+    first be converted to RVData-standard format using KPFRV2.from_fits().
+
+    The classmethod `from_fits` should be used to instantiate the object from
+    these files. The `_read` method is not intended to be called directly by users.
 
     Example
     -------
