@@ -24,7 +24,12 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.inheritance_diagram",
+    "nbsphinx",
 ]
+
+# nbsphinx configuration
+nbsphinx_execute = "never"  # Don't execute notebooks during build (they have pre-computed outputs)
+nbsphinx_allow_errors = True  # Continue build even if notebooks have errors
 
 templates_path = ["_templates"]
 exclude_patterns = []

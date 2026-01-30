@@ -252,7 +252,7 @@ class RVDataModel(object):
         # finish up writing
         hdul = fits.HDUList(hdu_list)
         dirname = os.path.dirname(fn)
-        if dirname != "" and not os.path.isdir(dirname):
+        if dirname and not os.path.isdir(dirname):
             os.makedirs(dirname, exist_ok=True)
         hdul.writeto(fn, overwrite=True, output_verify="silentfix")
         hdul.close()
