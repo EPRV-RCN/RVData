@@ -5,8 +5,8 @@ Tutorials
 These tutorials demonstrate how to use the RVData package to create and work with standardized EPRV data products.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Instrument Tutorials
+   :maxdepth: 1
+   :hidden:
 
    tutorials/DataStandard_Overview
    tutorials/KPF_Tutorial
