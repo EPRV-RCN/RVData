@@ -11,7 +11,6 @@ Documentation for EPRV Data Standardization Project!
    :caption: Contents:
 
    overview.rst
-   tutorials.rst
    governance.rst
    interact.rst
    new.rst
@@ -19,6 +18,7 @@ Documentation for EPRV Data Standardization Project!
    primaryheader.rst
    units.rst
    instrumentoverviews.rst
+   tutorials.rst
    api.rst
    faq.rst
 
