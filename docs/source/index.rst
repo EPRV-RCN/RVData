@@ -22,6 +22,14 @@ Documentation for EPRV Data Standardization Project!
    api.rst
    faq.rst
 
+.. toctree::
+   :hidden:
+
+   tutorials/DataStandard_Overview
+   tutorials/KPF_Tutorial
+   tutorials/Stitch_NEID_Spectrum_Example
+   tutorials/level3datastandard_from_NEIDlevel2_example
+
 Indices and tables
 ==================
 
