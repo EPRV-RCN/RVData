@@ -7,6 +7,7 @@ These tutorials demonstrate how to use the RVData package to create and work wit
 .. toctree::
    :maxdepth: 1
    :hidden:
+   :titlesonly:
 
    tutorials/DataStandard_Overview
    tutorials/KPF_Tutorial
