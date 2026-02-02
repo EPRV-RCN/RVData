@@ -242,7 +242,6 @@ class RVDataModel(object):
             fn (str): file path
 
         Note:
-            Can only write to KPF formatted FITS
             Filename should follow the EPRV naming convention:
             inst_SL#_YYYYMMDDThhmmss.fits
 
