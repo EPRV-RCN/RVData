@@ -162,3 +162,45 @@ class TestCheckFilenameConvention:
             assert result is False
             assert len(w) == 1
             assert "does not follow the EPRV naming convention" in str(w[0].message)
+
+
+class TestToFitsAutoFilename:
+    """Test that to_fits() auto-generates correct filenames."""
+
+    def test_to_fits_returns_filename(self):
+        """Test that to_fits() returns the filename it wrote to."""
+        import tempfile
+        import os
+
+        obj = RV2()
+        obj.headers["PRIMARY"] = OrderedDict()
+        obj.headers["PRIMARY"]["INSTRUME"] = "TEST"
+        obj.headers["PRIMARY"]["DATE-OBS"] = "2025-02-08T04:51:25"
+        obj.extensions["PRIMARY"] = None
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                filename = obj.to_fits()
+                assert filename == "test_SL2_20250208T045125.fits"
+                assert os.path.exists(filename)
+            finally:
+                os.chdir(old_cwd)
+
+    def test_to_fits_with_explicit_filename_returns_that_filename(self):
+        """Test that to_fits() with explicit filename returns that filename."""
+        import tempfile
+        import os
+
+        obj = RV2()
+        obj.headers["PRIMARY"] = OrderedDict()
+        obj.headers["PRIMARY"]["INSTRUME"] = "TEST"
+        obj.headers["PRIMARY"]["DATE-OBS"] = "2025-02-08T04:51:25"
+        obj.extensions["PRIMARY"] = None
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            explicit_name = os.path.join(tmpdir, "my_custom_name.fits")
+            filename = obj.to_fits(explicit_name)
+            assert filename == explicit_name
+            assert os.path.exists(filename)

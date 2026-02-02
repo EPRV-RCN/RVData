@@ -234,18 +234,26 @@ class RVDataModel(object):
                 parsed_value = parse_value_to_datatype(key, row["DataType"], value)
                 self.headers["PRIMARY"][key] = parsed_value
 
-    def to_fits(self, fn):
+    def to_fits(self, fn=None):
         """
         Collect the content of this instance into a monolithic FITS file
 
         Args:
-            fn (str): file path
+            fn (str, optional): file path. If not provided, automatically
+                generates a filename following the EPRV naming convention.
+
+        Returns:
+            str: The filename that was written to
 
         Note:
             Filename should follow the EPRV naming convention:
             inst_SL#_YYYYMMDDThhmmss.fits
 
         """
+        # Auto-generate filename if not provided
+        if fn is None:
+            fn = self.generate_standard_filename()
+
         if not fn.endswith(".fits"):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
@@ -266,6 +274,8 @@ class RVDataModel(object):
             os.makedirs(dirname, exist_ok=True)
         hdul.writeto(fn, overwrite=True, output_verify="silentfix")
         hdul.close()
+
+        return fn
 
     # =============================================================================
     # Filename convention methods

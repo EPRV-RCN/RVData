@@ -3,6 +3,7 @@ from pathlib import Path
 
 import requests
 
+from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level4 import RV4
 from rvdata.tests.regression.compliance import (
@@ -60,20 +61,26 @@ def test_espresso():
     files = download_instrument_files("ESPRESSO")
     raw_file = files["raw"]
 
-    # Test Level 2
+    # Test Level 2 - use auto-generated filename
     espr2 = RV2.from_fits(str(raw_file), instrument="ESPRESSO")
-    l2_standard = Path("esp_L2_standard.fits")
-    espr2.to_fits(str(l2_standard))
-    l2_obj = RV2.from_fits(str(l2_standard))
-    check_l2_extensions(str(l2_standard))
+    l2_standard = espr2.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l2_standard)), \
+        f"L2 filename '{l2_standard}' does not match EPRV convention"
+    assert l2_standard.startswith("espresso_SL2_"), \
+        f"L2 filename should start with 'espresso_SL2_', got '{l2_standard}'"
+    l2_obj = RV2.from_fits(l2_standard)
+    check_l2_extensions(l2_standard)
     check_l2_header(l2_obj.headers["PRIMARY"])
 
-    # Test Level 4
+    # Test Level 4 - use auto-generated filename
     espr4 = RV4.from_fits(str(raw_file), instrument="ESPRESSO")
-    l4_standard = Path("espr_L4_standard.fits")
-    espr4.to_fits(str(l4_standard))
-    l4_obj = RV4.from_fits(str(l4_standard))
-    check_l4_extensions(str(l4_standard))
+    l4_standard = espr4.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l4_standard)), \
+        f"L4 filename '{l4_standard}' does not match EPRV convention"
+    assert l4_standard.startswith("espresso_SL4_"), \
+        f"L4 filename should start with 'espresso_SL4_', got '{l4_standard}'"
+    l4_obj = RV4.from_fits(l4_standard)
+    check_l4_extensions(l4_standard)
     check_l4_header(l4_obj.headers["PRIMARY"])
 
 
