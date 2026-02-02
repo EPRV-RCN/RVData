@@ -80,9 +80,35 @@ class RV3(rvdata.core.models.base.RVDataModel):
         self.set_data("ORDER_TABLE", pd.DataFrame(columns=order_table_columns))
 
     def _read(self, hdul: fits.HDUList) -> None:
+        import warnings
+
         l3_ext = LEVEL3_EXTENSIONS.set_index("Name")
         for hdu in hdul:
-            fits_type = l3_ext.loc[hdu.name]["DataType"]
+            # Get DataType from predefined extensions, or infer from HDU type
+            if hdu.name in l3_ext.index:
+                fits_type = l3_ext.loc[hdu.name]["DataType"]
+            elif isinstance(hdu, fits.PrimaryHDU):
+                fits_type = "PrimaryHDU"
+            elif isinstance(hdu, fits.ImageHDU):
+                fits_type = "ImageHDU"
+                # Warn about non-standard extensions (except dynamic TRACE extensions)
+                if not hdu.name.startswith("STITCHED_CORR_TRACE"):
+                    warnings.warn(
+                        f"Non-standard extension '{hdu.name}' found in L3 file. "
+                        "This may indicate a malformed file.",
+                        UserWarning,
+                    )
+            elif isinstance(hdu, fits.BinTableHDU):
+                fits_type = "BinTableHDU"
+                if hdu.name not in ["EXT_DESCRIPT", "RECEIPT", "DRP_CONFIG", "ORDER_TABLE"]:
+                    warnings.warn(
+                        f"Non-standard table extension '{hdu.name}' found in L3 file. "
+                        "This may indicate a malformed file.",
+                        UserWarning,
+                    )
+            else:
+                continue  # Skip unknown HDU types
+
             if hdu.name not in self.extensions.keys():
                 self.create_extension(hdu.name, fits_type)
 
@@ -170,9 +196,10 @@ class RV3(rvdata.core.models.base.RVDataModel):
         traces2stitch = []
         for trace_num in traces:
             this_trace = str(l3prihdr[f"TRACE{trace_num}"]).strip()
-            if (l3prihdr[f"CLSRC{trace_num}"] is None) and (
-                this_trace.lower() != "sky"
-            ):
+            clsrc = l3prihdr[f"CLSRC{trace_num}"]
+            # Check for None (Python None or string "None" from FITS header)
+            clsrc_is_none = clsrc is None or (isinstance(clsrc, str) and clsrc.strip().lower() == "none")
+            if clsrc_is_none and (this_trace.lower() != "sky"):
                 traces2stitch.append(trace_num)
             else:
                 continue
@@ -249,8 +276,17 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 pass
         elif len(traces2stitch) > 1:
             # set STITCHED_CORR_TRACE{n}_WAVE/FLUX/VAR for each trace
+            # Note: The L3 standard defines STITCHED_CORR_TRACE1_* as optional extensions.
+            # For multi-trace instruments (e.g., KPF with 3 science fibers), we dynamically
+            # create TRACE{n} extensions for each science trace. This is an intentional
+            # extension of the standard to support instruments with multiple science fibers.
             for trace_num in traces2stitch:
                 try:
+                    # Create extensions if they don't exist (they're optional)
+                    for suffix in ["WAVE", "FLUX", "VAR"]:
+                        ext_name = f"STITCHED_CORR_TRACE{trace_num}_{suffix}"
+                        if ext_name not in self.extensions:
+                            self.create_extension(ext_name, "ImageHDU")
                     self.set_data(
                         f"STITCHED_CORR_TRACE{trace_num}_WAVE", st_wav[trace_num]
                     )
@@ -263,6 +299,18 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 except KeyError:
                     pass
             # TODO: if there are multiple traces, co-add all traces to produce the "SCI" extensions
+
+            # Update EXT_DESCRIPT table with new trace extensions
+            ext_descript = self.data["EXT_DESCRIPT"]
+            for trace_num in traces2stitch:
+                for suffix in ["WAVE", "FLUX", "VAR"]:
+                    ext_name = f"STITCHED_CORR_TRACE{trace_num}_{suffix}"
+                    if ext_name not in ext_descript["Name"].values:
+                        new_row = pd.DataFrame(
+                            {"Name": [ext_name], "Description": [f"Stitched trace {trace_num} {suffix.lower()}"]}
+                        )
+                        ext_descript = pd.concat([ext_descript, new_row], ignore_index=True)
+            self.set_data("EXT_DESCRIPT", ext_descript)
 
         # set the order table from level 2 data into level 3 object
         self.set_data("ORDER_TABLE", order_table)
