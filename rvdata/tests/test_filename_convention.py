@@ -167,6 +167,17 @@ class TestCheckFilenameConvention:
 class TestToFitsAutoFilename:
     """Test that to_fits() auto-generates correct filenames."""
 
+    def test_to_fits_auto_filename_generation(self):
+        """Test that to_fits() with no args uses generate_standard_filename()."""
+        obj = RV2()
+        obj.headers["PRIMARY"] = OrderedDict()
+        obj.headers["PRIMARY"]["INSTRUME"] = "TEST"
+        obj.headers["PRIMARY"]["DATE-OBS"] = "2025-02-08T04:51:25"
+
+        # Verify generate_standard_filename() produces the expected result
+        expected_filename = "test_SL2_20250208T045125.fits"
+        assert obj.generate_standard_filename() == expected_filename
+
     def test_to_fits_returns_filename(self):
         """Test that to_fits() returns the filename it wrote to."""
         import tempfile
@@ -179,14 +190,13 @@ class TestToFitsAutoFilename:
         obj.extensions["PRIMARY"] = None
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            old_cwd = os.getcwd()
-            try:
-                os.chdir(tmpdir)
-                filename = obj.to_fits()
-                assert filename == "test_SL2_20250208T045125.fits"
-                assert os.path.exists(filename)
-            finally:
-                os.chdir(old_cwd)
+            # Use explicit path to avoid changing directory (which breaks git repo lookup)
+            expected_filename = "test_SL2_20250208T045125.fits"
+            full_path = os.path.join(tmpdir, expected_filename)
+            filename = obj.to_fits(full_path)
+            assert filename == full_path
+            assert os.path.exists(filename)
+            assert os.path.basename(filename) == expected_filename
 
     def test_to_fits_with_explicit_filename_returns_that_filename(self):
         """Test that to_fits() with explicit filename returns that filename."""
