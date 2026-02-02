@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import importlib
 import os
+import re
 import warnings
 from collections import OrderedDict
 
@@ -233,27 +234,39 @@ class RVDataModel(object):
                 parsed_value = parse_value_to_datatype(key, row["DataType"], value)
                 self.headers["PRIMARY"][key] = parsed_value
 
-        # Add receipt entry for native instrument conversion (if applicable)
-        if instrument is not None:
-            self.receipt_add_entry(f"read_native_{instrument.upper()}_L{lvl}", "PASS")
-
-    def to_fits(self, fn):
+    def to_fits(self, fn=None):
         """
         Collect the content of this instance into a monolithic FITS file
 
         Args:
-            fn (str): file path
+            fn (str, optional): file path. If not provided, automatically
+                generates a filename following the EPRV naming convention.
+
+        Returns:
+            str: The filename that was written to
 
         Note:
-            Can only write to KPF formatted FITS
+            Filename should follow the EPRV naming convention:
+            inst_SL#_YYYYMMDDThhmmss.fits
 
         """
+        # Auto-generate filename if not provided
+        if fn is None:
+            fn = self.generate_standard_filename()
+
         if not fn.endswith(".fits"):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
 
         # Add receipt entry before writing (so it's included in the file)
         self.receipt_add_entry("to_fits", "PASS")
+        # Check filename convention and warn if it doesn't match
+        self.check_filename_convention(fn)
+
+        # Update FILENAME header to match the actual filename being written
+        basename = os.path.basename(fn)
+        if "PRIMARY" in self.headers:
+            self.headers["PRIMARY"]["FILENAME"] = (basename, "Name of the FITS file")
 
         hdu_list = self._create_hdul()
         # finish up writing
@@ -263,6 +276,114 @@ class RVDataModel(object):
             os.makedirs(dirname, exist_ok=True)
         hdul.writeto(fn, overwrite=True, output_verify="silentfix")
         hdul.close()
+
+        return fn
+
+    # =============================================================================
+    # Filename convention methods
+
+    # Pattern for standard filename: inst_SL#_YYYYMMDDThhmmss.fits
+    FILENAME_PATTERN = re.compile(
+        r"^([a-zA-Z]+)_SL([234])_(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.fits$"
+    )
+
+    def generate_standard_filename(self):
+        """
+        Generate a standard filename based on the EPRV naming convention.
+
+        The convention is: inst_SL#_YYYYMMDDThhmmss.fits
+        where:
+        - inst: instrument name (lowercase)
+        - SL#: standard level (SL2, SL3, or SL4)
+        - YYYYMMDDThhmmss: observation date/time
+
+        Returns:
+            str: The generated standard filename
+
+        Raises:
+            ValueError: If required header values (INSTRUME, DATE-OBS) are missing
+                or if the data level is not set
+        """
+        # Get instrument name from PRIMARY header
+        if "PRIMARY" not in self.headers:
+            raise ValueError("PRIMARY header not found")
+
+        instrume = self.headers["PRIMARY"].get("INSTRUME")
+        if instrume is None:
+            raise ValueError("INSTRUME keyword not found in PRIMARY header")
+        # Handle tuple format (value, comment)
+        if isinstance(instrume, tuple):
+            instrume = instrume[0]
+        instrume = str(instrume).lower()
+
+        # Get level
+        if self.level is None:
+            raise ValueError("Data level not set")
+        level = self.level
+
+        # Get DATE-OBS from PRIMARY header
+        date_obs = self.headers["PRIMARY"].get("DATE-OBS")
+        if date_obs is None:
+            raise ValueError("DATE-OBS keyword not found in PRIMARY header")
+        # Handle tuple format (value, comment)
+        if isinstance(date_obs, tuple):
+            date_obs = date_obs[0]
+
+        # Parse DATE-OBS (format: YYYY-MM-DDTHH:MM:SS.sss or similar)
+        # Remove any fractional seconds and parse
+        date_str = str(date_obs).split(".")[0]  # Remove fractional seconds
+        try:
+            dt = datetime.datetime.fromisoformat(date_str)
+        except ValueError:
+            raise ValueError(f"Cannot parse DATE-OBS value: {date_obs}")
+
+        # Format as YYYYMMDDThhmmss
+        datetime_str = dt.strftime("%Y%m%dT%H%M%S")
+
+        return f"{instrume}_SL{level}_{datetime_str}.fits"
+
+    def validate_filename(self, filename):
+        """
+        Validate if a filename matches the EPRV naming convention.
+
+        The convention is: inst_SL#_YYYYMMDDThhmmss.fits
+
+        Args:
+            filename (str): The filename to validate (basename only, no path)
+
+        Returns:
+            bool: True if the filename matches the convention, False otherwise
+        """
+        # Get just the basename if a path was provided
+        basename = os.path.basename(filename)
+        return bool(self.FILENAME_PATTERN.match(basename))
+
+    def check_filename_convention(self, filename):
+        """
+        Check if the filename follows the EPRV naming convention and issue
+        a warning if it doesn't.
+
+        Args:
+            filename (str): The filename to check
+
+        Returns:
+            bool: True if the filename matches the convention, False otherwise
+        """
+        basename = os.path.basename(filename)
+        if not self.validate_filename(basename):
+            try:
+                suggested = self.generate_standard_filename()
+                warnings.warn(
+                    f"Filename '{basename}' does not follow the EPRV naming convention. "
+                    f"Suggested filename: '{suggested}'"
+                )
+            except ValueError:
+                warnings.warn(
+                    f"Filename '{basename}' does not follow the EPRV naming convention "
+                    f"(inst_SL#_YYYYMMDDThhmmss.fits)"
+                )
+            return False
+        return True
 
     # =============================================================================
     # Receipt related members

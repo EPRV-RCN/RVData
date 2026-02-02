@@ -2,6 +2,7 @@ import unicodedata
 import warnings
 
 import numpy as np
+from astropy.io.fits.card import Undefined
 
 
 def to_ascii_safe(input_string):
@@ -43,7 +44,9 @@ def parse_value_to_datatype(keyword: str, datatype: str, in_value):
     try:
         if value is None:
             out_value = None
-        elif isinstance(value, str) and value.lower() == "undefined":
+        elif isinstance(value, Undefined):
+            out_value = None
+        elif isinstance(value, str) and (value.strip() == "" or value.lower() == "undefined"):
             out_value = None
         elif datatype.lower() == "uint":
             out_value = int(value)
