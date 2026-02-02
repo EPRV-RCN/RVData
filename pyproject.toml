@@ -35,6 +35,9 @@ dev = [
     "sphinx-rtd-theme", # ReadTheDocs theme for Sphinx
     "sphinxcontrib-napoleon",
     "sphinx-autodoc-typehints",
+    "nbsphinx",          # Jupyter notebook support in Sphinx
+    "ipykernel",         # Required for nbsphinx to execute notebooks
+    "pandoc",            # Required for nbsphinx
 ]
 
 

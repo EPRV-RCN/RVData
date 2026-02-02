@@ -18,6 +18,7 @@ Documentation for EPRV Data Standardization Project!
    primaryheader.rst
    units.rst
    instrumentoverviews.rst
+   tutorials.rst
    api.rst
    faq.rst
 
