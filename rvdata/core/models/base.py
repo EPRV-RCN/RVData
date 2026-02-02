@@ -233,6 +233,10 @@ class RVDataModel(object):
                 parsed_value = parse_value_to_datatype(key, row["DataType"], value)
                 self.headers["PRIMARY"][key] = parsed_value
 
+        # Add receipt entry for native instrument conversion (if applicable)
+        if instrument is not None:
+            self.receipt_add_entry(f"read_native_{instrument.upper()}_L{lvl}", "PASS")
+
     def to_fits(self, fn):
         """
         Collect the content of this instance into a monolithic FITS file
@@ -247,6 +251,9 @@ class RVDataModel(object):
         if not fn.endswith(".fits"):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
+
+        # Add receipt entry before writing (so it's included in the file)
+        self.receipt_add_entry("to_fits", "PASS")
 
         hdu_list = self._create_hdul()
         # finish up writing
