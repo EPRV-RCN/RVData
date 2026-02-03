@@ -258,6 +258,8 @@ class RVDataModel(object):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
 
+        # Add receipt entry before writing (so it's included in the file)
+        self.receipt_add_entry("to_fits", "PASS")
         # Check filename convention and warn if it doesn't match
         self.check_filename_convention(fn)
 
