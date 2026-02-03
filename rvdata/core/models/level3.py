@@ -318,3 +318,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
         self.set_header("PRIMARY", l3prihdr)
         self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
         self.set_header("ORDER_TABLE", l2obj.headers["ORDER_TABLE"])
+
+        # Inherit receipt from L2 object and add conversion entry
+        self.receipt = l2obj.receipt.copy()
+        self.receipt_add_entry("convert_level2_to_level3", "PASS")
