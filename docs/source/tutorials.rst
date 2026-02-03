@@ -18,10 +18,11 @@ The :doc:`KPF Tutorial <tutorials/KPF_Tutorial>` provides a comprehensive guide 
 - **Level 3**: Creating stitched 1D spectra from L2, plotting spectral features
 - **Level 4**: Creating RV measurements from native KPF L2, analyzing velocities
 
-NEID Tutorials
---------------
+NEID Tutorial
+-------------
+    
+The :doc:`NEID Tutorial <tutorials/NEID_Tutorial>` provides a comprehensive guide to working with NEID data at all levels:
 
-Additional tutorials for NEID data:
-
-- :doc:`Stitch NEID Spectrum <tutorials/Stitch_NEID_Spectrum_Example>`: Creating stitched spectra from NEID L2 data
-- :doc:`NEID L3 Example <tutorials/level3datastandard_from_NEIDlevel2_example>`: Creating L3 standard files from NEID L2
+- **Level 2**: Creating L2 from native NEID L2 file,access headers, examine extensions, plot spectra
+- **Level 3**: Creating stitched 1D spectra from L2, accessing full stitched spectra, examining spectral features
+- **Level 4**: Creating RV measurements from native NEID L2, analyzing velocities

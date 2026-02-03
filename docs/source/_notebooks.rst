@@ -7,5 +7,4 @@
 
    tutorials/DataStandard_Overview
    tutorials/KPF_Tutorial
-   tutorials/Stitch_NEID_Spectrum_Example
-   tutorials/level3datastandard_from_NEIDlevel2_example
+   tutorials/NEID_Tutorial
