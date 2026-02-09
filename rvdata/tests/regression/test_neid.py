@@ -1,5 +1,6 @@
 import requests
 import os
+from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
@@ -33,28 +34,37 @@ def download_files():
 def test_neid():
     native_l2_file = download_files()
 
-    # Check L2
+    # Check L2 - use auto-generated filename
     neidl2 = RV2.from_fits(native_l2_file, instrument="NEID")
-    standard_l2_file = "./neid_L2_standard.fits"
-    neidl2.to_fits(standard_l2_file)
+    standard_l2_file = neidl2.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(standard_l2_file)), \
+        f"L2 filename '{standard_l2_file}' does not match EPRV convention"
+    assert standard_l2_file.startswith("neid_SL2_"), \
+        f"L2 filename should start with 'neid_SL2_', got '{standard_l2_file}'"
     neidl2_obj = RV2.from_fits(standard_l2_file)
 
     check_l2_extensions(standard_l2_file)
     check_l2_header(neidl2_obj.headers["PRIMARY"])
 
-    # Check L3
+    # Check L3 - use auto-generated filename
     neidl3 = RV3.from_fits(native_l2_file, instrument="NEID")
-    standard_l3_file = "./neid_L3_standard.fits"
-    neidl3.to_fits(standard_l3_file)
+    standard_l3_file = neidl3.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(standard_l3_file)), \
+        f"L3 filename '{standard_l3_file}' does not match EPRV convention"
+    assert standard_l3_file.startswith("neid_SL3_"), \
+        f"L3 filename should start with 'neid_SL3_', got '{standard_l3_file}'"
     neidl3_obj = RV3.from_fits(standard_l3_file)
 
     check_l3_extensions(standard_l3_file)
     check_l3_header(neidl3_obj.headers["PRIMARY"])
 
-    # Check L4
+    # Check L4 - use auto-generated filename
     neidl4 = RV4.from_fits(native_l2_file, instrument="NEID")
-    standard_l4_file = "./neid_L4_standard.fits"
-    neidl4.to_fits(standard_l4_file)
+    standard_l4_file = neidl4.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(standard_l4_file)), \
+        f"L4 filename '{standard_l4_file}' does not match EPRV convention"
+    assert standard_l4_file.startswith("neid_SL4_"), \
+        f"L4 filename should start with 'neid_SL4_', got '{standard_l4_file}'"
     neidl4_obj = RV4.from_fits(standard_l4_file)
 
     check_l4_extensions(standard_l4_file)

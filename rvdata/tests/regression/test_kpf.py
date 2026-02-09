@@ -1,5 +1,6 @@
 import requests
 import os
+from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
@@ -41,9 +42,14 @@ def download_files():
 
 def test_kpf():
     l0file, l1file, l2file = download_files()
+
+    # Check L2 - use auto-generated filename
     kpf2 = RV2.from_fits(l1file, l0file=l0file, instrument="KPF")
-    l2_standard = "./kpf_L2_standard.fits"
-    kpf2.to_fits(l2_standard)
+    l2_standard = kpf2.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l2_standard)), \
+        f"L2 filename '{l2_standard}' does not match EPRV convention"
+    assert l2_standard.startswith("kpf_SL2_"), \
+        f"L2 filename should start with 'kpf_SL2_', got '{l2_standard}'"
     l2_obj = RV2.from_fits(l2_standard)
 
     check_l2_extensions(l2_standard)
@@ -53,17 +59,23 @@ def test_kpf():
     # Note: L3 creation requires an RVData-standard L2 file (created above).
     # Native KPF L2 files must first be converted using KPFRV2.from_fits().
     kpf3 = RV3.from_fits(l2_standard, instrument="KPF")
-    l3_standard = "./kpf_L3_standard.fits"
-    kpf3.to_fits(l3_standard)
+    l3_standard = kpf3.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l3_standard)), \
+        f"L3 filename '{l3_standard}' does not match EPRV convention"
+    assert l3_standard.startswith("kpf_SL3_"), \
+        f"L3 filename should start with 'kpf_SL3_', got '{l3_standard}'"
     l3_obj = RV3.from_fits(l3_standard)
 
     check_l3_extensions(l3_standard)
     check_l3_header(l3_obj.headers['PRIMARY'])
 
-    # Check L4
+    # Check L4 - use auto-generated filename
     kpf4 = RV4.from_fits(l2file, instrument="KPF")
-    l4_standard = "./kpf_L4_standard.fits"
-    kpf4.to_fits(l4_standard)
+    l4_standard = kpf4.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l4_standard)), \
+        f"L4 filename '{l4_standard}' does not match EPRV convention"
+    assert l4_standard.startswith("kpf_SL4_"), \
+        f"L4 filename should start with 'kpf_SL4_', got '{l4_standard}'"
     l4_obj = RV4.from_fits(l4_standard)
 
     check_l4_extensions(l4_standard)
