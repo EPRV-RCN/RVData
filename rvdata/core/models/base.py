@@ -495,7 +495,10 @@ class RVDataModel(object):
         if data is None:
             self.data[ext_name] = FITS_TYPE_MAP[ext_type]([])
         else:
-            self.data[ext_name] = FITS_TYPE_MAP[ext_type](data)
+            if ext_type == "BinTableHDU" and isinstance(data, pd.DataFrame):
+                self.data[ext_name] = Table.from_pandas(data)
+            else:
+                self.data[ext_name] = FITS_TYPE_MAP[ext_type](data)
 
     def del_extension(self, ext_name):
         """
@@ -536,7 +539,10 @@ class RVDataModel(object):
         """
         # check whether the extension already exist
         if ext_name in self.extensions.keys():
-            if isinstance(data, type(FITS_TYPE_MAP[self.extensions[ext_name]]([]))):
+            ext_type = self.extensions[ext_name]
+            if ext_type == "BinTableHDU" and isinstance(data, pd.DataFrame):
+                data = Table.from_pandas(data)
+            if isinstance(data, type(FITS_TYPE_MAP[ext_type]([]))):
                 self.data[ext_name] = data
             else:
                 raise TypeError(
@@ -588,11 +594,20 @@ class RVDataModel(object):
                     else:
                         raise KeyError("A different error...")
             elif value == "BinTableHDU":
-                table = Table.from_pandas(self.data[key])
+                table = self.data[key]
                 self.headers[key]["NAXIS1"] = len(table)
                 head = fits.Header(self.headers[key])
                 hdu = fits.BinTableHDU(data=table, header=head)
                 hdu.name = hduname
+                # Restore column metadata that BinTableHDU may have overwritten
+                stored = self.headers[key]
+                for i in range(1, len(table.columns) + 1):
+                    for kw in ("TUNIT", "TDISP", "TNULL"):
+                        card = f"{kw}{i}"
+                        if card in stored:
+                            hdu.header[card] = stored[card]
+                    if f"TUNIT{i}" in stored:
+                        hdu.columns[i - 1].unit = stored[f"TUNIT{i}"]
                 hdu_list.append(hdu)
             else:
                 print(

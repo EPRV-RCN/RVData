@@ -96,7 +96,7 @@ class RV2(rvdata.core.models.base.RVDataModel):
                 data = np.array(hdu.data)
                 self.set_data(hdu.name, data)
             elif fits_type == "BinTableHDU":
-                data = Table(hdu.data).to_pandas()
+                data = Table.read(hdu)
                 self.set_data(hdu.name, data)
 
             self.set_header(hdu.name, hdu.header)
@@ -134,7 +134,7 @@ class RV2(rvdata.core.models.base.RVDataModel):
             if isinstance(ext, np.ndarray):
                 row = "|{:20s} |{:20s} |{:20s}\n".format(name, "array", str(ext.shape))
                 head += row
-            elif isinstance(ext, pd.DataFrame):
+            elif isinstance(ext, Table):
                 row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
                 head += row
         print(head)
@@ -182,11 +182,20 @@ class RV2(rvdata.core.models.base.RVDataModel):
                     else:
                         raise KeyError("A different error...")
             elif value == "BinTableHDU":
-                table = Table.from_pandas(self.data[key])
+                table = self.data[key]
                 self.headers[key]["NAXIS1"] = len(table)
                 head = fits.Header(self.headers[key])
                 hdu = fits.BinTableHDU(data=table, header=head)
                 hdu.name = hduname
+                # Restore column metadata that BinTableHDU may have overwritten
+                stored = self.headers[key]
+                for i in range(1, len(table.columns) + 1):
+                    for kw in ("TUNIT", "TDISP", "TNULL"):
+                        card = f"{kw}{i}"
+                        if card in stored:
+                            hdu.header[card] = stored[card]
+                    if f"TUNIT{i}" in stored:
+                        hdu.columns[i - 1].unit = stored[f"TUNIT{i}"]
                 hdu_list.append(hdu)
             else:
                 print(
