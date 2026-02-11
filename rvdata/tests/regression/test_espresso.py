@@ -11,6 +11,11 @@ from rvdata.tests.regression.compliance import (
     check_l2_header,
     check_l4_extensions,
     check_l4_header,
+    check_l4_rv_columns,
+    check_order_table_columns,
+    check_receipt_columns,
+    check_drp_config_columns,
+    check_telemetry_columns,
 )
 
 FILE_URLS = {
@@ -71,6 +76,10 @@ def test_espresso():
     l2_obj = RV2.from_fits(l2_standard)
     check_l2_extensions(l2_standard)
     check_l2_header(l2_obj.headers["PRIMARY"])
+    check_order_table_columns(l2_standard)
+    check_receipt_columns(l2_standard)
+    check_drp_config_columns(l2_standard)
+    check_telemetry_columns(l2_standard)
 
     # Test Level 4 - use auto-generated filename
     espr4 = RV4.from_fits(str(raw_file), instrument="ESPRESSO")
@@ -82,6 +91,9 @@ def test_espresso():
     l4_obj = RV4.from_fits(l4_standard)
     check_l4_extensions(l4_standard)
     check_l4_header(l4_obj.headers["PRIMARY"])
+    check_l4_rv_columns(l4_standard)
+    check_receipt_columns(l4_standard)
+    check_drp_config_columns(l4_standard)
 
 
 def test_espresso_benchmark(benchmark):

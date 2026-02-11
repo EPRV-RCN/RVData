@@ -108,20 +108,20 @@ class NEIDRV4(RV4):
                         for order in range(122)
                     ]
                 ),
-                "RV_error": np.full(122, np.nan),
-                "BC_vel": np.array(
+                "RV_ERR": np.full(122, np.nan),
+                "BERV": np.array(
                     [
                         hdul["PRIMARY"].header[f"SSBRV{173 - order:03d}"]
                         for order in range(122)
                     ]
                 ),
-                "wave_start": np.full(122, np.nan),
-                "wave_end": np.full(122, np.nan),
-                "pixel_start": np.full(122, np.nan),
-                "pixel_end": np.full(122, np.nan),
-                "order_index": np.arange(122),
-                "echelle_order": 173 - np.arange(122),
-                "weight": np.array(
+                "WAVE_START": np.full(122, np.nan),
+                "WAVE_END": np.full(122, np.nan),
+                "PIXEL_START": np.full(122, np.nan),
+                "PIXEL_END": np.full(122, np.nan),
+                "ORDER_INDEX": np.arange(122),
+                "ECHELLE_ORDER": 173 - np.arange(122),
+                "WEIGHT": np.array(
                     [
                         (
                             hdul["CCFS"].header[f"CCFWT{173 - order:03d}"]
@@ -137,7 +137,7 @@ class NEIDRV4(RV4):
 
         # Add BERV to the primary header and write primary header
         order_bjd_sort = rv_table_data["BJD_TDB"][np.argsort(rv_table_data["BJD_TDB"])]
-        order_berv_sort = rv_table_data["BC_vel"][np.argsort(rv_table_data["BJD_TDB"])]
+        order_berv_sort = rv_table_data["BERV"][np.argsort(rv_table_data["BJD_TDB"])]
         phead["BERV"] = np.interp(phead["BJDTDB"], order_bjd_sort, order_berv_sort)
 
         self.set_header("PRIMARY", phead)
@@ -150,15 +150,15 @@ class NEIDRV4(RV4):
                 fsr_pixel_start = int(neid_fsr["fsr_start"].values[order])
                 fsr_pixel_end = int(neid_fsr["fsr_end"].values[order])
 
-                rv_table_data["wave_start"][order] = hdul["SCIWAVE"].data[
+                rv_table_data["WAVE_START"][order] = hdul["SCIWAVE"].data[
                     order, fsr_pixel_start
                 ]
-                rv_table_data["wave_end"][order] = hdul["SCIWAVE"].data[
+                rv_table_data["WAVE_END"][order] = hdul["SCIWAVE"].data[
                     order, fsr_pixel_end
                 ]
 
-                rv_table_data["pixel_start"][order] = fsr_pixel_start
-                rv_table_data["pixel_end"][order] = fsr_pixel_end
+                rv_table_data["PIXEL_START"][order] = fsr_pixel_start
+                rv_table_data["PIXEL_END"][order] = fsr_pixel_end
 
         self.set_data("RV1", pd.DataFrame(rv_table_data))
         ext_table["Name"].append("RV1")

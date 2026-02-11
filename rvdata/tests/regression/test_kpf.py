@@ -5,9 +5,14 @@ from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
 
-from rvdata.tests.regression.compliance import check_l2_extensions, check_l2_header
-from rvdata.tests.regression.compliance import check_l3_extensions, check_l3_header
-from rvdata.tests.regression.compliance import check_l4_extensions, check_l4_header
+from rvdata.tests.regression.compliance import (
+    check_l2_extensions, check_l2_header,
+    check_l3_extensions, check_l3_header,
+    check_l4_extensions, check_l4_header,
+    check_l4_rv_columns,
+    check_order_table_columns, check_receipt_columns,
+    check_drp_config_columns, check_telemetry_columns,
+)
 
 
 file_urls = {
@@ -54,6 +59,10 @@ def test_kpf():
 
     check_l2_extensions(l2_standard)
     check_l2_header(l2_obj.headers['PRIMARY'])
+    check_order_table_columns(l2_standard)
+    check_receipt_columns(l2_standard)
+    check_drp_config_columns(l2_standard)
+    check_telemetry_columns(l2_standard)
 
     # Check L3
     # Note: L3 creation requires an RVData-standard L2 file (created above).
@@ -68,6 +77,9 @@ def test_kpf():
 
     check_l3_extensions(l3_standard)
     check_l3_header(l3_obj.headers['PRIMARY'])
+    check_order_table_columns(l3_standard)
+    check_receipt_columns(l3_standard)
+    check_drp_config_columns(l3_standard)
 
     # Check L4 - use auto-generated filename
     kpf4 = RV4.from_fits(l2file, instrument="KPF")
@@ -80,6 +92,9 @@ def test_kpf():
 
     check_l4_extensions(l4_standard)
     check_l4_header(l4_obj.headers['PRIMARY'])
+    check_l4_rv_columns(l4_standard)
+    check_receipt_columns(l4_standard)
+    check_drp_config_columns(l4_standard)
 
 
 def test_kpf_benchmark(benchmark):

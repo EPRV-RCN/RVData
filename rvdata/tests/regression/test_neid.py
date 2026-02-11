@@ -5,9 +5,14 @@ from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
 
-from rvdata.tests.regression.compliance import check_l2_extensions, check_l2_header
-from rvdata.tests.regression.compliance import check_l3_extensions, check_l3_header
-from rvdata.tests.regression.compliance import check_l4_extensions, check_l4_header
+from rvdata.tests.regression.compliance import (
+    check_l2_extensions, check_l2_header,
+    check_l3_extensions, check_l3_header,
+    check_l4_extensions, check_l4_header,
+    check_l4_rv_columns,
+    check_order_table_columns, check_receipt_columns,
+    check_drp_config_columns, check_telemetry_columns,
+)
 
 file_urls = {
     "NEID": {
@@ -45,6 +50,10 @@ def test_neid():
 
     check_l2_extensions(standard_l2_file)
     check_l2_header(neidl2_obj.headers["PRIMARY"])
+    check_order_table_columns(standard_l2_file)
+    check_receipt_columns(standard_l2_file)
+    check_drp_config_columns(standard_l2_file)
+    check_telemetry_columns(standard_l2_file)
 
     # Check L3 - use auto-generated filename
     neidl3 = RV3.from_fits(native_l2_file, instrument="NEID")
@@ -57,6 +66,9 @@ def test_neid():
 
     check_l3_extensions(standard_l3_file)
     check_l3_header(neidl3_obj.headers["PRIMARY"])
+    check_order_table_columns(standard_l3_file)
+    check_receipt_columns(standard_l3_file)
+    check_drp_config_columns(standard_l3_file)
 
     # Check L4 - use auto-generated filename
     neidl4 = RV4.from_fits(native_l2_file, instrument="NEID")
@@ -69,6 +81,9 @@ def test_neid():
 
     check_l4_extensions(standard_l4_file)
     check_l4_header(neidl4_obj.headers["PRIMARY"])
+    check_l4_rv_columns(standard_l4_file)
+    check_receipt_columns(standard_l4_file)
+    check_drp_config_columns(standard_l4_file)
 
 
 def test_neid_benchmark(benchmark):

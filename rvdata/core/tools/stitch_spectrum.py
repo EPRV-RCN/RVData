@@ -172,7 +172,7 @@ def echelle_order_to_order_index(echelle_order, order_table):
     echelle_order : int
         The echelle order number to convert.
     order_table : pandas.DataFrame
-        DataFrame containing 'echelle_order' and 'order_index' columns.
+        DataFrame containing 'ECHELLE_ORDER' and 'ORDER_INDEX' columns.
     Returns:
     --------
     int or None
@@ -180,8 +180,8 @@ def echelle_order_to_order_index(echelle_order, order_table):
     """
 
     try:
-        return order_table.loc[order_table["echelle_order"] == echelle_order][
-            "order_index"
+        return order_table.loc[order_table["ECHELLE_ORDER"] == echelle_order][
+            "ORDER_INDEX"
         ].values[0]
     except IndexError:
         return None
@@ -522,7 +522,7 @@ def calculate_normalized_blaze_function(
     inst_stitch_config : dict
         Instrument stitching configuration dictionary.
     order_table : pandas.DataFrame
-        DataFrame containing 'echelle_order' and 'order_index' columns.
+        DataFrame containing 'ECHELLE_ORDER' and 'ORDER_INDEX' columns.
 
     Returns:
     --------

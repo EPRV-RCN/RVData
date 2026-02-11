@@ -224,10 +224,21 @@ class KPFRV2(RV2):
             data=hdul0["EXPMETER_SCI"].data,
             header=OrderedDict(hdul0["EXPMETER_SCI"].header),
         )
+        telemetry = Table(hdul1["TELEMETRY"].data).to_pandas()
+        telemetry_colmap = {
+            "keyword": "SENSOR",
+            "average": "VALUE",
+            "units": "UNITS",
+        }
+        for native_col, std_col in telemetry_colmap.items():
+            if native_col in telemetry.columns:
+                telemetry[std_col] = telemetry[native_col]
+        if "DATE" not in telemetry.columns:
+            telemetry["DATE"] = hdul1["PRIMARY"].header.get("DATE-OBS", "")
         self.create_extension(
             "TELEMETRY",
             "BinTableHDU",
-            data=hdul1["TELEMETRY"].data,
+            data=telemetry,
             header=OrderedDict(hdul1["TELEMETRY"].header),
         )
 
@@ -237,18 +248,34 @@ class KPFRV2(RV2):
         self.set_header("INSTRUMENT_HEADER", hdul1["PRIMARY"].header)
 
         self.set_header("DRP_CONFIG", OrderedDict(hdul1["CONFIG"].header))
-        self.set_data("DRP_CONFIG", Table(hdul1["CONFIG"].data).to_pandas())
+        drp_config = Table(hdul1["CONFIG"].data).to_pandas()
+        if "line" in drp_config.columns:
+            drp_config["ENTRY"] = drp_config["line"]
+        self.set_data("DRP_CONFIG", drp_config)
 
         self.set_header("RECEIPT", OrderedDict(hdul1["RECEIPT"].header))
-        self.set_data("RECEIPT", Table(hdul1["RECEIPT"].data).to_pandas())
+        receipt = Table(hdul1["RECEIPT"].data).to_pandas()
+        receipt_colmap = {
+            "Time": "TIME",
+            "Code_Release": "CODE_RELEASE",
+            "Branch_Name": "BRANCH_NAME",
+            "Commit_Hash": "COMMIT_HASH",
+            "Module_Name": "FUNCTION",
+            "Module_Param": "ARGS",
+            "Status": "STATUS",
+        }
+        for native_col, std_col in receipt_colmap.items():
+            if native_col in receipt.columns:
+                receipt[std_col] = receipt[native_col]
+        self.set_data("RECEIPT", receipt)
 
         wavelengths = self.data["TRACE2_WAVE"]
         order_table_data = pd.DataFrame(
             {
-                "echelle_order": 137 - np.arange(wavelengths.shape[0]),
-                "order_index": np.arange(wavelengths.shape[0]),
-                "wave_start": np.nanmin(wavelengths.data, axis=1),
-                "wave_end": np.nanmax(wavelengths.data, axis=1),
+                "ECHELLE_ORDER": 137 - np.arange(wavelengths.shape[0]),
+                "ORDER_INDEX": np.arange(wavelengths.shape[0]),
+                "WAVE_START": np.nanmin(wavelengths.data, axis=1),
+                "WAVE_END": np.nanmax(wavelengths.data, axis=1),
             }
         )
         self.set_data("ORDER_TABLE", order_table_data)

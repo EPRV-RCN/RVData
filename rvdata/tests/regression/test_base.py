@@ -9,6 +9,10 @@ from rvdata.tests.regression.compliance import (
     check_l3_header,
     check_l4_extensions,
     check_l4_header,
+    check_l4_rv_columns,
+    check_order_table_columns,
+    check_receipt_columns,
+    check_drp_config_columns,
 )
 
 
@@ -20,6 +24,9 @@ def test_base():
 
     check_l2_extensions(l2_standard)
     check_l2_header(l2_obj.headers["PRIMARY"])
+    check_order_table_columns(l2_standard)
+    check_receipt_columns(l2_standard)
+    check_drp_config_columns(l2_standard)
 
     l3 = RV3()
     l3_standard = "./base_L3_standard.fits"
@@ -28,6 +35,9 @@ def test_base():
 
     check_l3_extensions(l3_standard)
     check_l3_header(l3_obj.headers["PRIMARY"])
+    check_order_table_columns(l3_standard)
+    check_receipt_columns(l3_standard)
+    check_drp_config_columns(l3_standard)
 
     l4 = RV4()
     l4_standard = "./base_L4_standard.fits"
@@ -36,6 +46,9 @@ def test_base():
 
     check_l4_extensions(l4_standard)
     check_l4_header(l4_obj.headers["PRIMARY"])
+    check_l4_rv_columns(l4_standard)
+    check_receipt_columns(l4_standard)
+    check_drp_config_columns(l4_standard)
 
 
 if __name__ == "__main__":
