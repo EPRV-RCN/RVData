@@ -282,5 +282,36 @@ def check_telemetry_columns(inpfile):
     _check_table_columns(inpfile, "TELEMETRY", "L2-TELEMETRY-columns.csv")
 
 
+def check_l2_compliance(inpfile):
+    """Run all Level 2 compliance checks."""
+    check_l2_extensions(inpfile)
+    with fits.open(inpfile) as hdul:
+        check_l2_header(hdul["PRIMARY"].header)
+    check_order_table_columns(inpfile)
+    check_receipt_columns(inpfile)
+    check_drp_config_columns(inpfile)
+    check_telemetry_columns(inpfile)
+
+
+def check_l3_compliance(inpfile):
+    """Run all Level 3 compliance checks."""
+    check_l3_extensions(inpfile)
+    with fits.open(inpfile) as hdul:
+        check_l3_header(hdul["PRIMARY"].header)
+    check_order_table_columns(inpfile)
+    check_receipt_columns(inpfile)
+    check_drp_config_columns(inpfile)
+
+
+def check_l4_compliance(inpfile):
+    """Run all Level 4 compliance checks."""
+    check_l4_extensions(inpfile)
+    with fits.open(inpfile) as hdul:
+        check_l4_header(hdul["PRIMARY"].header)
+    check_l4_rv_columns(inpfile)
+    check_receipt_columns(inpfile)
+    check_drp_config_columns(inpfile)
+
+
 if __name__ == "__main__":
     check_l2_extensions("rvstandard.fits")
