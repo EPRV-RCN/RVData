@@ -22,22 +22,27 @@ def _make_fits_with_metadata(path):
     phdu.header["DATE-OBS"] = "2024-01-01T00:00:00"
 
     # Build a BinTableHDU with explicit column metadata
-    col1 = fits.Column(name="BJD_TDB", format="D", unit="d", disp="F15.7",
-                        array=np.array([2460000.5, 2460001.5]))
-    col2 = fits.Column(name="RV", format="E", unit="m/s", disp="F10.3",
-                        array=np.array([1.23, 4.56]))
-    col3 = fits.Column(name="RV_ERR", format="E", unit="m/s", disp="F10.3",
-                        array=np.array([0.01, 0.02]))
+    col1 = fits.Column(
+        name="BJD_TDB", format="D", unit="d", disp="F15.7",
+        array=np.array([2460000.5, 2460001.5]))
+    col2 = fits.Column(
+        name="RV", format="E", unit="m/s", disp="F10.3",
+        array=np.array([1.23, 4.56]))
+    col3 = fits.Column(
+        name="RV_ERR", format="E", unit="m/s", disp="F10.3",
+        array=np.array([0.01, 0.02]))
 
     rv_hdu = fits.BinTableHDU.from_columns([col1, col2, col3], name="RV1")
 
     # EXT_DESCRIPT table (required by RV4)
-    ext_col1 = fits.Column(name="Name", format="20A",
-                            array=np.array(["RV1", "EXT_DESCRIPT", "INSTRUMENT_HEADER",
-                                            "RECEIPT", "DRP_CONFIG"]))
-    ext_col2 = fits.Column(name="Description", format="60A",
-                            array=np.array(["RV table", "Extension descriptions",
-                                            "Instrument header", "Receipt", "DRP config"]))
+    ext_col1 = fits.Column(
+        name="Name", format="20A",
+        array=np.array(["RV1", "EXT_DESCRIPT", "INSTRUMENT_HEADER",
+                        "RECEIPT", "DRP_CONFIG"]))
+    ext_col2 = fits.Column(
+        name="Description", format="60A",
+        array=np.array(["RV table", "Extension descriptions",
+                        "Instrument header", "Receipt", "DRP config"]))
     ext_hdu = fits.BinTableHDU.from_columns([ext_col1, ext_col2], name="EXT_DESCRIPT")
 
     # INSTRUMENT_HEADER as ImageHDU
