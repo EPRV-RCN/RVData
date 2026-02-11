@@ -152,9 +152,13 @@ class KPFRV4(RV4):
             "Module_Param": "ARGS",
             "Status": "STATUS",
         }
+        mapped_native_cols = []
         for native_col, std_col in receipt_colmap.items():
             if native_col in receipt.columns:
                 receipt[std_col] = receipt[native_col]
+                mapped_native_cols.append(native_col)
+        if mapped_native_cols:
+            receipt = receipt.drop(columns=mapped_native_cols)
         self.set_data("RECEIPT", receipt)
 
         all_exts = list(self.extensions.keys())

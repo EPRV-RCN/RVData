@@ -69,11 +69,11 @@ A Level 4 file will contain derived data products such as RV measurements, cross
 L4 data products are expected to be derived from an L2 file, and inherit the PRIMARY, INSTRUMENT_HEADER, RECEIPT, and DRP_CONFIG 
 extensions from that L2.
 
-The RV extension is a Binary Table that contains the following columns: BJD_TDB, RV, RV_ERR, BERV, WAVE_START, WAVE_END.
+The RV1 extension is a Binary Table that contains the following columns: BJD_TDB, RV, RV_ERR, BERV, WAVE_START, WAVE_END.
 Optional, additional columns include: PIXEL_START, PIXEL_END, ORDER_INDEX, ECHELLE_ORDER, WEIGHT, RESIDUAL_DRIFT.
 The WAVE_START and WAVE_END values can be set to same number if reporting central wavelength of the segment.
 
-The header for this extension should contain RVMETHOD, RVSTART, RVSTEP, MASK keywords.
+The header for the RV1 extension should contain RVMETHOD, RVSTART, RVSTEP, MASK keywords.
 
 .. csv-table::
     :header-rows: 1

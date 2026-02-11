@@ -202,8 +202,6 @@ def _check_table_columns(
         allowed_extra_prefixes). If False, only check that required
         columns are present.
     """
-    from astropy.table import Table
-
     csv_path = (
         importlib.resources.files("rvdata.core.models.config") / csv_filename
     )
@@ -213,8 +211,15 @@ def _check_table_columns(
     # Determine required columns: if CSV has a Required column use it,
     # otherwise all columns are required
     if "Required" in reference_columns.columns:
+        normalized_required = (
+            reference_columns["Required"]
+            .astype(str)
+            .str.strip()
+            .str.casefold()
+        )
+        truthy_values = {"yes", "y", "true", "1"}
         required_columns = reference_columns.loc[
-            reference_columns["Required"] == "Yes", "Name"
+            normalized_required.isin(truthy_values), "Name"
         ].tolist()
     else:
         required_columns = all_standard_columns
@@ -224,8 +229,7 @@ def _check_table_columns(
             f"{ext_name} extension not found in {inpfile}"
         )
 
-        table = Table(hdul[ext_name].data).to_pandas()
-        actual_columns = table.columns.tolist()
+        actual_columns = hdul[ext_name].columns.names
 
         # Check all required columns are present
         for col in required_columns:
@@ -276,10 +280,12 @@ def check_telemetry_columns(inpfile):
 
     Only checks if the TELEMETRY extension is present (it is optional).
     """
-    with fits.open(inpfile) as hdul:
-        if "TELEMETRY" not in hdul:
-            return
-    _check_table_columns(inpfile, "TELEMETRY", "L2-TELEMETRY-columns.csv")
+    try:
+        _check_table_columns(inpfile, "TELEMETRY", "L2-TELEMETRY-columns.csv")
+    except AssertionError as e:
+        if "extension not found" in str(e):
+            return  # TELEMETRY is optional
+        raise
 
 
 def check_l2_compliance(inpfile):
