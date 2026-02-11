@@ -551,6 +551,23 @@ class RVDataModel(object):
         else:
             raise NameError("Name {} does not exist as extension".format(ext_name))
 
+    @staticmethod
+    def _restore_column_metadata(hdu, stored_header):
+        """Restore TUNIT, TDISP, and TNULL cards that BinTableHDU may overwrite.
+
+        The BinTableHDU constructor can normalize or drop column metadata
+        (e.g. ``m/s`` becomes ``m s-1``).  This method copies the original
+        values back from the stored header into both the HDU header and
+        the Column objects so they survive ``writeto()``.
+        """
+        for i in range(1, len(hdu.columns) + 1):
+            for kw in ("TUNIT", "TDISP", "TNULL"):
+                card = f"{kw}{i}"
+                if card in stored_header:
+                    hdu.header[card] = stored_header[card]
+            if f"TUNIT{i}" in stored_header:
+                hdu.columns[i - 1].unit = stored_header[f"TUNIT{i}"]
+
     def _create_hdul(self):
         """
         Create an hdul in FITS format.
@@ -595,19 +612,11 @@ class RVDataModel(object):
                         raise KeyError("A different error...")
             elif value == "BinTableHDU":
                 table = self.data[key]
-                self.headers[key]["NAXIS1"] = len(table)
+                self.headers[key]["NAXIS2"] = len(table)
                 head = fits.Header(self.headers[key])
                 hdu = fits.BinTableHDU(data=table, header=head)
                 hdu.name = hduname
-                # Restore column metadata that BinTableHDU may have overwritten
-                stored = self.headers[key]
-                for i in range(1, len(table.columns) + 1):
-                    for kw in ("TUNIT", "TDISP", "TNULL"):
-                        card = f"{kw}{i}"
-                        if card in stored:
-                            hdu.header[card] = stored[card]
-                    if f"TUNIT{i}" in stored:
-                        hdu.columns[i - 1].unit = stored[f"TUNIT{i}"]
+                self._restore_column_metadata(hdu, self.headers[key])
                 hdu_list.append(hdu)
             else:
                 print(

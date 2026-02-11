@@ -1,6 +1,6 @@
 """
-Tests that BinTableHDU column metadata (TUNIT, TFORM, TDISP) survives
-a read/write round-trip when stored as astropy Table internally.
+Tests that BinTableHDU column metadata (TUNIT, TFORM, TDISP, TNULL)
+survives a read/write round-trip when stored as astropy Table internally.
 """
 
 import os
@@ -31,8 +31,12 @@ def _make_fits_with_metadata(path):
     col3 = fits.Column(
         name="RV_ERR", format="E", unit="m/s", disp="F10.3",
         array=np.array([0.01, 0.02]))
+    col4 = fits.Column(
+        name="FLAG", format="J", null=-999,
+        array=np.array([1, 2]))
 
-    rv_hdu = fits.BinTableHDU.from_columns([col1, col2, col3], name="RV1")
+    rv_hdu = fits.BinTableHDU.from_columns(
+        [col1, col2, col3, col4], name="RV1")
 
     # EXT_DESCRIPT table (required by RV4)
     ext_col1 = fits.Column(
@@ -69,12 +73,27 @@ def test_bintable_metadata_roundtrip():
 
         _make_fits_with_metadata(src)
 
+        ncols = 4  # BJD_TDB, RV, RV_ERR, FLAG
+
         # Read original metadata
         with fits.open(src) as hdul_orig:
             orig_header = hdul_orig["RV1"].header
-            orig_tunits = {i: orig_header.get(f"TUNIT{i}") for i in range(1, 4)}
-            orig_tforms = {i: orig_header.get(f"TFORM{i}") for i in range(1, 4)}
-            orig_tdisps = {i: orig_header.get(f"TDISP{i}") for i in range(1, 4)}
+            orig_tunits = {
+                i: orig_header.get(f"TUNIT{i}")
+                for i in range(1, ncols + 1)
+            }
+            orig_tforms = {
+                i: orig_header.get(f"TFORM{i}")
+                for i in range(1, ncols + 1)
+            }
+            orig_tdisps = {
+                i: orig_header.get(f"TDISP{i}")
+                for i in range(1, ncols + 1)
+            }
+            orig_tnulls = {
+                i: orig_header.get(f"TNULL{i}")
+                for i in range(1, ncols + 1)
+            }
 
         # Round-trip through RV4
         obj = RV4.from_fits(src)
@@ -83,13 +102,15 @@ def test_bintable_metadata_roundtrip():
         # Read back and compare
         with fits.open(dst) as hdul_out:
             out_header = hdul_out["RV1"].header
-            for i in range(1, 4):
+            for i in range(1, ncols + 1):
                 assert out_header.get(f"TUNIT{i}") == orig_tunits[i], \
-                    f"TUNIT{i} mismatch: {out_header.get(f'TUNIT{i}')} != {orig_tunits[i]}"
+                    f"TUNIT{i}: {out_header.get(f'TUNIT{i}')} != {orig_tunits[i]}"
                 assert out_header.get(f"TFORM{i}") == orig_tforms[i], \
-                    f"TFORM{i} mismatch: {out_header.get(f'TFORM{i}')} != {orig_tforms[i]}"
+                    f"TFORM{i}: {out_header.get(f'TFORM{i}')} != {orig_tforms[i]}"
                 assert out_header.get(f"TDISP{i}") == orig_tdisps[i], \
-                    f"TDISP{i} mismatch: {out_header.get(f'TDISP{i}')} != {orig_tdisps[i]}"
+                    f"TDISP{i}: {out_header.get(f'TDISP{i}')} != {orig_tdisps[i]}"
+                assert out_header.get(f"TNULL{i}") == orig_tnulls[i], \
+                    f"TNULL{i}: {out_header.get(f'TNULL{i}')} != {orig_tnulls[i]}"
 
 
 def test_internal_data_is_astropy_table():

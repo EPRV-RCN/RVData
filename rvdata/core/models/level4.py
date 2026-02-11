@@ -182,19 +182,11 @@ class RV4(rvdata.core.models.base.RVDataModel):
                         raise KeyError("A different error...")
             elif value == "BinTableHDU":
                 table = self.data[key]
-                self.headers[key]["NAXIS1"] = len(table)
+                self.headers[key]["NAXIS2"] = len(table)
                 head = fits.Header(self.headers[key])
                 hdu = fits.BinTableHDU(data=table, header=head)
                 hdu.name = hduname
-                # Restore column metadata that BinTableHDU may have overwritten
-                stored = self.headers[key]
-                for i in range(1, len(table.columns) + 1):
-                    for kw in ("TUNIT", "TDISP", "TNULL"):
-                        card = f"{kw}{i}"
-                        if card in stored:
-                            hdu.header[card] = stored[card]
-                    if f"TUNIT{i}" in stored:
-                        hdu.columns[i - 1].unit = stored[f"TUNIT{i}"]
+                self._restore_column_metadata(hdu, self.headers[key])
                 hdu_list.append(hdu)
             else:
                 print(
