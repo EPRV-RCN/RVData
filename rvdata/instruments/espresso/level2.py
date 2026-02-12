@@ -212,7 +212,12 @@ class ESPRESSORV2(RV2):
 
             # Properly construct the file path
             table_order_path = os.path.join(base_dir, "config", "table_order.csv")
-            self.set_data("ORDER_TABLE", pd.read_csv(table_order_path))
+            order_df = pd.read_csv(table_order_path)
+            order_df["ECHELLE_ORDER"] = order_df["ETC/Int_Order"]
+            order_df["ORDER_INDEX"] = np.arange(len(order_df))
+            order_df["WAVE_START"] = order_df["start_wav[nm]"]
+            order_df["WAVE_END"] = order_df["endwav[nm]"]
+            self.set_data("ORDER_TABLE", order_df)
         except Exception as e:
             print("Error while setting ORDER_TABLE data:", e)
         # Remove empty extensions

@@ -1,7 +1,13 @@
-Name,Description
-BJD_TDB,BJD in barycentric dynamical time
-RV,radial velocity
-RV_ERR,uncertainty in radial velocity
-BERV,barycentric earth radial velocity
-WAVE_START,start wavelength of RV
-WAVE_END,end wavelength of RV
+Name,Required,Description
+BJD_TDB,Yes,BJD in barycentric dynamical time
+RV,Yes,radial velocity
+RV_ERR,Yes,uncertainty in radial velocity
+BERV,Yes,barycentric earth radial velocity
+WAVE_START,Yes,start wavelength of RV
+WAVE_END,Yes,end wavelength of RV
+PIXEL_START,No,start pixel of RV
+PIXEL_END,No,end pixel of RV
+ORDER_INDEX,No,order index (0-based)
+ECHELLE_ORDER,No,physical echelle order number
+WEIGHT,No,RV weight
+RESIDUAL_DRIFT,No,residual instrumental drift
