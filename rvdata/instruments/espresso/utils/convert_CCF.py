@@ -60,10 +60,10 @@ def convert_RV(RV4, file_path, trace_nb=1):
             {
                 "BJD_TDB": [header["HIERARCH ESO QC BJD"]],
                 "RV": [header["HIERARCH ESO QC CCF RV"]],
-                "RV_error": [header["HIERARCH ESO QC CCF RV ERROR"]],
-                "BC_vel": [header["HIERARCH ESO QC BERV"]],
-                "wave_start": [np.nan],
-                "wave_end": [np.nan],
+                "RV_ERR": [header["HIERARCH ESO QC CCF RV ERROR"]],
+                "BERV": [header["HIERARCH ESO QC BERV"]],
+                "WAVE_START": [np.nan],
+                "WAVE_END": [np.nan],
             }
         )
         if f"RV{trace_nb}" not in RV4.extensions:
@@ -157,10 +157,10 @@ def convert_custom_files(RV4, file_path):
                     {
                         "BJD_TDB": [header["HIERARCH ESO QC BJD"]],
                         "RV": [header["HIERARCH ESO QC CCF RV"]],
-                        "RV_error": [header["HIERARCH ESO QC CCF RV ERROR"]],
-                        "BC_vel": [header["HIERARCH ESO QC BERV"]],
-                        "wave_start": [np.nan],
-                        "wave_end": [np.nan],
+                        "RV_ERR": [header["HIERARCH ESO QC CCF RV ERROR"]],
+                        "BERV": [header["HIERARCH ESO QC BERV"]],
+                        "WAVE_START": [np.nan],
+                        "WAVE_END": [np.nan],
                     }
                 )
                 RV4.create_extension(
