@@ -227,10 +227,10 @@ class MAROONXRV2(RV2):
                 wave_end.append(np.nanmax(wave))
 
         order_table = pd.DataFrame({
-            "echelle_order": np.array(e_order, dtype=np.float32),
-            "order_index": np.array(i_order, dtype=np.float32),
-            "wave_start": np.array(wave_start, dtype=np.float32),
-            "wave_end": np.array(wave_end, dtype=np.float32),
+            "ECHELLE_ORDER": np.array(e_order, dtype=np.float32),
+            "ORDER_INDEX": np.array(i_order, dtype=np.float32),
+            "WAVE_START": np.array(wave_start, dtype=np.float32),
+            "WAVE_END": np.array(wave_end, dtype=np.float32),
         })
         return order_table
 

@@ -202,8 +202,13 @@ class NIRPSRV2(RV2):
             # Properly construct the file path
             table_order_path = os.path.join(base_dir, "config", "table_order.csv")
             table_order_df = pd.read_csv(table_order_path)
-            table_order_df['index_order'] -= 1
-            self.set_data('ORDER_TABLE', table_order_df)
+            standardized_order_df = pd.DataFrame({
+                'ECHELLE_ORDER': table_order_df['physical_order'],
+                'ORDER_INDEX': table_order_df['index_order'] - 1,
+                'WAVE_START': table_order_df['start_wav(nm)'],
+                'WAVE_END': table_order_df['end_wav(nm)'],
+            })
+            self.set_data('ORDER_TABLE', standardized_order_df)
         except Exception as e:
             print('Error while setting ORDER_TABLE data:', e)
         # Remove empty extensions
