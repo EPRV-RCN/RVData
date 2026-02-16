@@ -158,7 +158,11 @@ def standardizeMXHeader(prime, file, obstype, channel, datalvl='L2'):
         Dictionary containing standardized header keywords.
     """
 
-    hmap_path = os.path.join(os.getcwd(), 'config', 'header_map.csv')
+    # Build path to header_map.csv relative to this module, not the current
+    # working directory, so it works regardless of where the process is started.
+    module_dir = os.path.dirname(__file__)
+    maroonx_root = os.path.dirname(module_dir)
+    hmap_path = os.path.join(maroonx_root, 'config', 'header_map.csv')
     headmap = pd.read_csv(hmap_path, header=0)
 
     name = file
