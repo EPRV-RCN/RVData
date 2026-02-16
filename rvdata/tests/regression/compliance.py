@@ -180,5 +180,144 @@ def check_l4_header(header):
             continue
 
 
+def _check_table_columns(
+    inpfile, ext_name, csv_filename,
+    allowed_extra_prefixes=(), strict=False,
+):
+    """Check that columns in a BinTableHDU match the standard names from a CSV spec.
+
+    Parameters
+    ----------
+    inpfile : str
+        Path to FITS file.
+    ext_name : str
+        Name of the extension to check.
+    csv_filename : str
+        Filename of the CSV spec (in rvdata.core.models.config).
+    allowed_extra_prefixes : tuple of str
+        Column name prefixes that are allowed beyond the standard set
+        (only used when strict=True).
+    strict : bool
+        If True, reject any non-standard columns (unless they match
+        allowed_extra_prefixes). If False, only check that required
+        columns are present.
+    """
+    csv_path = (
+        importlib.resources.files("rvdata.core.models.config") / csv_filename
+    )
+    reference_columns = pd.read_csv(csv_path)
+    all_standard_columns = reference_columns["Name"].tolist()
+
+    # Determine required columns: if CSV has a Required column use it,
+    # otherwise all columns are required
+    if "Required" in reference_columns.columns:
+        normalized_required = (
+            reference_columns["Required"]
+            .astype(str)
+            .str.strip()
+            .str.casefold()
+        )
+        truthy_values = {"yes", "y", "true", "1"}
+        required_columns = reference_columns.loc[
+            normalized_required.isin(truthy_values), "Name"
+        ].tolist()
+    else:
+        required_columns = all_standard_columns
+
+    with fits.open(inpfile) as hdul:
+        assert ext_name in hdul, (
+            f"{ext_name} extension not found in {inpfile}"
+        )
+
+        actual_columns = hdul[ext_name].columns.names
+
+        # Check all required columns are present
+        for col in required_columns:
+            assert col in actual_columns, (
+                f"Required {ext_name} column '{col}' not found in {inpfile}. "
+                f"Actual columns: {actual_columns}"
+            )
+
+        # Optionally check no non-standard column names
+        if strict:
+            for col in actual_columns:
+                if col in all_standard_columns:
+                    continue
+                if any(col.startswith(prefix) for prefix in allowed_extra_prefixes):
+                    continue
+                assert False, (
+                    f"Non-standard {ext_name} column '{col}' found in {inpfile}. "
+                    f"Standard columns are: {all_standard_columns}"
+                )
+
+
+def check_l4_rv_columns(inpfile):
+    """Check that RV1 columns use standard names from the CSV spec."""
+    _check_table_columns(
+        inpfile, "RV1", "L4-RV_TABLE-columns.csv",
+        allowed_extra_prefixes=("RV_TRACE",),
+        strict=True,
+    )
+
+
+def check_order_table_columns(inpfile):
+    """Check that ORDER_TABLE columns use standard names from the CSV spec."""
+    _check_table_columns(inpfile, "ORDER_TABLE", "BASE-ORDER_TABLE-columns.csv")
+
+
+def check_receipt_columns(inpfile):
+    """Check that RECEIPT columns use standard names from the CSV spec."""
+    _check_table_columns(inpfile, "RECEIPT", "BASE-RECEIPT-columns.csv")
+
+
+def check_drp_config_columns(inpfile):
+    """Check that DRP_CONFIG columns use standard names from the CSV spec."""
+    _check_table_columns(inpfile, "DRP_CONFIG", "BASE-DRP_CONFIG-columns.csv")
+
+
+def check_telemetry_columns(inpfile):
+    """Check that TELEMETRY columns use standard names from the CSV spec.
+
+    Only checks if the TELEMETRY extension is present (it is optional).
+    """
+    try:
+        _check_table_columns(inpfile, "TELEMETRY", "L2-TELEMETRY-columns.csv")
+    except AssertionError as e:
+        if "extension not found" in str(e):
+            return  # TELEMETRY is optional
+        raise
+
+
+def check_l2_compliance(inpfile):
+    """Run all Level 2 compliance checks."""
+    check_l2_extensions(inpfile)
+    with fits.open(inpfile) as hdul:
+        check_l2_header(hdul["PRIMARY"].header)
+    check_order_table_columns(inpfile)
+    check_receipt_columns(inpfile)
+    check_drp_config_columns(inpfile)
+    check_telemetry_columns(inpfile)
+
+
+def check_l3_compliance(inpfile):
+    """Run all Level 3 compliance checks."""
+    check_l3_extensions(inpfile)
+    with fits.open(inpfile) as hdul:
+        check_l3_header(hdul["PRIMARY"].header)
+    check_order_table_columns(inpfile)
+    check_receipt_columns(inpfile)
+    check_drp_config_columns(inpfile)
+
+
+def check_l4_compliance(inpfile):
+    """Run all Level 4 compliance checks."""
+    check_l4_extensions(inpfile)
+    with fits.open(inpfile) as hdul:
+        check_l4_header(hdul["PRIMARY"].header)
+    check_l4_rv_columns(inpfile)
+    check_receipt_columns(inpfile)
+    check_drp_config_columns(inpfile)
+
+
 if __name__ == "__main__":
     check_l2_extensions("rvstandard.fits")

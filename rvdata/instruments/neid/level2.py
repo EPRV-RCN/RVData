@@ -82,10 +82,10 @@ class NEIDRV2(RV2):
         # Order Table
         order_table_data = pd.DataFrame(
             {
-                "echelle_order": 173 - np.arange(hdul["SCIWAVE"].data.shape[0]),
-                "order_index": np.arange(hdul["SCIWAVE"].data.shape[0]),
-                "wave_start": np.nanmin(hdul["SCIWAVE"].data, axis=1),
-                "wave_end": np.nanmax(hdul["SCIWAVE"].data, axis=1),
+                "ECHELLE_ORDER": 173 - np.arange(hdul["SCIWAVE"].data.shape[0]),
+                "ORDER_INDEX": np.arange(hdul["SCIWAVE"].data.shape[0]),
+                "WAVE_START": np.nanmin(hdul["SCIWAVE"].data, axis=1),
+                "WAVE_END": np.nanmax(hdul["SCIWAVE"].data, axis=1),
             }
         )
         self.set_data("ORDER_TABLE", order_table_data)

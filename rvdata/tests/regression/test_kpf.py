@@ -5,9 +5,9 @@ from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
 
-from rvdata.tests.regression.compliance import check_l2_extensions, check_l2_header
-from rvdata.tests.regression.compliance import check_l3_extensions, check_l3_header
-from rvdata.tests.regression.compliance import check_l4_extensions, check_l4_header
+from rvdata.tests.regression.compliance import (
+    check_l2_compliance, check_l3_compliance, check_l4_compliance,
+)
 
 
 file_urls = {
@@ -50,10 +50,7 @@ def test_kpf():
         f"L2 filename '{l2_standard}' does not match EPRV convention"
     assert l2_standard.startswith("kpf_SL2_"), \
         f"L2 filename should start with 'kpf_SL2_', got '{l2_standard}'"
-    l2_obj = RV2.from_fits(l2_standard)
-
-    check_l2_extensions(l2_standard)
-    check_l2_header(l2_obj.headers['PRIMARY'])
+    check_l2_compliance(l2_standard)
 
     # Check L3
     # Note: L3 creation requires an RVData-standard L2 file (created above).
@@ -64,10 +61,7 @@ def test_kpf():
         f"L3 filename '{l3_standard}' does not match EPRV convention"
     assert l3_standard.startswith("kpf_SL3_"), \
         f"L3 filename should start with 'kpf_SL3_', got '{l3_standard}'"
-    l3_obj = RV3.from_fits(l3_standard)
-
-    check_l3_extensions(l3_standard)
-    check_l3_header(l3_obj.headers['PRIMARY'])
+    check_l3_compliance(l3_standard)
 
     # Check L4 - use auto-generated filename
     kpf4 = RV4.from_fits(l2file, instrument="KPF")
@@ -76,10 +70,7 @@ def test_kpf():
         f"L4 filename '{l4_standard}' does not match EPRV convention"
     assert l4_standard.startswith("kpf_SL4_"), \
         f"L4 filename should start with 'kpf_SL4_', got '{l4_standard}'"
-    l4_obj = RV4.from_fits(l4_standard)
-
-    check_l4_extensions(l4_standard)
-    check_l4_header(l4_obj.headers['PRIMARY'])
+    check_l4_compliance(l4_standard)
 
 
 def test_kpf_benchmark(benchmark):
