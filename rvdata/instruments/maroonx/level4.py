@@ -45,20 +45,25 @@ class MAROONXRV4(RV4):
     Notes
     -----
     To construct an RVData Level 4 object, a MAROONX standard Level 2 FITS file
-    and pickle file containing MAROONX RV data product generated
-    with SERVAL, is required.
-    The classmethod 'from_fits' should be used to instantiate the object
-    from standard Level 2 FITS. 'createL4' should be
-    used to construct Level 4 object.
-    The '_read' method is not intended to be called directly by users.
+    and a pickle file containing the MAROONX RV data product generated
+    with SERVAL are required.
+    Unlike other RV4 subclasses, MAROONXRV4 is not intended to be
+    instantiated via the :meth:`RV4.from_fits` classmethod. Instead, users
+    should create an instance directly with ``MAROONXRV4()`` and then call
+    :meth:`createL4` with an open Level 2 HDUList, the SERVAL RV pickle
+    file, and the desired channel (``"RED"`` or ``"BLUE"``) to construct
+    the Level 4 object.
+    The '_read' method is not intended to be called directly by users and
+    will raise a RuntimeError if invoked.
 
     Example
     -------
     >>> from core.models.level2 import RV2
-    >>> from core.models.level4 import RV4
+    >>> from rvdata.instruments.maroonx.level4 import MAROONXRV4
     >>> L2_obj = RV2.from_fits("MAROONXRED_SL2_YYYYMMDDTHHMMSS.fits")
+    >>> MX_rv4_obj = MAROONXRV4()
     >>> MX_rv4_obj.createL4(fits.open(L2_obj.filename), RVfile, channel)
-    >>> MX_rv4_obj.to_fits(f'MAROONXRED_SL4_YYYYMMDDTHHMMSS.fits')
+    >>> MX_rv4_obj.to_fits("MAROONXRED_SL4_YYYYMMDDTHHMMSS.fits")
     """
     def _read(self, hdul: fits.HDUList) -> None:
         raise RuntimeError(
