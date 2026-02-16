@@ -253,7 +253,8 @@ class MAROONXRV2(RV2):
         )
 
         # Set up extension Description table
-        exd_path = os.path.join(os.getcwd(), 'config', 'MX_ext_Descript.csv')
+        module_dir = os.path.dirname(__file__)
+        exd_path = os.path.join(module_dir, 'config', 'MX_ext_Descript.csv')
         ext_table = pd.read_csv(exd_path)
 
         if "Required" in ext_table.columns:
