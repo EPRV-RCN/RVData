@@ -119,7 +119,8 @@ def fetch_instEra(jdval):
         era not found.
     """
 
-    era_path = os.path.join(os.path.dirname(__file__), 'config', 'MX_inst_era.csv')
+    maroonx_dir = os.path.dirname(os.path.dirname(__file__))
+    era_path = os.path.join(maroonx_dir, 'config', 'MX_inst_era.csv')
     instera = pd.read_csv(era_path)
     current_jd = Time.now().jd
     instera["End_JD"] = instera["End_JD"].fillna(current_jd)

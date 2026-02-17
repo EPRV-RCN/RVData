@@ -218,5 +218,10 @@ class MAROONXRV4(RV4):
         ext_table["Description"].append(
             "Table of activity results for MAROONX from SERVAL"
         )
+        # Add EXT_DESCRIPT entry for itself
+        ext_table["Name"].append("EXT_DESCRIPT")
+        ext_table["Description"].append(
+            "Description of each extension.")
+
         # Set extension Description table
         self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))

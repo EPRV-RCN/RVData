@@ -80,6 +80,7 @@ def test_maroonx():
     check_l4_header(l4_obj_blue.headers['PRIMARY'])
 
     # Check red camera
+    rv4_obj = MAROONXRV4()
     rv4_obj.createL4(fits.open(l2_obj_red.filename), rv_red, channel="RED")
     l4_standard_red = f"./MAROONXRED_SL4_{timestamp}.fits"
     rv4_obj.to_fits(l4_standard_red)
