@@ -165,10 +165,10 @@ class EXPRESRV2(RV2):
         # 5: ORDER_TABLE
         order_table_data = pd.DataFrame(
             {
-                "echelle_order": 160 - np.arange(hdul[1].data["wavelength"].shape[0]),
-                "order_index": np.arange(hdul[1].data["wavelength"].shape[0]),
-                "wave_start": np.nanmin(hdul[1].data["wavelength"].data, axis=1),
-                "wave_end": np.nanmax(hdul[1].data["wavelength"].data, axis=1),
+                "ECHELLE_ORDER": 160 - np.arange(hdul[1].data["wavelength"].shape[0]),
+                "ORDER_INDEX": np.arange(hdul[1].data["wavelength"].shape[0]),
+                "WAVE_START": np.nanmin(hdul[1].data["wavelength"].data, axis=1),
+                "WAVE_END": np.nanmax(hdul[1].data["wavelength"].data, axis=1),
             }
         )
         self.set_data("ORDER_TABLE", order_table_data)
