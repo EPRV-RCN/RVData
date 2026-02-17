@@ -495,7 +495,10 @@ class RVDataModel(object):
         if data is None:
             self.data[ext_name] = FITS_TYPE_MAP[ext_type]([])
         else:
-            self.data[ext_name] = FITS_TYPE_MAP[ext_type](data)
+            if ext_type == "BinTableHDU" and isinstance(data, pd.DataFrame):
+                self.data[ext_name] = Table.from_pandas(data)
+            else:
+                self.data[ext_name] = FITS_TYPE_MAP[ext_type](data)
 
     def del_extension(self, ext_name):
         """
@@ -536,7 +539,10 @@ class RVDataModel(object):
         """
         # check whether the extension already exist
         if ext_name in self.extensions.keys():
-            if isinstance(data, type(FITS_TYPE_MAP[self.extensions[ext_name]]([]))):
+            ext_type = self.extensions[ext_name]
+            if ext_type == "BinTableHDU" and isinstance(data, pd.DataFrame):
+                data = Table.from_pandas(data)
+            if isinstance(data, type(FITS_TYPE_MAP[ext_type]([]))):
                 self.data[ext_name] = data
             else:
                 raise TypeError(
@@ -544,6 +550,23 @@ class RVDataModel(object):
                 )
         else:
             raise NameError("Name {} does not exist as extension".format(ext_name))
+
+    @staticmethod
+    def _restore_column_metadata(hdu, stored_header):
+        """Restore TUNIT, TDISP, and TNULL cards that BinTableHDU may overwrite.
+
+        The BinTableHDU constructor can normalize or drop column metadata
+        (e.g. ``m/s`` becomes ``m s-1``).  This method copies the original
+        values back from the stored header into both the HDU header and
+        the Column objects so they survive ``writeto()``.
+        """
+        for i in range(1, len(hdu.columns) + 1):
+            for kw in ("TUNIT", "TDISP", "TNULL"):
+                card = f"{kw}{i}"
+                if card in stored_header:
+                    hdu.header[card] = stored_header[card]
+            if f"TUNIT{i}" in stored_header:
+                hdu.columns[i - 1].unit = stored_header[f"TUNIT{i}"]
 
     def _create_hdul(self):
         """
@@ -588,11 +611,12 @@ class RVDataModel(object):
                     else:
                         raise KeyError("A different error...")
             elif value == "BinTableHDU":
-                table = Table.from_pandas(self.data[key])
-                self.headers[key]["NAXIS1"] = len(table)
+                table = self.data[key]
+                self.headers[key]["NAXIS2"] = len(table)
                 head = fits.Header(self.headers[key])
                 hdu = fits.BinTableHDU(data=table, header=head)
                 hdu.name = hduname
+                self._restore_column_metadata(hdu, self.headers[key])
                 hdu_list.append(hdu)
             else:
                 print(

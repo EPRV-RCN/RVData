@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import importlib.resources
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, vstack
 
 import rvdata.core.models.base
 from rvdata.core.models.definitions import (
@@ -118,7 +118,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 data = np.array(hdu.data)
                 self.set_data(hdu.name, data)
             elif fits_type == "BinTableHDU":
-                data = Table(hdu.data).to_pandas()
+                data = Table.read(hdu)
                 self.set_data(hdu.name, data)
 
             self.set_header(hdu.name, hdu.header)
@@ -156,7 +156,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
             if isinstance(ext, np.ndarray):
                 row = "|{:20s} |{:20s} |{:20s}\n".format(name, "array", str(ext.shape))
                 head += row
-            elif isinstance(ext, pd.DataFrame):
+            elif isinstance(ext, Table):
                 row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
                 head += row
         print(head)
@@ -305,11 +305,11 @@ class RV3(rvdata.core.models.base.RVDataModel):
             for trace_num in traces2stitch:
                 for suffix in ["WAVE", "FLUX", "VAR"]:
                     ext_name = f"STITCHED_CORR_TRACE{trace_num}_{suffix}"
-                    if ext_name not in ext_descript["Name"].values:
-                        new_row = pd.DataFrame(
+                    if ext_name not in ext_descript["Name"]:
+                        new_row = Table(
                             {"Name": [ext_name], "Description": [f"Stitched trace {trace_num} {suffix.lower()}"]}
                         )
-                        ext_descript = pd.concat([ext_descript, new_row], ignore_index=True)
+                        ext_descript = vstack([ext_descript, new_row])
             self.set_data("EXT_DESCRIPT", ext_descript)
 
         # set the order table from level 2 data into level 3 object

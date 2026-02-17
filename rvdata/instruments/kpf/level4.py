@@ -1,5 +1,5 @@
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, vstack
 import numpy as np
 import pandas as pd
 import os
@@ -64,11 +64,8 @@ class KPFRV4(RV4):
                 ccf_array = np.concatenate((ccf_array, hdul2[ccf_ext].data), axis=1)
 
         self.create_extension("CCF1", "ImageHDU", data=ccf_array, header=ccf_meta)
-        ccf_row = pd.DataFrame([{
-            "Name": "CCF1",
-            "Description": "CCFs from which RV1 values were derived."
-        }])
-        self.data['EXT_DESCRIPT'] = pd.concat([self.data['EXT_DESCRIPT'], ccf_row], ignore_index=True)
+        ccf_row = Table({"Name": ["CCF1"], "Description": ["CCFs from which RV1 values were derived."]})
+        self.data['EXT_DESCRIPT'] = vstack([self.data['EXT_DESCRIPT'], ccf_row])
 
         # set the primary header
         hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
