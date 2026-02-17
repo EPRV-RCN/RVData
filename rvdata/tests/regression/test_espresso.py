@@ -32,7 +32,7 @@ def download_instrument_files(instrument: str = "ESPRESSO") -> dict[str, Path]:
     """Download all files for the specified instrument."""
 
     # CA bundle path relative to this test file
-    CA_BUNDLE_PATH = Path(__file__).parent / "fixtures" / "dace-unige-ch-chain.pem"
+#    CA_BUNDLE_PATH = Path(__file__).parent / "fixtures" / "dace-unige-ch-chain.pem"
 
     local_files = {}
 
@@ -45,7 +45,9 @@ def download_instrument_files(instrument: str = "ESPRESSO") -> dict[str, Path]:
         filepath = Path(filename)
 
         if not filepath.exists():
-            response = requests.get(url, verify=str(CA_BUNDLE_PATH), timeout=30)
+#            response = requests.get(url, verify=str(CA_BUNDLE_PATH), timeout=30)
+            response = requests.get(url)
+
             response.raise_for_status()
             filepath.write_bytes(response.content)
 
