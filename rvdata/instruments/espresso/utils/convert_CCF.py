@@ -1,4 +1,5 @@
 from astropy.io import fits
+from astropy.table import Table as AstropyTable, vstack
 from rvdata.core.models.level4 import RV4
 import pandas as pd
 import numpy as np
@@ -7,10 +8,8 @@ import os
 
 def add_to_ext_descript(RV4, ext_name, description):
     """Add a row to the EXT_DESCRIPT table for the given extension."""
-    row = pd.DataFrame({"Name": [ext_name], "Description": [description]})
-    RV4.data["EXT_DESCRIPT"] = pd.concat(
-        [RV4.data["EXT_DESCRIPT"], row], ignore_index=True
-    )
+    row = AstropyTable({"Name": [ext_name], "Description": [description]})
+    RV4.data["EXT_DESCRIPT"] = vstack([RV4.data["EXT_DESCRIPT"], row])
 
 
 def convert_CCF(RV4: RV4, file_path: str) -> None:

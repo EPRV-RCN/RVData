@@ -2,12 +2,13 @@ from collections import OrderedDict
 import importlib.resources
 import numpy as np
 import pandas as pd
+from astropy.table import Table
 
 # mapping between fits extension data types and Python object data types
 FITS_TYPE_MAP = {
     "PrimaryHDU": OrderedDict,
     "ImageHDU": np.array,
-    "BinTableHDU": pd.DataFrame,
+    "BinTableHDU": Table,
 }
 
 # Header keywords required by all levels of data are defined in a series
