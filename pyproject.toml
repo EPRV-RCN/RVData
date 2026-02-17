@@ -17,7 +17,6 @@ dependencies = [
     "numpy",
     "scipy",
     "pandas",
-    "tables",
     "GitPython",
     "astroquery",
     "jplephem",
@@ -26,6 +25,9 @@ dependencies = [
 
 # Optional dependencies
 [project.optional-dependencies]
+maroonx = [
+    "tables",           # Required for reading MAROON-X HDF5 files via pd.HDFStore
+]
 dev = [
     "flake8",           # Code linting
     "pytest",           # Testing

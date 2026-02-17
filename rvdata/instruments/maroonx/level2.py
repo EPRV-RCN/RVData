@@ -87,7 +87,14 @@ class MAROONXRV2(RV2):
           - self.red_product
         """
         # Opening HDF5 file and extracting datasets stored in the file
-        store = pd.HDFStore(file, 'r')
+        try:
+            store = pd.HDFStore(file, 'r')
+        except ImportError as e:
+            raise ImportError(
+                "The 'tables' (pytables) package is required for reading "
+                "MAROON-X HDF5 files. Install it with: "
+                "pip install 'rv-data-standard[maroonx]'"
+            ) from e
         spec_blue = store['spec_blue']
         header_blue = store['header_blue']
         spec_red = store['spec_red']
