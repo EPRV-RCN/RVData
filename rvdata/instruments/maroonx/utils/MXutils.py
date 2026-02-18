@@ -3,12 +3,62 @@
 
 import numpy as np
 import pandas as pd
+import h5py
+import pickle
 from astropy.coordinates import Angle, SkyCoord, EarthLocation
 from astropy.time import Time
 import astropy.units as u
 from collections import OrderedDict
 import os
 from astroquery.simbad import Simbad
+
+
+def read_hdfstore(filepath, key):
+    """
+    Read a pandas DataFrame or Series from an HDF5 file that was
+    created by pd.HDFStore, using h5py instead of pytables.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the HDF5 file.
+    key : str
+        Key (group name) to read from the file.
+
+    Returns
+    -------
+    pandas.DataFrame or pandas.Series
+        The reconstructed data with the same structure as
+        pd.HDFStore would return.
+    """
+    with h5py.File(filepath, 'r') as f:
+        group = f[key]
+
+        if 'block0_values' in group:
+            columns = [x.decode() for x in group['axis0'][:]]
+            raw_data = pickle.loads(
+                group['block0_values'][0].tobytes()
+            )
+
+            if 'axis1_level0' in group:
+                level0 = group['axis1_level0'][:]
+                level1 = group['axis1_level1'][:]
+                label0 = group['axis1_label0'][:]
+                label1 = group['axis1_label1'][:]
+                idx = pd.MultiIndex.from_arrays(
+                    [level0[label0], level1[label1]]
+                )
+            else:
+                idx = range(raw_data.shape[0])
+
+            return pd.DataFrame(raw_data, index=idx, columns=columns)
+
+        elif 'values' in group:
+            index = [x.decode() for x in group['index'][:]]
+            values = pickle.loads(
+                group['values'][0].tobytes()
+            )
+            return pd.Series(values, index=index)
 
 
 def pad_array(arr, target_shape, pad_value=np.nan):

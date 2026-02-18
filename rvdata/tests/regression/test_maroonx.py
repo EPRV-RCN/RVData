@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import pytest
 import requests
 import os
 from astropy.io import fits
@@ -14,10 +13,6 @@ from rvdata.tests.regression.compliance import (
     check_l2_extensions, check_l2_header)
 from rvdata.tests.regression.compliance import (
     check_l4_extensions, check_l4_header)
-
-_has_tables = pytest.importorskip(
-    "tables", reason="pytables required for MAROON-X HDF5 files"
-)
 
 pathname = "http://grinnell.as.arizona.edu/~rvdata/maroonx/"
 file_urls = {

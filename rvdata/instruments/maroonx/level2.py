@@ -87,26 +87,15 @@ class MAROONXRV2(RV2):
           - self.red_product
         """
         # Opening HDF5 file and extracting datasets stored in the file
-        try:
-            store = pd.HDFStore(file, 'r')
-        except ImportError as e:
-            raise ImportError(
-                "The 'tables' (pytables) package is required for reading "
-                "MAROON-X HDF5 files. Install it with: "
-                "pip install 'rv-data-standard[maroonx]'"
-            ) from e
-        spec_blue = store['spec_blue']
-        header_blue = store['header_blue']
-        spec_red = store['spec_red']
-        header_red = store['header_red']
-        store.close()
+        spec_blue = MXutils.read_hdfstore(file, 'spec_blue')
+        header_blue = MXutils.read_hdfstore(file, 'header_blue')
+        spec_red = MXutils.read_hdfstore(file, 'spec_red')
+        header_red = MXutils.read_hdfstore(file, 'header_red')
 
         # read blaze file
         bzfile = os.path.join(os.getcwd(), flat)
-        store2 = pd.HDFStore(bzfile, 'r+')
-        blaze_blue = store2['blaze_blue']
-        blaze_red = store2['blaze_red']
-        store2.close()
+        blaze_blue = MXutils.read_hdfstore(bzfile, 'blaze_blue')
+        blaze_red = MXutils.read_hdfstore(bzfile, 'blaze_red')
 
         obstype, flux_key, fiber_range = (
             ('CAL', 'box_extraction', range(1, 6))
