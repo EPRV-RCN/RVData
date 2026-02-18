@@ -75,6 +75,32 @@ class TestSetDataUpcast:
             upcast_warnings = [x for x in w if "MinBitDepth" in str(x.message)]
             assert len(upcast_warnings) == 0
 
+    def test_uint8_upcasted_preserves_signedness(self):
+        """Unsigned integer data should upcast to unsigned target dtype."""
+        rv2 = RV2()
+        rv2.create_extension("TRACE1_QUALITY", "ImageHDU")
+        # uint8 has 8 bits, but if MinBitDepth were higher it should stay unsigned.
+        # Use BJD_TDB (MinBitDepth=64) with uint8 data to test signedness preservation.
+        data = np.ones((10, 100), dtype=np.uint8)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            # BJD_TDB requires MinBitDepth=64, uint8 should upcast to uint64
+            rv2.set_data("BJD_TDB", data)
+            upcast_warnings = [x for x in w if "MinBitDepth" in str(x.message)]
+            assert len(upcast_warnings) == 1
+        assert rv2.data["BJD_TDB"].dtype == np.uint64
+
+    def test_int8_upcasted_preserves_signedness(self):
+        """Signed integer data should upcast to signed target dtype."""
+        rv2 = RV2()
+        data = np.ones((10, 100), dtype=np.int8)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            rv2.set_data("BJD_TDB", data)
+            upcast_warnings = [x for x in w if "MinBitDepth" in str(x.message)]
+            assert len(upcast_warnings) == 1
+        assert rv2.data["BJD_TDB"].dtype == np.int64
+
     def test_multiplicity_trace2_wave_upcasted(self):
         """TRACE2_WAVE should inherit TRACE1_WAVE's MinBitDepth=64."""
         rv2 = RV2()

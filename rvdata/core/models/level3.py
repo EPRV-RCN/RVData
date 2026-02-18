@@ -83,8 +83,11 @@ class RV3(rvdata.core.models.base.RVDataModel):
 
     def _get_min_bit_depth(self, ext_name):
         """Look up MinBitDepth for an ImageHDU extension from the L3 config."""
-        # Handle multiplicity: STITCHED_CORR_TRACE2_WAVE -> STITCHED_CORR_TRACE1_WAVE
-        canonical = re.sub(r'(?<=TRACE)\d+', '1', ext_name)
+        # Handle multiplicity:
+        #   STITCHED_CORR_TRACE2_WAVE -> STITCHED_CORR_TRACE1_WAVE
+        #   STITCHED_CUSTOMCORR2_TRACE2_WAVE -> STITCHED_CUSTOMCORR1_TRACE1_WAVE
+        canonical = re.sub(r'(?<=CUSTOMCORR)\d+', '1', ext_name)
+        canonical = re.sub(r'(?<=TRACE)\d+', '1', canonical)
         row = LEVEL3_EXTENSIONS[LEVEL3_EXTENSIONS["Name"] == canonical]
         if row.empty:
             row = LEVEL3_EXTENSIONS[LEVEL3_EXTENSIONS["Name"] == ext_name]

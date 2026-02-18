@@ -562,8 +562,13 @@ class RVDataModel(object):
                             target = {32: np.float32, 64: np.float64}.get(
                                 min_depth, np.float64
                             )
+                        elif np.issubdtype(data.dtype, np.unsignedinteger):
+                            target = {8: np.uint8, 16: np.uint16,
+                                      32: np.uint32, 64: np.uint64}.get(
+                                min_depth, np.uint64
+                            )
                         else:
-                            target = {8: np.uint8, 16: np.int16,
+                            target = {8: np.int8, 16: np.int16,
                                       32: np.int32, 64: np.int64}.get(
                                 min_depth, np.int64
                             )

@@ -105,8 +105,9 @@ class RV2(rvdata.core.models.base.RVDataModel):
 
     def _get_min_bit_depth(self, ext_name):
         """Look up MinBitDepth for an ImageHDU extension from the L2 config."""
-        # Handle multiplicity: TRACE2_WAVE -> TRACE1_WAVE
-        canonical = re.sub(r'(?<=TRACE)\d+', '1', ext_name)
+        # Handle multiplicity: CUSTOM2_TRACE2_WAVE -> CUSTOM1_TRACE1_WAVE
+        canonical = re.sub(r'(?<=CUSTOM)\d+', '1', ext_name)
+        canonical = re.sub(r'(?<=TRACE)\d+', '1', canonical)
         row = LEVEL2_EXTENSIONS[LEVEL2_EXTENSIONS["Name"] == canonical]
         if row.empty:
             row = LEVEL2_EXTENSIONS[LEVEL2_EXTENSIONS["Name"] == ext_name]
