@@ -38,13 +38,9 @@ jobs:
         run: tox -e codestyle
 
   test:
-    name: Regression Tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: Regression Tests
+    runs-on: ubuntu-latest
     needs: codestyle
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
