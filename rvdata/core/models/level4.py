@@ -137,4 +137,3 @@ class RV4(rvdata.core.models.base.RVDataModel):
                 row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
                 head += row
         print(head)
-
