@@ -41,8 +41,9 @@ def download_instrument_files(instrument: str = "ESPRESSO") -> dict[str, Path]:
         # get the file name from the URL
         filename = url.rsplit("/", 1)[-1]
         if os.name == "nt":
-            # For Windows: Replace ":" with "_" in file names
-            filename = filename.replace(":", "_")
+            # For Windows: colons are not allowed in filenames, use underscores
+            # to match what get_files_names.py produces via replace(":", "_")
+            filename = re.sub(r"T(\d{2})-(\d{2})-(\d{2})", r"T\1_\2_\3", filename)
         else:
             # Restore colons in ISO timestamp time portions (HH-MM-SS -> HH:MM:SS)
             filename = re.sub(r"T(\d{2})-(\d{2})-(\d{2})", r"T\1:\2:\3", filename)
