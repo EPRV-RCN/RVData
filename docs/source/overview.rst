@@ -107,7 +107,7 @@ https://github.com/EPRV-RCN/RVData .
 
 This repository contains RV2(), RV3(), and RV4() base classes to hold
 data required for generating the standard data files. These classes
-have a *write* method named *.tofits()* which outputs the data into
+have a *write* method named *.to_fits()* which outputs the data into
 the standard format.
 
 To integrate a new instrument into the translator, the instrument team

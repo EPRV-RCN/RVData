@@ -32,9 +32,9 @@ ESPRESSO
 * Link to data archive: https://archive.eso.org/cms.html
 * Person/email for translator maintenance & bug reports: Emile Fontanet [emile.fontanet@unige.ch]
 * Naming convention for all data standard products:
-   * L2 : ESPRE_L2_2022-08-24T03:37:56.276.fits
-   * L3 : ESPRE_L3_2022-08-24T03:37:56.276.fits
-   * L4 : ESPRE_L4_2022-08-24T03:37:56.276.fits
+   * L2 : espre_SL2_20220824T033756.fits
+   * L3 : espre_SL3_20220824T033756.fits
+   * L4 : espre_SL4_20220824T033756.fits
 * Date of last translator update and current version number: June 2025 
 
 **Instrument era (INSTERA keyword) date ranges**
@@ -261,9 +261,9 @@ HARPS
 * Link to data archive: https://archive.eso.org/cms.html
 * Person/email for translator maintenance & bug reports: Emile Fontanet (emile.fontanet@unige.ch)
 * Naming convention for all data standard products:
-   * L2 : HARPS_L2_2022-08-24T03:37:56.276.fits
-   * L3 : HARPS_L3_2022-08-24T03:37:56.276.fits
-   * L4 : HARPS_L4_2022-08-24T03:37:56.276.fits
+   * L2 : harps_SL2_20220824T033756.fits
+   * L3 : harps_SL3_20220824T033756.fits
+   * L4 : harps_SL4_20220824T033756.fits
 * Date of last translator update and current version number: June 2025
 
 **Instrument era (INSTERA keyword) date ranges**
@@ -328,9 +328,9 @@ HARPS-N
 * Link to data archive: http://archives.ia2.inaf.it/tng/
 * Person/email for translator maintenance & bug reports: Emile Fontanet (emile.fontanet@unige.ch)
 * Naming convention for all data standard products:
-   * L2 : HARPN_L2_2022-08-24T03:37:56.276.fits
-   * L3 : HARPN_L3_2022-08-24T03:37:56.276.fits
-   * L4 : HARPN_L4_2022-08-24T03:37:56.276.fits
+   * L2 : harpn_SL2_20220824T033756.fits
+   * L3 : harpn_SL3_20220824T033756.fits
+   * L4 : harpn_SL4_20220824T033756.fits
 * Date of last translator update and current version number: June 2025
 
 **Instrument era (INSTERA keyword) date ranges**
@@ -480,9 +480,9 @@ KPF
 * Link to data archive: https://koa.ipac.caltech.edu/
 * Person/email for translator maintenance & bug reports: BJ Fulton [bjfulton@ipac.caltech.edu]
 * Naming convention for all data standard products:
-   * L2 : KPFL2_20250208T045125.fits
-   * L3 : KPFL3_20250208T045125.fits
-   * L4 : KPFL4_20250208T045125.fits
+   * L2 : kpf_SL2_20250208T045125.fits
+   * L3 : kpf_SL3_20250208T045125.fits
+   * L4 : kpf_SL4_20250208T045125.fits
 * Date of last translator update and current version number: 2025-06-17 v0.2.0
 
 **Instrument era (INSTERA keyword) date ranges**
