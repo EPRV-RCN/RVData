@@ -117,7 +117,7 @@ class RVDataModel(object):
         # create an empty instance
         this_data = cls()
         # populate it with self.read()
-        with fits.open(fn) as hdul:
+        with fits.open(fn, memmap=False) as hdul:
             this_data.filename = os.path.basename(fn)
             this_data.dirname = os.path.dirname(fn)
             this_data.read(hdul, instrument, **kwargs)

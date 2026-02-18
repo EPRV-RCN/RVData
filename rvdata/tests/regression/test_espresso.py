@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 import requests
@@ -13,17 +14,17 @@ from rvdata.tests.regression.compliance import (
 
 FILE_URLS = {
     "ESPRESSO": {
-        "raw": "https://dace.unige.ch/downloads/EPRV_standard_data/ESPRE.2017-12-03T02:09:40.348.fits",
-        "S2D_BLAZE_A": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S2D_BLAZE_A.fits",
-        "S2D_BLAZE_B": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S2D_BLAZE_B.fits",
-        "BLAZE_A": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T10:43:59.835_BLAZE_A.fits",
-        "BLAZE_B": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T10:43:59.835_BLAZE_B.fits",
-        "S1D_A": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S1D_A.fits",
-        "S1D_B": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S1D_B.fits",
-        "S1D_TELL_CORR_A": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S1D_TELL_CORR_A.fits",
-        "DRIFT_MATRIX_B": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_DRIFT_MATRIX_B.fits",
-        "CCF_A": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_CCF_A.fits",
-        "CCF_TELL_CORR_A": "https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_CCF_TELL_CORR_A.fits",
+        "raw": "http://grinnell.as.arizona.edu/~rvdata/espresso/ESPRE.2017-12-03T02-09-40.348.fits",
+        "S2D_BLAZE_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S2D_BLAZE_A.fits",
+        "S2D_BLAZE_B": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S2D_BLAZE_B.fits",
+        "BLAZE_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T10-43-59.835_BLAZE_A.fits",
+        "BLAZE_B": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T10-43-59.835_BLAZE_B.fits",
+        "S1D_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S1D_A.fits",
+        "S1D_B": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S1D_B.fits",
+        "S1D_TELL_CORR_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S1D_TELL_CORR_A.fits",
+        "DRIFT_MATRIX_B": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_DRIFT_MATRIX_B.fits",
+        "CCF_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_CCF_A.fits",
+        "CCF_TELL_CORR_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_CCF_TELL_CORR_A.fits",
     }
 }
 
@@ -32,20 +33,26 @@ def download_instrument_files(instrument: str = "ESPRESSO") -> dict[str, Path]:
     """Download all files for the specified instrument."""
 
     # CA bundle path relative to this test file
-    CA_BUNDLE_PATH = Path(__file__).parent / "fixtures" / "dace-unige-ch-chain.pem"
+    # CA_BUNDLE_PATH = Path(__file__).parent / "fixtures" / "dace-unige-ch-chain.pem"
 
     local_files = {}
 
     for key, url in FILE_URLS[instrument].items():
         # get the file name from the URL
         filename = url.rsplit("/", 1)[-1]
-        # For Windows: Replace ":" with "_" in file names
         if os.name == "nt":
-            filename = filename.replace(":", "_")
+            # For Windows: colons are not allowed in filenames, use underscores
+            # to match what get_files_names.py produces via replace(":", "_")
+            filename = re.sub(r"T(\d{2})-(\d{2})-(\d{2})", r"T\1_\2_\3", filename)
+        else:
+            # Restore colons in ISO timestamp time portions (HH-MM-SS -> HH:MM:SS)
+            filename = re.sub(r"T(\d{2})-(\d{2})-(\d{2})", r"T\1:\2:\3", filename)
         filepath = Path(filename)
 
         if not filepath.exists():
-            response = requests.get(url, verify=str(CA_BUNDLE_PATH), timeout=30)
+            # response = requests.get(url, verify=str(CA_BUNDLE_PATH), timeout=30)
+            response = requests.get(url)
+
             response.raise_for_status()
             filepath.write_bytes(response.content)
 
