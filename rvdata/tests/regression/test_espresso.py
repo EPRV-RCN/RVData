@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 import requests
@@ -39,9 +40,12 @@ def download_instrument_files(instrument: str = "ESPRESSO") -> dict[str, Path]:
     for key, url in FILE_URLS[instrument].items():
         # get the file name from the URL
         filename = url.rsplit("/", 1)[-1]
-        # For Windows: Replace ":" with "_" in file names
         if os.name == "nt":
+            # For Windows: Replace ":" with "_" in file names
             filename = filename.replace(":", "_")
+        else:
+            # Restore colons in ISO timestamp time portions (HH-MM-SS -> HH:MM:SS)
+            filename = re.sub(r"T(\d{2})-(\d{2})-(\d{2})", r"T\1:\2:\3", filename)
         filepath = Path(filename)
 
         if not filepath.exists():
