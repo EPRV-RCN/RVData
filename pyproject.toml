@@ -17,6 +17,7 @@ dependencies = [
     "numpy",
     "scipy",
     "pandas",
+    "h5py",
     "GitPython",
     "astroquery",
     "jplephem",
@@ -25,9 +26,6 @@ dependencies = [
 
 # Optional dependencies
 [project.optional-dependencies]
-maroonx = [
-    "h5py",             # Required for reading MAROON-X HDF5 files
-]
 dev = [
     "flake8",           # Code linting
     "pytest",           # Testing
