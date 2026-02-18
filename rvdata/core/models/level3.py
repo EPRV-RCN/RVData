@@ -2,6 +2,8 @@
 Level 3 Data Model for RV spectral data
 """
 
+import re
+
 import numpy as np
 import pandas as pd
 import importlib.resources
@@ -78,6 +80,20 @@ class RV3(rvdata.core.models.base.RVDataModel):
         # Initialize ORDER_TABLE with columns from definition
         order_table_columns = BASE_ORDER_TABLE_COLUMNS["Name"].tolist()
         self.set_data("ORDER_TABLE", pd.DataFrame(columns=order_table_columns))
+
+    def _get_min_bit_depth(self, ext_name):
+        """Look up MinBitDepth for an ImageHDU extension from the L3 config."""
+        # Handle multiplicity: STITCHED_CORR_TRACE2_WAVE -> STITCHED_CORR_TRACE1_WAVE
+        canonical = re.sub(r'(?<=TRACE)\d+', '1', ext_name)
+        row = LEVEL3_EXTENSIONS[LEVEL3_EXTENSIONS["Name"] == canonical]
+        if row.empty:
+            row = LEVEL3_EXTENSIONS[LEVEL3_EXTENSIONS["Name"] == ext_name]
+        if row.empty:
+            return None
+        val = row.iloc[0]["MinBitDepth"]
+        if pd.isna(val):
+            return None
+        return int(val)
 
     def _read(self, hdul: fits.HDUList) -> None:
         import warnings
