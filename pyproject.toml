@@ -31,6 +31,7 @@ dev = [
     "tox",              # Testing
     "pytest-benchmark", # Benchmarking
     "coverage",         # Code coverage
+    "pytest-cov",       # pytest coverage plugin
     "sphinx<9",         # Documentation, limited to version 8 for compatibility with sphinx-rtd-theme
     "sphinx-rtd-theme", # ReadTheDocs theme for Sphinx
     "sphinxcontrib-napoleon",

@@ -1,5 +1,6 @@
 [![Fast CI](https://github.com/EPRV-RCN/RVData/actions/workflows/ci-fast.yml/badge.svg?branch=develop)](https://github.com/EPRV-RCN/RVData/actions/workflows/ci-fast.yml)
 [![Full CI](https://github.com/EPRV-RCN/RVData/actions/workflows/ci-full.yml/badge.svg?branch=develop)](https://github.com/EPRV-RCN/RVData/actions/workflows/ci-full.yml)
+[![codecov](https://codecov.io/gh/EPRV-RCN/RVData/graph/badge.svg)](https://codecov.io/gh/EPRV-RCN/RVData)
 [![Documentation Status](https://readthedocs.org/projects/eprv-data-standard/badge/?version=latest)](https://eprv-data-standard.readthedocs.io/en/latest/?badge=latest)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
