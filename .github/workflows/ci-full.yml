@@ -42,13 +42,13 @@ jobs:
         run: tox -e codestyle
 
   regression:
-    name: Regression Tests - Python 3.${{ matrix.python-ver }} (${{ matrix.tox-env }})
+    name: Regression Tests - Python 3.${{ matrix.python-ver }} (${{ matrix.tox-env }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     needs: codestyle
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-ver: ['12', '13', '14']
         tox-env: [test, test-olddeps, test-predeps]
     steps:
