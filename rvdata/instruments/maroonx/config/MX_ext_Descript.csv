@@ -1,0 +1,36 @@
+Name,Description,Required
+PRIMARY,EPRV standard FITS header,True
+INSTRUMENT_HEADER,Header inherited from native instrument file,True
+RECEIPT,The list of operations performed on this file,True
+DRP_CONFIG,Pipeline details to go from the raw file to this file,True
+EXT_DESCRIPT,Description of each extension in the file,True
+ORDER_TABLE,Table of echelle order information,True
+TRACE1_FLUX,Flux in fiber 1 (populated with nans),False
+TRACE1_WAVE,Wavelength in fiber 1 (populated with nans),False
+TRACE1_VAR,Flux variance in fiber 1 (populated with nans),False
+TRACE1_BLAZE,Blaze in fiber 1 (populated with ones),False
+TRACE2_FLUX,Flux in fiber 2,True
+TRACE2_WAVE,Wavelength in fiber 2,True
+TRACE2_VAR,Flux variance in fiber 2,True
+TRACE2_BLAZE,Blaze in fiber 2,True
+TRACE3_FLUX,Flux in fiber 3,True
+TRACE3_WAVE,Wavelength in fiber 3,True
+TRACE3_VAR,Flux variance in fiber 3,True
+TRACE3_BLAZE,Blaze in fiber 3,True
+TRACE4_FLUX,Flux in fiber 4,True
+TRACE4_WAVE,Wavelength in fiber 4,True
+TRACE4_VAR,Flux variance in fiber 4,True
+TRACE4_BLAZE,Blaze in fiber 4,True
+TRACE5_FLUX,Flux in fiber 5,True
+TRACE5_WAVE,Wavelength in fiber 5,True
+TRACE5_VAR,Flux variance in fiber 5,True
+TRACE5_BLAZE,Blaze in fiber 5,True
+TRACE6_FLUX,Flux in virtual fiber 6,True
+TRACE6_WAVE,Wavelength in virtual fiber 6,True
+TRACE6_VAR,Flux variance in virtual fiber 6,True
+TRACE6_BLAZE,Blaze in virtual fiber 6,True
+BARYCORR_KMS,Barycentric correction velocity in km/s,True
+BARYCORR_Z,Barycentric correction in redshift in km/s,True
+BJD_TDB,Barycentric dynamical time (JD),True
+TRACE3_DRIFT,Nightly instrument drift measured in km/s,True
+EXPMETER,Exposure meter data,False
