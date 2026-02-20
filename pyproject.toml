@@ -17,6 +17,7 @@ dependencies = [
     "numpy",
     "scipy",
     "pandas",
+    "h5py",
     "GitPython",
     "astroquery",
     "jplephem",
