@@ -1,6 +1,5 @@
 from astropy.io import fits
 
-# from astropy.table import Table
 import numpy as np
 import pandas as pd
 import os
@@ -52,16 +51,17 @@ class NEIDRV4(RV4):
     """
 
     def _read(self, hdul: fits.HDUList, **kwargs) -> None:
-
-        # Set up extension description table
+        # Set up extension Description table
         ext_table = {
-            "extension_name": [],
-            "description": [],
+            "Name": [],
+            "Description": [],
         }
 
         # Set up the primary header
-        phead = make_neid_primary_header.make_base_primary_header(hdul[0].header)
-        phead["DATALVL"] = 4
+        phead = make_neid_primary_header.make_base_primary_header(
+            hdul["PRIMARY"].header
+        )
+        phead["DATALVL"] = "L4"
 
         # Add RV specific entries to the primary header
         phead["BJDTDB"] = hdul["CCFS"].header["CCFJDMOD"]
@@ -70,13 +70,19 @@ class NEIDRV4(RV4):
         phead["RVMETHOD"] = "CCF"
         phead["SYSVEL"] = hdul["PRIMARY"].header["QRV"]
 
-        ext_table["extension_name"].append("PRIMARY")
-        ext_table["description"].append("EPRV Standard FITS HEADER (no data)")
+        ext_table["Name"].append("PRIMARY")
+        ext_table["Description"].append("EPRV Standard FITS HEADER (no data)")
 
         # Instrument header
         self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
-        ext_table["extension_name"].append("INSTRUMENT_HEADER")
-        ext_table["description"].append("Primary header of native instrument file")
+        ext_table["Name"].append("INSTRUMENT_HEADER")
+        ext_table["Description"].append("Primary header of native instrument file")
+
+        # Receipt
+        ext_table["Name"].append("RECEIPT")
+        ext_table["Description"].append(
+            "Table of operations that have been performed on this file"
+        )
 
         # RV1 - turn the CCFS extension header into a table
 
@@ -87,33 +93,40 @@ class NEIDRV4(RV4):
         rv_table_data = OrderedDict(
             {
                 "BJD_TDB": np.array(
-                    [hdul[0].header[f"SSBJD{173-order:03d}"] for order in range(122)]
+                    [
+                        hdul["PRIMARY"].header[f"SSBJD{173 - order:03d}"]
+                        for order in range(122)
+                    ]
                 ),
                 "RV": np.array(
                     [
                         (
-                            hdul["CCFS"].header[f"CCFRV{173-order:03d}"]
+                            hdul["CCFS"].header[f"CCFRV{173 - order:03d}"]
                             if not (hdul["CCFS"].data[order] == 0).all()
                             else np.nan
                         )
                         for order in range(122)
                     ]
                 ),
-                "RV_error": np.full(122, np.nan),
-                "BC_vel": np.array(
-                    [hdul[0].header[f"SSBRV{173-order:03d}"] for order in range(122)]
+                "RV_ERR": np.full(122, np.nan),
+                "BERV": np.array(
+                    [
+                        hdul["PRIMARY"].header[f"SSBRV{173 - order:03d}"]
+                        for order in range(122)
+                    ]
                 ),
-                "wave_start": np.full(122, np.nan),
-                "wave_end": np.full(122, np.nan),
-                "pixel_start": np.full(122, np.nan),
-                "pixel_end": np.full(122, np.nan),
-                "order_index": np.arange(122),
-                "echelle_order": 173 - np.arange(122),
-                "weight": np.array(
+                "WAVE_START": np.full(122, np.nan),
+                "WAVE_END": np.full(122, np.nan),
+                "PIXEL_START": np.full(122, np.nan),
+                "PIXEL_END": np.full(122, np.nan),
+                "ORDER_INDEX": np.arange(122),
+                "ECHELLE_ORDER": 173 - np.arange(122),
+                "WEIGHT": np.array(
                     [
                         (
-                            hdul["CCFS"].header[f"CCFWT{173-order:03d}"]
-                            if hdul["CCFS"].header[f"CCFWT{173-order:03d}"] is not None
+                            hdul["CCFS"].header[f"CCFWT{173 - order:03d}"]
+                            if hdul["CCFS"].header[f"CCFWT{173 - order:03d}"]
+                            is not None
                             else np.nan
                         )
                         for order in range(122)
@@ -124,33 +137,32 @@ class NEIDRV4(RV4):
 
         # Add BERV to the primary header and write primary header
         order_bjd_sort = rv_table_data["BJD_TDB"][np.argsort(rv_table_data["BJD_TDB"])]
-        order_berv_sort = rv_table_data["BC_vel"][np.argsort(rv_table_data["BJD_TDB"])]
+        order_berv_sort = rv_table_data["BERV"][np.argsort(rv_table_data["BJD_TDB"])]
         phead["BERV"] = np.interp(phead["BJDTDB"], order_bjd_sort, order_berv_sort)
 
         self.set_header("PRIMARY", phead)
 
         # Add information about the wavelength/pixel extents of the RV computation per order
         for order in range(122):
-            if (
-                np.isfinite(neid_fsr["fsr_start"].values[order])
-                and np.isfinite(rv_table_data["RV"][order])
+            if np.isfinite(neid_fsr["fsr_start"].values[order]) and np.isfinite(
+                rv_table_data["RV"][order]
             ):
                 fsr_pixel_start = int(neid_fsr["fsr_start"].values[order])
                 fsr_pixel_end = int(neid_fsr["fsr_end"].values[order])
 
-                rv_table_data["wave_start"][order] = hdul["SCIWAVE"].data[
+                rv_table_data["WAVE_START"][order] = hdul["SCIWAVE"].data[
                     order, fsr_pixel_start
                 ]
-                rv_table_data["wave_end"][order] = hdul["SCIWAVE"].data[
+                rv_table_data["WAVE_END"][order] = hdul["SCIWAVE"].data[
                     order, fsr_pixel_end
                 ]
 
-                rv_table_data["pixel_start"][order] = fsr_pixel_start
-                rv_table_data["pixel_end"][order] = fsr_pixel_end
+                rv_table_data["PIXEL_START"][order] = fsr_pixel_start
+                rv_table_data["PIXEL_END"][order] = fsr_pixel_end
 
         self.set_data("RV1", pd.DataFrame(rv_table_data))
-        ext_table["extension_name"].append("RV1")
-        ext_table["description"].append(
+        ext_table["Name"].append("RV1")
+        ext_table["Description"].append(
             "Order-wise RV measurement table for NEID Science fiber trace"
         )
 
@@ -171,8 +183,8 @@ class NEIDRV4(RV4):
         self.create_extension(
             "CCF1", "ImageHDU", data=hdul["CCFS"].data, header=ccf_header
         )
-        ext_table["extension_name"].append("CCF1")
-        ext_table["description"].append("Order-wise CCFs for NEID Science fiber trace")
+        ext_table["Name"].append("CCF1")
+        ext_table["Description"].append("Order-wise CCFs for NEID Science fiber trace")
 
         # Diagnostics extension - for now just put in the activity extension directly
 
@@ -234,10 +246,16 @@ class NEIDRV4(RV4):
             "BinTableHDU",
             data=pd.DataFrame(diagnostics_table_data),
         )
-        ext_table["extension_name"].append("DIAGNOSTICS1")
-        ext_table["description"].append(
+        ext_table["Name"].append("DIAGNOSTICS1")
+        ext_table["Description"].append(
             "Table of activity diagnostics for NEID science fiber trace"
         )
 
-        # Set extension description table
+        ext_table["Name"].append("DRP_CONFIG")
+        ext_table["Description"].append("DRP configuration parameters.")
+
+        ext_table["Name"].append("EXT_DESCRIPT")
+        ext_table["Description"].append("Description of each extension.")
+
+        # Set extension Description table
         self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))

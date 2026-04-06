@@ -10,12 +10,15 @@ Documentation for EPRV Data Standardization Project!
    :maxdepth: 2
    :caption: Contents:
 
+   overview.rst
+   governance.rst
    interact.rst
    new.rst
    FITS-extensions.rst
    primaryheader.rst
    units.rst
    instrumentoverviews.rst
+   tutorials.rst
    api.rst
    faq.rst
 

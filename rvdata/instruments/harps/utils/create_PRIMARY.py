@@ -51,7 +51,7 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> 
     to translate, copy, or compute header keywords for the L2 file. It then
     constructs a `PrimaryHDU` with the appropriate metadata.
 
-    Parameters:
+    Args:
         RV2 (RV2): An instance of the RV2 class containing metadata and headers
             required for processing.
         names (list[str]): A dictionary mapping different file types (e.g., raw file)
@@ -63,7 +63,7 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> 
         None : The function modifies the RV2 object in place by adding or
             updating the extnames_raw extensions.
 
-    Notes:
+    Note:
     - If a keyword has `skip = True` in `header_map.csv`, it is not copied
       automatically but requires a specific computation.
     - If a keyword value is missing in the source file, it is set to `Null`.
@@ -809,7 +809,7 @@ def get_moon_velocity_in_target_direction(
     Compute the velocity of the Moon projected in the direction of a given
     target in the sky.
 
-    Parameters:
+    Args:
         alpha_deg (float): Right Ascension (RA) of the target in degrees.
         delta_deg (float): Declination (Dec) of the target in degrees.
         julian_day (float): Julian date for the calculation.
