@@ -1,24 +1,18 @@
-Keyword,Description,Units,Data type,Example Value,Default,Population Required for EPRV Standard Compliance,Notes
-XTENSION,,,,,,,
-BITPIX,,,,,,,
-NAXIS,Number of array dimensions,N/A,int,2,UNDEFINED,Y,Autopopulated by astropy
-NAXIS1,Number of pixels,N/A,uint,9216,UNDEFINED,Y,Autopopulated by astropy
-NAXIS2,Number of orders,N/A,int,122,UNDEFINED,Y,Autopopulated by astropy
-WCSAXES,Number of WCS Axes,N/A,int,122,UNDEFINED,Y,Number of orders
-PCOUNT,integer used to define the data structure -- obseleted,N/A,int,0,'',N,required keywords that are obseleted
-GCOUNT,integer used to define the data structure -- obseleted,N/A,int,0,'',N,required keywords that are obseleted
-EXTNAME,Extension contents,N/A,string,traceN_wavelength,UNKNOWN,Y,
-CTYPEN,Wavelength Axis Description,N/A,string,WAVE,WAVE,Y,static -- always WAVE
-CPDISN,Wavelength Axis Function Type,N/A,string,Polynomial or Non-Parametric,UNKNOWN,Y,All C keywords are repeated for each order index N
-CUNITN,Wavelength Units,N/A,string,Angstrom,UNKNOWN,Y,
-CRPIXN,Reference pixel position -- suggest this be central pixel value,pixels,uint,4096,UNDEFINED,Y,Doesn't have to be meaningful -- can choose any pixel and wavelength combo
-CRVALN,Reference pixel wavelength,Angstrom,float32,5246.387496,UNDEFINED,Y,Doesn't have to be meaningful -- can choose any pixel and wavelength combo
-CDELTN,Linear dispersion at ref pixel wavelength,AA/,float32,0.004352,UNDEFINED,Y,
-PSN_0,Subtype of function CPDIS,N/A,string,Legendre,UNKNOWN,Y,All PS keywords will be repeated for each order N in the wavelength solution
-PSN_1,Number of parameters in function PSN_0,N/A,int,5,UNDEFINED,Y,The meanings of PSN_0-4 are locked but the answers will change based on wavelength solution format
-PSN_2,Function domain,pixels,string,"[1,9216]",UNKNOWN,Y,Range of pixel numbers in order N
-PSN_3,Number of the physical echelle order,order,uint,63,UNDEFINED,Y,Physical echelle order number of order N
-PSN_4,Function window,N/A,string,"[-1,1]",UNKNOWN,N,Should be populated if meaningful for the wavelength solution type
-PVN_0,Function coefficient 0,N/A,float32,5240,UNDEFINED,Y,0th order coefficient of the wavelength solution. All PV keywords repeated for each order index 'N'
-PVN_1,Function coefficient 1,N/A,float32,0.342145,UNDEFINED,Y,1st order coefficient of the wavelength solution.
-PVN_#,Function coefficient ,N/A,float32,0.00083472,'',N, #th order coefficient of the wavelength solution.
+Keyword,Description,Units,DataType,Example Value,Default,Required,Notes
+XTENSION,Name of the extension type,N/A,,IMAGE,UNKNOWN,True,
+WCSAXES,Number of WCS Axes,N/A,int,122,UNDEFINED,True,Number of orders
+EXTNAME,Extension contents,N/A,string,traceN_wavelength,UNKNOWN,True,
+CTYPEN,Wavelength Axis Description,N/A,string,WAVE,WAVE,True,static -- always WAVE
+CPDISN,Wavelength Axis Function Type,N/A,string,Polynomial or Non-Parametric,UNKNOWN,True,All C keywords are repeated for each order index N
+CUNITN,Wavelength Units,N/A,string,Angstrom,UNKNOWN,True,
+CRPIXN,Reference pixel position -- suggest this be central pixel value,pixels,uint,4096,UNDEFINED,True,Doesn't have to be meaningful -- can choose any pixel and wavelength combo
+CRVALN,Reference pixel wavelength,Angstrom,float32,5246.387496,UNDEFINED,True,Doesn't have to be meaningful -- can choose any pixel and wavelength combo
+CDELTN,Linear dispersion at ref pixel wavelength,AA/,float32,0.004352,UNDEFINED,True,
+PSN_0,Subtype of function CPDIS,N/A,string,Legendre,UNKNOWN,True,All PS keywords will be repeated for each order N in the wavelength solution
+PSN_1,Number of parameters in function PSN_0,N/A,int,5,UNDEFINED,True,The meanings of PSN_0-4 are locked but the answers will change based on wavelength solution format
+PSN_2,Function domain,pixels,string,"[1,9216]",UNKNOWN,True,Range of pixel numbers in order N
+PSN_3,Number of the physical echelle order,order,uint,63,UNDEFINED,True,Physical echelle order number of order N
+PSN_4,Function window,N/A,string,"[-1,1]",UNKNOWN,False,Should be populated if meaningful for the wavelength solution type
+PVN_0,Function coefficient 0,N/A,float32,5240,UNDEFINED,True,0th order coefficient of the wavelength solution. All PV keywords repeated for each order index 'N'
+PVN_1,Function coefficient 1,N/A,float32,0.342145,UNDEFINED,True,1st order coefficient of the wavelength solution.
+PVN_#,Function coefficient ,N/A,float32,0.00083472,'',False, #th order coefficient of the wavelength solution.

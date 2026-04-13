@@ -1,7 +1,7 @@
 Base Data Model
 ===============
 
-.. automodule:: core.models.base
+.. automodule:: rvdata.core.models.base
    :members:
    :undoc-members:
    :show-inheritance:    

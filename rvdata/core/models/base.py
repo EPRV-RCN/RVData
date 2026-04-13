@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import importlib
 import os
+import re
 import warnings
 from collections import OrderedDict
 
@@ -13,7 +14,6 @@ import git
 from git.exc import InvalidGitRepositoryError
 
 import pandas as pd
-import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
@@ -23,9 +23,10 @@ from rvdata.core.models.definitions import (
     LEVEL2_PRIMARY_KEYWORDS,
     LEVEL3_PRIMARY_KEYWORDS,
     LEVEL4_PRIMARY_KEYWORDS,
+    BASE_RECEIPT_COLUMNS,
 )
-from rvdata.core.models.receipt_columns import RECEIPT_COL
 from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
+from rvdata.core.tools.headers import parse_value_to_datatype
 
 
 class RVDataModel(object):
@@ -44,13 +45,27 @@ class RVDataModel(object):
     Attributes
     ----------
     extensions : dict
-        A dictionary of extensions. This maps extension name to their FITS data type, e.g. PrimaryHDU, ImageHDU, BinTableHDU.
+        A dictionary of extensions. This maps extension name to their FITS data type,
+        e.g. PrimaryHDU, ImageHDU, BinTableHDU.
     headers : dict
-        A dictionary of headers of each extension (HDU). This stores all header information from the FITS file as a dictionary with extension name as the keys and the header content as the values. Headers are stored as OrderedDict types.
+        A dictionary of headers of each extension (HDU). This stores all header information
+        from the FITS file as a dictionary with extension name as the keys and the header
+        content as the values. Headers are stored as OrderedDict types.
     data : dict
-        A dictionary of data of each extension (HDU). This stores all extension data from the FITS file as a dictionary with extension name as the keys and the data content as the values. Data type is translated from the FITS type to an appropriate Python data type by core.model.definitions.FITS_TYPE_MAP.
+        A dictionary of data of each extension (HDU). This stores all extension data from
+        the FITS file as a dictionary with extension name as the keys and the data content
+        as the values. Data type is translated from the FITS type to an appropriate Python
+        data type by core.model.definitions.FITS_TYPE_MAP.
     receipt : pandas.DataFrame
-        A table that records the history of this data. The receipt keeps track of the data process history, so that the information stored by this instance can be reproduced from the original data. It is structured as a pandas.DataFrame table, with each row as an entry. Anything that modifies the content of a data product are expected to also write to the receipt. Three string inputs from the primitive are required: name, any relevant parameters, and a status. The receipt will also automatically fill in additional information, such as the time of execution, code release version, current branch, ect. It is not recommended to modify the receipt Dataframe directly. Use the provided methods to make any adjustments, such as:
+        A table that records the history of this data. The receipt keeps track of the data
+        process history, so that the information stored by this instance can be reproduced
+        from the original data. It is structured as a pandas.DataFrame table, with each row
+        as an entry. Anything that modifies the content of a data product are expected to
+        also write to the receipt. Three string inputs from the primitive are required: name,
+        any relevant parameters, and a status. The receipt will also automatically fill in
+        additional information, such as the time of execution, code release version, current
+        branch, ect. It is not recommended to modify the receipt Dataframe directly. Use the
+        provided methods to make any adjustments, such as:
             >>> from core.models.level1 import RV1
             >>> data = RV1()
             >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
@@ -65,7 +80,9 @@ class RVDataModel(object):
         self.read_methods = INSTRUMENT_READERS
 
         self.extensions = OrderedDict()  # map name to FITS type
-        self.headers = OrderedDict()  # map name to extension header
+        self.headers = (
+            OrderedDict()
+        )  # map name to extension header; the dict is keyword to (value, comment)
         self.data = OrderedDict()  # map name to extension data
         self.receipt = pd.DataFrame([])
 
@@ -87,22 +104,45 @@ class RVDataModel(object):
             cls (data model class): the data instance containing the file content
 
         """
-        this_data = cls()
+
+        # Check whether the file exists and is a FITS file
         if not os.path.isfile(fn):
             raise IOError(f"{fn} does not exist.")
 
+        if not fn.endswith(".fits") and not fn.endswith(".fit"):
+            # Can only read .fits files
+            raise IOError("input files must be FITS files")
+
+        # create an empty instance
+        this_data = cls()
         # populate it with self.read()
-        this_data.read(fn, instrument, **kwargs)
+        with fits.open(fn, memmap=False) as hdul:
+            this_data.filename = os.path.basename(fn)
+            this_data.dirname = os.path.dirname(fn)
+            this_data.read(hdul, instrument, **kwargs)
+
+        # compute MD5 sum of source file and write it into a receipt entry for tracking.
+        # Note that MD5 sum has known security vulnerabilities, but we are only using
+        # this to ensure data integrity, and there is no known reason for someone to try
+        # to hack astronomical data files.  If something more secure is is needed,
+        # substitute hashlib.sha256 for hashlib.md5
+        md5 = hashlib.md5()
+        with open(fn, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                md5.update(chunk)
+        this_data.receipt_add_entry("from_fits", "PASS")
+
         # Return this instance
         return this_data
 
-    def read(self, fn, instrument=None, overwrite=False, **kwargs):
+    # TODO: overwrite is not yet used
+    def read(self, hdu_list, instrument=None, overwrite=False, **kwargs):
         """
         Read the content of a RVData standard .fits file and populate this
         data structure.
 
         Args:
-            fn (str): file path (relative to the repository)
+            hdu_list (fits.HDUList): list of HDUs read from a FITS file
             instrument (str): instrument name. None implies FITS file is in EPRV standard format.
             overwrite (bool): if this instance is not empty, specifies whether to overwrite
 
@@ -115,140 +155,235 @@ class RVDataModel(object):
 
         """
 
-        if not fn.endswith(".fits"):
-            # Can only read .fits files
-            raise IOError("input files must be FITS files")
-
-        self.filename = os.path.basename(fn)
-        self.dirname = os.path.dirname(fn)
-
-        with fits.open(fn) as hdu_list:
-
-            # Handles the Receipt and the auxilary HDUs
-            for hdu in hdu_list:
-                if isinstance(hdu, fits.PrimaryHDU):
-                    self.headers[hdu.name] = hdu.header
-                elif isinstance(hdu, fits.BinTableHDU):
+        # Handles the Receipt and the auxilary HDUs
+        for hdu in hdu_list:
+            if isinstance(hdu, fits.PrimaryHDU):
+                self.headers[hdu.name] = hdu.header
+            elif isinstance(hdu, fits.BinTableHDU):
+                if "RECEIPT" in hdu.name:
                     t = Table.read(hdu)
-                    if "RECEIPT" in hdu.name:
-                        # Table contains the RECEIPT
-                        df: pd.DataFrame = t.to_pandas()
-                        # TODO: get receipt columns from core.models.config.BASE-RECEIPT-columns.csv
-                        if df.empty:
-                            df = pd.DataFrame(columns=RECEIPT_COL)
-                        else:
-                            df = df.reindex(
-                                df.columns.union(RECEIPT_COL, sort=False),
-                                axis=1,
-                                fill_value="",
-                            )
-                        setattr(self, hdu.name, df)
-                        setattr(self, hdu.name.lower(), getattr(self, hdu.name))
-                        self.headers[hdu.name] = hdu.header
-                        setattr(self, hdu.name, t.to_pandas())
+                    # Table contains the RECEIPT
+                    df: pd.DataFrame = t.to_pandas()
+                    receipt_columns = BASE_RECEIPT_COLUMNS["Name"].tolist()
+                    if df.empty:
+                        df = pd.DataFrame(columns=receipt_columns)
+                    else:
+                        # Reindex to include all receipt_columns
+                        # Avoid using fill_value in reindex() due to pandas bug
+                        # with string dtype when there are multiple columns
+                        all_cols = df.columns.union(receipt_columns, sort=False)
+                        df = df.reindex(columns=all_cols)
+                        # Fill missing columns (NaN values) with empty strings
+                        df = df.fillna("")
+                    self.receipt = df
+                # else:
+                #     t = Table.read(hdu)
+                #     self.headers[hdu.name] = hdu.header
+                #     self.data[hdu.name] = t.to_pandas()
 
-            # Leave the rest of HDUs to level specific readers
-            # assume reader method and class names folow RV2 conventions
-            lvl = self.level
-            if instrument is None:
-                if lvl == 2:
-                    import rvdata.core.models.level2
+            # TODO: we can fill in all the object headers and data, not just tables
+            #       It's confusing because here we're using Astropy Tables,
+            #       but the FITS_TYPE_MAP is calling for Pandas DataFrames.
+            # TODO: really we should be using create_extension()
 
-                    method = rvdata.core.models.level2.RV2._read
-                    method(self, hdu_list)
-                elif lvl == 3:
-                    import rvdata.core.models.level3
+        # Leave the rest of HDUs to level specific readers
+        # assume reader method and class names folow RV2 conventions
+        lvl = self.level
+        if instrument is None:
+            if lvl == 2:
+                import rvdata.core.models.level2
 
-                    method = rvdata.core.models.level4.RV3._read
-                    method(self, hdu_list)
-                elif lvl == 4:
-                    import rvdata.core.models.level4
+                method = rvdata.core.models.level2.RV2._read
+                method(self, hdu_list)
+            elif lvl == 3:
+                import rvdata.core.models.level3
 
-                    method = rvdata.core.models.level4.RV4._read
-                    method(self, hdu_list)
-            elif instrument in self.read_methods.keys():
-                clsname = self.read_methods[instrument]["class"]
-                methname = self.read_methods[instrument]["method"]
-                modname = self.read_methods[instrument]["module"]
-                if lvl != 2:
-                    modname = modname.replace("level2", "level{}".format(lvl))
-                    clsname = clsname.replace("RV2", "RV{}".format(lvl))
-                    methname = methname.replace("level2", "level{}".format(lvl))
+                method = rvdata.core.models.level3.RV3._read
+                method(self, hdu_list)
+            elif lvl == 4:
+                import rvdata.core.models.level4
 
-                module = importlib.import_module(modname)
+                method = rvdata.core.models.level4.RV4._read
+                method(self, hdu_list)
+        elif instrument in self.read_methods.keys():
+            clsname = self.read_methods[instrument]["class"]
+            methname = self.read_methods[instrument]["method"]
+            modname = self.read_methods[instrument]["module"]
+            if lvl != 2:
+                modname = modname.replace("level2", "level{}".format(lvl))
+                clsname = clsname.replace("RV2", "RV{}".format(lvl))
+                methname = methname.replace("level2", "level{}".format(lvl))
 
-                cls = getattr(module, clsname)
-                method = getattr(cls, methname)
-                method(self, hdu_list, **kwargs)
-            else:
-                # the provided data_type is not recognized, ie.
-                # not in the self.read_methods list
-                raise IOError("cannot recognize data type {}".format(instrument))
+            module = importlib.import_module(modname)
+
+            cls = getattr(module, clsname)
+            method = getattr(cls, methname)
+            method(self, hdu_list, **kwargs)
+        else:
+            # the provided data_type is not recognized, ie.
+            # not in the self.read_methods list
+            raise IOError("cannot recognize data type {}".format(instrument))
 
         # check and recast the headers into appropriate types
-        for i, row in pd.concat(
+        for _, row in pd.concat(
             [LEVEL2_PRIMARY_KEYWORDS, LEVEL3_PRIMARY_KEYWORDS, LEVEL4_PRIMARY_KEYWORDS]
         ).iterrows():
             key = row["Keyword"]
             if key in self.headers["PRIMARY"]:
                 value = self.headers["PRIMARY"][key]
-                if value is None:
-                    continue
-                try:
-                    if row["Data type"].lower() == "uint":
-                        self.headers["PRIMARY"][key] = int(value)
-                    elif row["Data type"].lower() == "float":
-                        self.headers["PRIMARY"][key] = float(value)
-                    elif row["Data type"].lower() == "string":
-                        self.headers["PRIMARY"][key] = str(value)
-                    elif row["Data type"].lower() == "double":
-                        self.headers["PRIMARY"][key] = np.float64(value)
-                    elif row["Data type"].lower() == "boolean":
-                        self.headers['PRIMARY'][key] = bool(value)
-                    else:
-                        warnings.warn(f"Unknown type {row['Data type']} for keyword {key}")
-                except (TypeError, AttributeError, ValueError):
-                    warnings.warn(
-                        f"Cannot convert value {value} for keyword {key} to type {row['Data type']}"
-                    )
+                parsed_value = parse_value_to_datatype(key, row["DataType"], value)
+                self.headers["PRIMARY"][key] = parsed_value
 
-        # compute MD5 sum of source file and write it into a receipt entry for tracking.
-        # Note that MD5 sum has known security vulnerabilities, but we are only using
-        # this to ensure data integrity, and there is no known reason for someone to try
-        # to hack astronomical data files.  If something more secure is is needed,
-        # substitute hashlib.sha256 for hashlib.md5
-        md5 = hashlib.md5()
-        with open(fn, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                md5.update(chunk)
-        self.receipt_add_entry("from_fits", "PASS")
-
-    def to_fits(self, fn):
+    def to_fits(self, fn=None):
         """
         Collect the content of this instance into a monolithic FITS file
 
         Args:
-            fn (str): file path
+            fn (str, optional): file path. If not provided, automatically
+                generates a filename following the EPRV naming convention.
+
+        Returns:
+            str: The filename that was written to
 
         Note:
-            Can only write to KPF formatted FITS
+            Filename should follow the EPRV naming convention:
+            inst_SL#_YYYYMMDDThhmmss.fits
 
         """
+        # Auto-generate filename if not provided
+        if fn is None:
+            fn = self.generate_standard_filename()
+
         if not fn.endswith(".fits"):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
 
-        gen_hdul = getattr(self, "_create_hdul", None)
-        if gen_hdul is None:
-            raise TypeError("Write method not found. Is this the base class?")
-        else:
-            hdu_list = gen_hdul()
+        # Add receipt entry before writing (so it's included in the file)
+        self.receipt_add_entry("to_fits", "PASS")
+        # Check filename convention and warn if it doesn't match
+        self.check_filename_convention(fn)
+
+        # Update FILENAME header to match the actual filename being written
+        basename = os.path.basename(fn)
+        if "PRIMARY" in self.headers:
+            self.headers["PRIMARY"]["FILENAME"] = (basename, "Name of the FITS file")
+
+        hdu_list = self._create_hdul()
         # finish up writing
         hdul = fits.HDUList(hdu_list)
-        if not os.path.isdir(os.path.dirname(fn)):
-            os.makedirs(os.path.dirname(fn), exist_ok=True)
+        dirname = os.path.dirname(fn)
+        if dirname and not os.path.isdir(dirname):
+            os.makedirs(dirname, exist_ok=True)
         hdul.writeto(fn, overwrite=True, output_verify="silentfix")
         hdul.close()
+
+        return fn
+
+    # =============================================================================
+    # Filename convention methods
+
+    # Pattern for standard filename: inst_SL#_YYYYMMDDThhmmss.fits
+    FILENAME_PATTERN = re.compile(
+        r"^([a-zA-Z]+)_SL([234])_(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.fits$"
+    )
+
+    def generate_standard_filename(self):
+        """
+        Generate a standard filename based on the EPRV naming convention.
+
+        The convention is: inst_SL#_YYYYMMDDThhmmss.fits
+        where:
+        - inst: instrument name (lowercase)
+        - SL#: standard level (SL2, SL3, or SL4)
+        - YYYYMMDDThhmmss: observation date/time
+
+        Returns:
+            str: The generated standard filename
+
+        Raises:
+            ValueError: If required header values (INSTRUME, DATE-OBS) are missing
+                or if the data level is not set
+        """
+        # Get instrument name from PRIMARY header
+        if "PRIMARY" not in self.headers:
+            raise ValueError("PRIMARY header not found")
+
+        instrume = self.headers["PRIMARY"].get("INSTRUME")
+        if instrume is None:
+            raise ValueError("INSTRUME keyword not found in PRIMARY header")
+        # Handle tuple format (value, comment)
+        if isinstance(instrume, tuple):
+            instrume = instrume[0]
+        instrume = str(instrume).lower()
+
+        # Get level
+        if self.level is None:
+            raise ValueError("Data level not set")
+        level = self.level
+
+        # Get DATE-OBS from PRIMARY header
+        date_obs = self.headers["PRIMARY"].get("DATE-OBS")
+        if date_obs is None:
+            raise ValueError("DATE-OBS keyword not found in PRIMARY header")
+        # Handle tuple format (value, comment)
+        if isinstance(date_obs, tuple):
+            date_obs = date_obs[0]
+
+        # Parse DATE-OBS (format: YYYY-MM-DDTHH:MM:SS.sss or similar)
+        # Remove any fractional seconds and parse
+        date_str = str(date_obs).split(".")[0]  # Remove fractional seconds
+        try:
+            dt = datetime.datetime.fromisoformat(date_str)
+        except ValueError:
+            raise ValueError(f"Cannot parse DATE-OBS value: {date_obs}")
+
+        # Format as YYYYMMDDThhmmss
+        datetime_str = dt.strftime("%Y%m%dT%H%M%S")
+
+        return f"{instrume}_SL{level}_{datetime_str}.fits"
+
+    def validate_filename(self, filename):
+        """
+        Validate if a filename matches the EPRV naming convention.
+
+        The convention is: inst_SL#_YYYYMMDDThhmmss.fits
+
+        Args:
+            filename (str): The filename to validate (basename only, no path)
+
+        Returns:
+            bool: True if the filename matches the convention, False otherwise
+        """
+        # Get just the basename if a path was provided
+        basename = os.path.basename(filename)
+        return bool(self.FILENAME_PATTERN.match(basename))
+
+    def check_filename_convention(self, filename):
+        """
+        Check if the filename follows the EPRV naming convention and issue
+        a warning if it doesn't.
+
+        Args:
+            filename (str): The filename to check
+
+        Returns:
+            bool: True if the filename matches the convention, False otherwise
+        """
+        basename = os.path.basename(filename)
+        if not self.validate_filename(basename):
+            try:
+                suggested = self.generate_standard_filename()
+                warnings.warn(
+                    f"Filename '{basename}' does not follow the EPRV naming convention. "
+                    f"Suggested filename: '{suggested}'"
+                )
+            except ValueError:
+                warnings.warn(
+                    f"Filename '{basename}' does not follow the EPRV naming convention "
+                    f"(inst_SL#_YYYYMMDDThhmmss.fits)"
+                )
+            return False
+        return True
 
     # =============================================================================
     # Receipt related members
@@ -360,7 +495,10 @@ class RVDataModel(object):
         if data is None:
             self.data[ext_name] = FITS_TYPE_MAP[ext_type]([])
         else:
-            self.data[ext_name] = FITS_TYPE_MAP[ext_type](data)
+            if ext_type == "BinTableHDU" and isinstance(data, pd.DataFrame):
+                self.data[ext_name] = Table.from_pandas(data)
+            else:
+                self.data[ext_name] = FITS_TYPE_MAP[ext_type](data)
 
     def del_extension(self, ext_name):
         """
@@ -401,7 +539,10 @@ class RVDataModel(object):
         """
         # check whether the extension already exist
         if ext_name in self.extensions.keys():
-            if isinstance(data, type(FITS_TYPE_MAP[self.extensions[ext_name]]([]))):
+            ext_type = self.extensions[ext_name]
+            if ext_type == "BinTableHDU" and isinstance(data, pd.DataFrame):
+                data = Table.from_pandas(data)
+            if isinstance(data, type(FITS_TYPE_MAP[ext_type]([]))):
                 self.data[ext_name] = data
             else:
                 raise TypeError(
@@ -409,3 +550,80 @@ class RVDataModel(object):
                 )
         else:
             raise NameError("Name {} does not exist as extension".format(ext_name))
+
+    @staticmethod
+    def _restore_column_metadata(hdu, stored_header):
+        """Restore TUNIT, TDISP, and TNULL cards that BinTableHDU may overwrite.
+
+        The BinTableHDU constructor can normalize or drop column metadata
+        (e.g. ``m/s`` becomes ``m s-1``).  This method copies the original
+        values back from the stored header into both the HDU header and
+        the Column objects so they survive ``writeto()``.
+        """
+        for i in range(1, len(hdu.columns) + 1):
+            for kw in ("TUNIT", "TDISP", "TNULL"):
+                card = f"{kw}{i}"
+                if card in stored_header:
+                    hdu.header[card] = stored_header[card]
+            if f"TUNIT{i}" in stored_header:
+                hdu.columns[i - 1].unit = stored_header[f"TUNIT{i}"]
+
+    def _create_hdul(self):
+        """
+        Create an hdul in FITS format.
+        This is used by the base model for writing data context to file
+        """
+        hdu_list = []
+        hdu_definitions = self.extensions.items()
+        for key, value in hdu_definitions:
+            hduname = key
+            if value == "PrimaryHDU":
+                head = fits.Header()
+                for keyword, content in self.headers[key].items():
+                    head[keyword] = content
+                hdu = fits.PrimaryHDU(header=head)
+                hdu_list.insert(0, hdu)
+            elif value == "ImageHDU":
+                data = self.data[key]
+                if data is None:
+                    ndim = 0
+                else:
+                    ndim = len(data.shape)
+                self.headers[key]["NAXIS"] = ndim
+                if ndim == 0:
+                    self.headers[key]["NAXIS1"] = 0
+                else:
+                    for d in range(ndim):
+                        self.headers[key]["NAXIS{}".format(d + 1)] = data.shape[d]
+                head = fits.Header(self.headers[key])
+                try:
+                    hdu = fits.ImageHDU(data=data, header=head)
+                    hdu.name = hduname
+                    hdu_list.append(hdu)
+                except KeyError as ke:
+                    print("KeyError exception raised: -->ke=" + str(ke))
+                    print("Attempting to handle it...")
+                    if str(ke) == "'bool'":
+                        data = data.astype(float)
+                        print("------>SHAPE=" + str(data.shape))
+                        hdu = fits.ImageHDU(data=data, header=head)
+                        hdu_list.append(hdu)
+                    else:
+                        raise KeyError("A different error...")
+            elif value == "BinTableHDU":
+                table = self.data[key]
+                self.headers[key]["NAXIS2"] = len(table)
+                head = fits.Header(self.headers[key])
+                hdu = fits.BinTableHDU(data=table, header=head)
+                hdu.name = hduname
+                self._restore_column_metadata(hdu, self.headers[key])
+                hdu_list.append(hdu)
+            else:
+                print(
+                    "Can't translate {} into a valid FITS format.".format(
+                        type(self.data[key])
+                    )
+                )
+                continue
+
+        return hdu_list

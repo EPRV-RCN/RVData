@@ -107,7 +107,9 @@ class KPFRV2(RV2):
                     blaze_data = hdul1[blaze_ext].data
                     blaze_meta = OrderedDict(hdul1[blaze_ext].header)
                 else:
-                    warnings.warn("Blaze extensions not found in KPF L1 file, using default.")
+                    warnings.warn(
+                        "Blaze extensions not found in KPF L1 file, using default."
+                    )
                     blaze_data = blazeHDU[flux_ext].data
                     blaze_meta = OrderedDict(blazeHDU[flux_ext].header)
 
@@ -190,6 +192,7 @@ class KPFRV2(RV2):
 
                 self.set_header(out_prefix + "BLAZE", flux_meta)
                 self.set_data(out_prefix + "BLAZE", blaze_array)
+
             else:
                 self.create_extension(
                     out_prefix + "FLUX", "ImageHDU", data=flux_array, header=flux_meta
@@ -221,10 +224,25 @@ class KPFRV2(RV2):
             data=hdul0["EXPMETER_SCI"].data,
             header=OrderedDict(hdul0["EXPMETER_SCI"].header),
         )
+        telemetry = Table(hdul1["TELEMETRY"].data).to_pandas()
+        telemetry_colmap = {
+            "keyword": "SENSOR",
+            "average": "VALUE",
+            "units": "UNITS",
+        }
+        mapped_native_cols = []
+        for native_col, std_col in telemetry_colmap.items():
+            if native_col in telemetry.columns:
+                telemetry[std_col] = telemetry[native_col]
+                mapped_native_cols.append(native_col)
+        if mapped_native_cols:
+            telemetry = telemetry.drop(columns=mapped_native_cols)
+        if "DATE" not in telemetry.columns:
+            telemetry["DATE"] = hdul1["PRIMARY"].header.get("DATE-OBS", "")
         self.create_extension(
             "TELEMETRY",
             "BinTableHDU",
-            data=hdul1["TELEMETRY"].data,
+            data=telemetry,
             header=OrderedDict(hdul1["TELEMETRY"].header),
         )
 
@@ -234,18 +252,38 @@ class KPFRV2(RV2):
         self.set_header("INSTRUMENT_HEADER", hdul1["PRIMARY"].header)
 
         self.set_header("DRP_CONFIG", OrderedDict(hdul1["CONFIG"].header))
-        self.set_data("DRP_CONFIG", Table(hdul1["CONFIG"].data).to_pandas())
+        drp_config = Table(hdul1["CONFIG"].data).to_pandas()
+        if "line" in drp_config.columns:
+            drp_config["ENTRY"] = drp_config["line"]
+        self.set_data("DRP_CONFIG", drp_config)
 
         self.set_header("RECEIPT", OrderedDict(hdul1["RECEIPT"].header))
-        self.set_data("RECEIPT", Table(hdul1["RECEIPT"].data).to_pandas())
+        receipt = Table(hdul1["RECEIPT"].data).to_pandas()
+        receipt_colmap = {
+            "Time": "TIME",
+            "Code_Release": "CODE_RELEASE",
+            "Branch_Name": "BRANCH_NAME",
+            "Commit_Hash": "COMMIT_HASH",
+            "Module_Name": "FUNCTION",
+            "Module_Param": "ARGS",
+            "Status": "STATUS",
+        }
+        mapped_native_cols = []
+        for native_col, std_col in receipt_colmap.items():
+            if native_col in receipt.columns:
+                receipt[std_col] = receipt[native_col]
+                mapped_native_cols.append(native_col)
+        if mapped_native_cols:
+            receipt = receipt.drop(columns=mapped_native_cols)
+        self.set_data("RECEIPT", receipt)
 
         wavelengths = self.data["TRACE2_WAVE"]
         order_table_data = pd.DataFrame(
             {
-                "echelle_order": 137 - np.arange(wavelengths.shape[0]),
-                "order_index": np.arange(wavelengths.shape[0]),
-                "wave_start": np.nanmin(wavelengths.data, axis=1),
-                "wave_end": np.nanmax(wavelengths.data, axis=1),
+                "ECHELLE_ORDER": 137 - np.arange(wavelengths.shape[0]),
+                "ORDER_INDEX": np.arange(wavelengths.shape[0]),
+                "WAVE_START": np.nanmin(wavelengths.data, axis=1),
+                "WAVE_END": np.nanmax(wavelengths.data, axis=1),
             }
         )
         self.set_data("ORDER_TABLE", order_table_data)
@@ -253,21 +291,26 @@ class KPFRV2(RV2):
         hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
         headmap = pd.read_csv(hmap_path, header=0)
 
-        phead = fits.PrimaryHDU().header
+        phead = RV2().headers["PRIMARY"]
         ihead = self.headers["INSTRUMENT_HEADER"]
         for i, row in headmap.iterrows():
             skey = row["STANDARD"]
             kpfkey = row["INSTRUMENT"]
+            content = phead.get(skey, '')
+            if len(content) == 2:
+                description = content[1]
+            else:
+                description = ''
             if pd.notnull(kpfkey) and kpfkey in ihead.keys():
                 kpfval = ihead[kpfkey]
             else:
                 kpfval = row["DEFAULT"]
             if pd.notnull(kpfval):
-                phead[skey] = kpfval
+                phead[skey] = (kpfval, description)
             else:
-                phead[skey] = None
+                phead[skey] = (None, description)
 
-        phead["ISSOLAR"] = ihead["OBJECT"].lower() == "socal"
+        phead["ISSOLAR"] = (ihead["OBJECT"].lower() == "socal", "Is this the Sun?")
         self.set_header("PRIMARY", phead)
 
         # overwrite EXT_DESCRIPT as a DataFrame, dropping the Comments column

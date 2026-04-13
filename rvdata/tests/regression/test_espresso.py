@@ -1,99 +1,93 @@
-import requests
 import os
+import re
+from pathlib import Path
+
+import requests
+
+from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level4 import RV4
+from rvdata.tests.regression.compliance import (
+    check_l2_compliance,
+    check_l4_compliance,
+)
 
-# from rvdata.instruments.kpf.level2 import KPFRV2
-from rvdata.tests.regression.compliance import check_l2_extensions, check_l2_header
-from rvdata.tests.regression.compliance import check_l4_extensions, check_l4_header
-
-
-file_urls = {
+FILE_URLS = {
     "ESPRESSO": {
-        'raw': 'https://dace.unige.ch/downloads/EPRV_standard_data/ESPRE.2017-12-03T02:09:40.348.fits',
-        'S2D_BLAZE_A': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S2D_BLAZE_A.fits',
-        'S2D_BLAZE_B': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S2D_BLAZE_B.fits',
-        'BLAZE_A': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T10:43:59.835_BLAZE_A.fits',
-        'BLAZE_B': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T10:43:59.835_BLAZE_B.fits',
-        'S1D_A': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S1D_A.fits',
-        'S1D_B': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S1D_B.fits',
-        'S1D_TELL_CORR_A': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_S1D_TELL_CORR_A.fits',
-        'DRIFT_MATRIX_B': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_DRIFT_MATRIX_B.fits',
-        'CCF_A': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_CCF_A.fits',
-        'CCF_TELL_CORR_A': 'https://dace.unige.ch/downloads/EPRV_standard_data/r.ESPRE.2017-12-03T02:09:40.348_CCF_TELL_CORR_A.fits'
+        "raw": "http://grinnell.as.arizona.edu/~rvdata/espresso/ESPRE.2017-12-03T02-09-40.348.fits",
+        "S2D_BLAZE_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S2D_BLAZE_A.fits",
+        "S2D_BLAZE_B": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S2D_BLAZE_B.fits",
+        "BLAZE_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T10-43-59.835_BLAZE_A.fits",
+        "BLAZE_B": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T10-43-59.835_BLAZE_B.fits",
+        "S1D_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S1D_A.fits",
+        "S1D_B": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S1D_B.fits",
+        "S1D_TELL_CORR_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_S1D_TELL_CORR_A.fits",
+        "DRIFT_MATRIX_B": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_DRIFT_MATRIX_B.fits",
+        "CCF_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_CCF_A.fits",
+        "CCF_TELL_CORR_A": "http://grinnell.as.arizona.edu/~rvdata/espresso/r.ESPRE.2017-12-03T02-09-40.348_CCF_TELL_CORR_A.fits",
     }
 }
 
 
-def download_file(url, filename):
-    response = requests.get(url, verify=False)
-    response.raise_for_status()  # Check if the request was successful
-    with open(filename, "wb") as file:
-        file.write(response.content)
+def download_instrument_files(instrument: str = "ESPRESSO") -> dict[str, Path]:
+    """Download all files for the specified instrument."""
 
+    # CA bundle path relative to this test file
+    # CA_BUNDLE_PATH = Path(__file__).parent / "fixtures" / "dace-unige-ch-chain.pem"
 
-def download_files():
-    raw_file = "ESPRE.2017-12-03T02:09:40.348.fits"
-    s2d_A_file = "r.ESPRE.2017-12-03T02:09:40.348_S2D_BLAZE_A.fits"
-    s2d_B_file = "r.ESPRE.2017-12-03T02:09:40.348_S2D_BLAZE_B.fits"
-    blaze_A_file = "r.ESPRE.2017-12-03T10:43:59.835_BLAZE_A.fits"
-    blaze_B_file = "r.ESPRE.2017-12-03T10:43:59.835_BLAZE_B.fits"
-    s1d_A_file = "r.ESPRE.2017-12-03T02:09:40.348_S1D_A.fits"
-    s1d_B_file = "r.ESPRE.2017-12-03T02:09:40.348_S1D_B.fits"
-    s1d_tell_corr_A_file = "r.ESPRE.2017-12-03T02:09:40.348_S1D_TELL_CORR_A.fits"
-    drift_matrix_B_file = "r.ESPRE.2017-12-03T02:09:40.348_DRIFT_MATRIX_B.fits"
-    ccf_A_file = "r.ESPRE.2017-12-03T02:09:40.348_CCF_A.fits"
-    ccf_tell_corr_A_file = "r.ESPRE.2017-12-03T02:09:40.348_CCF_TELL_CORR_A.fits"
+    local_files = {}
 
-    if not os.path.exists(raw_file):
-        download_file(file_urls["ESPRESSO"]['raw'], raw_file)
-    if not os.path.exists(s2d_A_file):
-        download_file(file_urls["ESPRESSO"]['S2D_BLAZE_A'], s2d_A_file)
-    if not os.path.exists(s2d_B_file):
-        download_file(file_urls["ESPRESSO"]['S2D_BLAZE_B'], s2d_B_file)
-    if not os.path.exists(blaze_A_file):
-        download_file(file_urls["ESPRESSO"]['BLAZE_A'], blaze_A_file)
-    if not os.path.exists(blaze_B_file):
-        download_file(file_urls["ESPRESSO"]['BLAZE_B'], blaze_B_file)
-    if not os.path.exists(s1d_A_file):
-        download_file(file_urls["ESPRESSO"]['S1D_A'], s1d_A_file)
-    if not os.path.exists(s1d_B_file):
-        download_file(file_urls["ESPRESSO"]['S1D_B'], s1d_B_file)
-    if not os.path.exists(s1d_tell_corr_A_file):
-        download_file(file_urls["ESPRESSO"]['S1D_TELL_CORR_A'], s1d_tell_corr_A_file)
-    if not os.path.exists(drift_matrix_B_file):
-        download_file(file_urls["ESPRESSO"]['DRIFT_MATRIX_B'], drift_matrix_B_file)
-    if not os.path.exists(ccf_A_file):
-        download_file(file_urls["ESPRESSO"]['CCF_A'], ccf_A_file)
-    if not os.path.exists(ccf_tell_corr_A_file):
-        download_file(file_urls["ESPRESSO"]['CCF_TELL_CORR_A'], ccf_tell_corr_A_file)
+    for key, url in FILE_URLS[instrument].items():
+        # get the file name from the URL
+        filename = url.rsplit("/", 1)[-1]
+        if os.name == "nt":
+            # For Windows: colons are not allowed in filenames, use underscores
+            # to match what get_files_names.py produces via replace(":", "_")
+            filename = re.sub(r"T(\d{2})-(\d{2})-(\d{2})", r"T\1_\2_\3", filename)
+        else:
+            # Restore colons in ISO timestamp time portions (HH-MM-SS -> HH:MM:SS)
+            filename = re.sub(r"T(\d{2})-(\d{2})-(\d{2})", r"T\1:\2:\3", filename)
+        filepath = Path(filename)
 
-    return raw_file, s2d_A_file, s2d_B_file, blaze_A_file, blaze_B_file, s1d_A_file, s1d_B_file, s1d_tell_corr_A_file, drift_matrix_B_file, ccf_A_file, ccf_tell_corr_A_file
+        if not filepath.exists():
+            # response = requests.get(url, verify=str(CA_BUNDLE_PATH), timeout=30)
+            response = requests.get(url)
+
+            response.raise_for_status()
+            filepath.write_bytes(response.content)
+
+        local_files[key] = filepath
+
+    return local_files
 
 
 def test_espresso():
-    raw_file, s2d_A_file, s2d_B_file, blaze_A_file, blaze_B_file, s1d_A_file, s1d_B_file, s1d_tell_corr_A_file, drift_matrix_B_file, ccf_A_file, ccf_tell_corr_A_file = download_files()
-    espr2 = RV2.from_fits(raw_file, instrument="ESPRESSO")
-    l2_standard = "./esp_L2_standard.fits"
-    espr2.to_fits(l2_standard)
-    l2_obj = RV2.from_fits(l2_standard)
+    """Test ESPRESSO data processing for L2 and L4 standards."""
+    files = download_instrument_files("ESPRESSO")
+    raw_file = files["raw"]
 
-    check_l2_extensions(l2_standard)
-    check_l2_header(l2_obj.headers['PRIMARY'])
+    # Test Level 2 - use auto-generated filename
+    espr2 = RV2.from_fits(str(raw_file), instrument="ESPRESSO")
+    l2_standard = espr2.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l2_standard)), \
+        f"L2 filename '{l2_standard}' does not match EPRV convention"
+    assert l2_standard.startswith("espresso_SL2_"), \
+        f"L2 filename should start with 'espresso_SL2_', got '{l2_standard}'"
+    check_l2_compliance(l2_standard)
 
-    espr4 = RV4.from_fits(raw_file, instrument="ESPRESSO")
-    l4_standard = "./espr_L4_standard.fits"
-    espr4.to_fits(l4_standard)
-    l4_obj = RV4.from_fits(l4_standard)
-
-    check_l4_extensions(l4_standard)
-    check_l4_header(l4_obj.headers['PRIMARY'])
+    # Test Level 4 - use auto-generated filename
+    espr4 = RV4.from_fits(str(raw_file), instrument="ESPRESSO")
+    l4_standard = espr4.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l4_standard)), \
+        f"L4 filename '{l4_standard}' does not match EPRV convention"
+    assert l4_standard.startswith("espresso_SL4_"), \
+        f"L4 filename should start with 'espresso_SL4_', got '{l4_standard}'"
+    check_l4_compliance(l4_standard)
 
 
 def test_espresso_benchmark(benchmark):
-    # run test_kpf() once to download the files
-    _ = download_files
-    # now run it again with benchmark
+    """Benchmark wrapper for test_espresso."""
+    download_instrument_files("ESPRESSO")
     benchmark(test_espresso)
 
 

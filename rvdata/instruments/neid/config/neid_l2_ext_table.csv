@@ -1,0 +1,25 @@
+Name,Description,Required
+PRIMARY,EPRV Standard FITS HEADER (no data),True
+INSTRUMENT_HEADER,Primary header of native NEID instrument file,True
+RECEIPT,The list of operations performed on this file,True
+DRP_CONFIG,Pipeline details to go from the raw file to this file,True
+EXT_DESCRIPT,Contains the description of all the extensions in the file,True
+ORDER_TABLE,Table of echelle order information,True
+TRACE1_FLUX,Flux in Trace 1 NEID MODE FIBER1 fiber,True
+TRACE1_WAVE,Wavelength in Trace 1 NEID MODE FIBER1 fiber,True
+TRACE1_VAR,Flux variance in Trace 1 NEID MODE FIBER1 fiber,True
+TRACE1_BLAZE,Blaze in Trace 1 NEID MODE FIBER1 fiber,True
+TRACE2_FLUX,Flux in Trace 2 NEID MODE FIBER2 fiber,True
+TRACE2_WAVE,Wavelength in Trace 2 NEID MODE FIBER2 fiber,True
+TRACE2_VAR,Flux variance in Trace 2 NEID MODE FIBER2 fiber,True
+TRACE2_BLAZE,Blaze in Trace 2 NEID MODE FIBER2 fiber,True
+TRACE3_FLUX,Flux in Trace 3 NEID MODE FIBER3 fiber,False
+TRACE3_WAVE,Wavelength in Trace 3 NEID MODE FIBER3 fiber,False
+TRACE3_VAR,Flux variance in Trace 3 NEID MODE FIBER3 fiber,False
+TRACE3_BLAZE,Blaze in Trace 3 NEID MODE FIBER3 fiber,False
+BARYCORR_KMS,Barycentric correction velocity per order in km/s,True
+BARYCORR_Z,Barycentric correction velocity per order in redshift (z),True
+BJD_TDB,Photon weighted midpoint per order as barycentric dynamical time (JD),True
+TRACE1_DRIFT,Instrument drift velocity relative to start of observing session in km/s,True
+EXPMETER,Chromatic exposure meter for Trace 1 science fiber,True
+TRACE1_TELLURIC,Telluric model for Trace 1 science fiber (line and continuum absorption combined),True

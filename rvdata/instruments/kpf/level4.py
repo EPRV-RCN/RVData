@@ -1,5 +1,5 @@
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, vstack
 import numpy as np
 import pandas as pd
 import os
@@ -64,6 +64,8 @@ class KPFRV4(RV4):
                 ccf_array = np.concatenate((ccf_array, hdul2[ccf_ext].data), axis=1)
 
         self.create_extension("CCF1", "ImageHDU", data=ccf_array, header=ccf_meta)
+        ccf_row = Table({"Name": ["CCF1"], "Description": ["CCFs from which RV1 values were derived."]})
+        self.data['EXT_DESCRIPT'] = vstack([self.data['EXT_DESCRIPT'], ccf_row])
 
         # set the primary header
         hmap_path = os.path.join(os.path.dirname(__file__), "config/header_map.csv")
@@ -93,13 +95,13 @@ class KPFRV4(RV4):
             "RV_TRACE2": "orderlet1",
             "RV_TRACE3": "orderlet2",
             "RV_TRACE4": "orderlet3",
-            "COMBINED_RV": "RV",
-            "COMBINED_RV_ERR": "RV error",
-            "BCVEL": "Bary_RVC",
-            "wave_start": "s_wavelength",
-            "wave_end": "e_wavelength",
-            "order_index": "order no.",
-            "weight": "CCF Weights",
+            "RV": "RV",
+            "RV_ERR": "RV error",
+            "BERV": "Bary_RVC",
+            "WAVE_START": "s_wavelength",
+            "WAVE_END": "e_wavelength",
+            "ORDER_INDEX": "order no.",
+            "WEIGHT": "CCF Weights",
         }
 
         sysvel = hdul2["PRIMARY"].header.get("TARGRADV", 0.0)
@@ -107,8 +109,9 @@ class KPFRV4(RV4):
         rvdata = pd.DataFrame(arr)
         for std_col, kpf_col in colmap.items():
             if kpf_col in rvdata.columns:
-                rvdata[std_col] = rvdata[kpf_col]
-                rvdata.drop(columns=[kpf_col], inplace=True)
+                if std_col != kpf_col:
+                    rvdata[std_col] = rvdata[kpf_col]
+                    rvdata.drop(columns=[kpf_col], inplace=True)
             else:
                 print(f"Warning: {kpf_col} not found in KPF data, skipping.")
 
@@ -116,8 +119,8 @@ class KPFRV4(RV4):
             if col not in colmap.keys():
                 rvdata.drop(columns=[col], inplace=True)
 
-        rvdata["echelle_order"] = 137 - rvdata["order_index"]
-        rvdata["COMBINED_RV"] = rvdata["COMBINED_RV"] - sysvel
+        rvdata["ECHELLE_ORDER"] = 137 - rvdata["ORDER_INDEX"]
+        rvdata["RV"] = rvdata["RV"] - sysvel
         for i in [2, 3, 4]:
             rvdata["RV_TRACE{}".format(i)] = rvdata["RV_TRACE{}".format(i)] - sysvel
 
@@ -130,10 +133,30 @@ class KPFRV4(RV4):
         self.set_header("RV1", rv_header)
 
         self.set_header("DRP_CONFIG", OrderedDict(hdul2["CONFIG"].header))
-        self.set_data("DRP_CONFIG", Table(hdul2["CONFIG"].data).to_pandas())
+        drp_config = Table(hdul2["CONFIG"].data).to_pandas()
+        if "line" in drp_config.columns:
+            drp_config["ENTRY"] = drp_config["line"]
+        self.set_data("DRP_CONFIG", drp_config)
 
         self.set_header("RECEIPT", OrderedDict(hdul2["RECEIPT"].header))
-        self.set_data("RECEIPT", Table(hdul2["RECEIPT"].data).to_pandas())
+        receipt = Table(hdul2["RECEIPT"].data).to_pandas()
+        receipt_colmap = {
+            "Time": "TIME",
+            "Code_Release": "CODE_RELEASE",
+            "Branch_Name": "BRANCH_NAME",
+            "Commit_Hash": "COMMIT_HASH",
+            "Module_Name": "FUNCTION",
+            "Module_Param": "ARGS",
+            "Status": "STATUS",
+        }
+        mapped_native_cols = []
+        for native_col, std_col in receipt_colmap.items():
+            if native_col in receipt.columns:
+                receipt[std_col] = receipt[native_col]
+                mapped_native_cols.append(native_col)
+        if mapped_native_cols:
+            receipt = receipt.drop(columns=mapped_native_cols)
+        self.set_data("RECEIPT", receipt)
 
         all_exts = list(self.extensions.keys())
         for ext_name in all_exts:

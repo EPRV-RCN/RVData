@@ -170,8 +170,11 @@ class HARPSRV2(RV2):
 
             # Properly construct the file path
             table_order_path = os.path.join(base_dir, "config", "table_order.csv")
-            table_order_df = pd.read_csv(table_order_path, sep='\t')[['physical_order ', 'start_wav(nm) ', 'end_wav(nm) ']]
-            table_order_df['index_order'] = np.linspace(0, 71, 72, dtype='int')[::-1]
+            table_order_df = pd.read_csv(table_order_path, sep='\t')
+            table_order_df['ECHELLE_ORDER'] = table_order_df['physical_order ']
+            table_order_df['ORDER_INDEX'] = np.linspace(0, 71, 72, dtype='int')[::-1]
+            table_order_df['WAVE_START'] = table_order_df['start_wav(nm) ']
+            table_order_df['WAVE_END'] = table_order_df['end_wav(nm) ']
             self.set_data('ORDER_TABLE', table_order_df)
         except Exception as e:
             print('Error while setting ORDER_TABLE data:', e)

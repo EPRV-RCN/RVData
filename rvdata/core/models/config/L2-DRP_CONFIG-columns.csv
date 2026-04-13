@@ -1,7 +1,0 @@
-Name,Description
-ORDER_IDX,order index
-OPTICAL_ORDER,optical order
-OBJECT,target object name
-SOURCE,sky/sci/cal
-CHIP_IDX,detector chip index
-TRACE_IDX,trace index

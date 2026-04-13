@@ -1,0 +1,26 @@
+# Include necessary files
+include LICENSE
+include README.md
+include pyproject.toml
+
+# Include package data (CSV config files, reference FITS files needed by the package)
+recursive-include rvdata *.csv
+recursive-include rvdata/instruments/kpf/reference_fits *.fits
+
+# Exclude large files and directories that shouldn't be in the package
+# Exclude entire docs directory (documentation, not runtime code)
+# This excludes the large FITS tutorial files (~171 MB total)
+prune docs
+
+# Exclude sample data
+prune kpf_sample
+
+# Exclude build artifacts
+prune build
+prune dist
+prune *.egg-info
+
+# Exclude test FITS files in root directory
+exclude kpf_*.fits
+exclude KP.*.fits
+

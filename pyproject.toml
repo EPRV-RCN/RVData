@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel", "sphinx", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "RVdata"
+name = "rv-data-standard"
 dynamic = ["version"]
 description = "EPRV Data Standardization Project"
 authors = [
@@ -15,31 +15,32 @@ requires-python = ">=3.12"
 dependencies = [
     "astropy",
     "numpy",
+    "scipy",
     "pandas",
+    "h5py",
     "GitPython",
-    "specutils",
     "astroquery",
-    "jplephem"
+    "jplephem",
+    "bindensity"
 ]
 
 # Optional dependencies
 [project.optional-dependencies]
 dev = [
-    "black",       # Code formatting
-    "flake8",      # Code linting
-    "pytest",      # Testing
-    "tox",         # Testing
+    "flake8",           # Code linting
+    "pytest",           # Testing
+    "tox",              # Testing
     "pytest-benchmark", # Benchmarking
-    "coverage",    # Code coverage
-    "sphinx",            # Documentation
-    "sphinx-rtd-theme",  # ReadTheDocs theme for Sphinx
+    "coverage",         # Code coverage
+    "sphinx<9",         # Documentation, limited to version 8 for compatibility with sphinx-rtd-theme
+    "sphinx-rtd-theme", # ReadTheDocs theme for Sphinx
     "sphinxcontrib-napoleon",
     "sphinx-autodoc-typehints",
+    "nbsphinx",          # Jupyter notebook support in Sphinx
+    "ipykernel",         # Required for nbsphinx to execute notebooks
+    "pandoc",            # Required for nbsphinx
 ]
 
-[tool.black]
-line-length = 88
-target-version = ["py313"]
 
 [tool.flake8]
 max-line-length = 88
@@ -73,7 +74,6 @@ addopts = [
 ]
 
 [tool.coverage]
-
     [tool.coverage.run]
         omit = [
             "rvdata/core/models/config/*",

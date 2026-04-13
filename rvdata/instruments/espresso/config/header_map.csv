@@ -29,8 +29,8 @@ CDEC,HIERARCH ESO TEL%UT% TARG DELTA,,PRIMARY,S2D_BLAZE_A,,True,[sexa] Catalog d
 CEQNX,HIERARCH ESO TEL%UT% TARG EQUINOX,,PRIMARY,S2D_BLAZE_A,,True,[yr] Catalog equinox for obj in trace,UNDEFINED
 CEPCH,HIERARCH ESO TEL%UT% TARG EPOCH,,PRIMARY,S2D_BLAZE_A,,True,[yr] Catalog epoch for obj in trace,UNDEFINED
 CPLX,PLX_VALUE,,PRIMARY,Simbad,,True,[mas] Catalog parallax for obj in trace,Null
-CPMR,HIERARCH ESO TEL%UT% TARG PMA,,PRIMARY,S2D_BLAZE_A,,True,["/yr] Catalog proper motion RA (obj) in trace,Null
-CPMD,HIERARCH ESO TEL%UT% TARG PMD,,PRIMARY,S2D_BLAZE_A,,True,["/yr] Catalog proper motion DEC (obj) in trace,Null
+CPMR,HIERARCH ESO TEL%UT% TARG PMA,,PRIMARY,S2D_BLAZE_A,,True,[arcsec/yr] Catalog proper motion RA (obj) in trace,Null
+CPMD,HIERARCH ESO TEL%UT% TARG PMD,,PRIMARY,S2D_BLAZE_A,,True,[arcsec/yr] Catalog proper motion DEC (obj) in trace,Null
 CRV,HIERARCH ESO OCS OBJ RV,,PRIMARY,S2D_BLAZE_A,,True,[km/s] Catalog Systemic RV for obj in trace,UNDEFINED
 CZ,CZ,,PRIMARY,CRV,,True,Catalog Z for obj in trace,Null
 CCLR,HIERARCH ESO OCS OBJ BV,,PRIMARY,S2D_BLAZE_A,,True,[mag] Catalog Gaia B-R for obj in trace,Null

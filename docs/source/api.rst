@@ -3,7 +3,7 @@ API
 
 Documentation for the core code
 
-.. automodule:: core
+.. automodule:: rvdata.core
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,6 +16,8 @@ Base Classes
 
    data_model/base_model
    data_model/level_2
+   data_model/level_3
+   data_model/level_4
 
 
 Instrument Classes

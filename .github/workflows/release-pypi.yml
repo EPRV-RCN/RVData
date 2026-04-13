@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write  # Required for Trusted Publishing (OIDC)
 
 jobs:
   build-and-publish:
@@ -20,7 +21,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Upgrade pip and install build tooling
         run: |
@@ -32,8 +33,12 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          verbose: true
+        # Using Trusted Publishing (OIDC) - no password needed
+        # Trusted Publisher is already configured for 'rv-data-standard' on PyPI
+        # 
+        # If you need to use API token instead, uncomment the lines below:
+        # with:
+        #   password: ${{ secrets.PYPI_API_TOKEN }}
+        #   verbose: true
 
 

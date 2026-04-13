@@ -1,0 +1,5 @@
+Name,Description
+ECHELLE_ORDER,physical Echelle order
+ORDER_INDEX,array index from 0
+WAVE_START,start wavelength of order
+WAVE_END,end wavelength of order
