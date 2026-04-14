@@ -56,7 +56,6 @@ def convert_S1D(
                     ext_type = LEVEL3_EXTENSIONS.query(f"Name == '{extname}'")["DataType"].values[0]
                     if ("_B" in file):
                         continue
-                    #extname = extname.replace('TRACE1', trace)
                     corr = 'SKYSUBCORR' if 'skysub' in file else ('TELLCORR' if 'tell_corr' in file else 'CORR')
                     extname = extname.replace('CORR', corr)
                     if extname not in RV3.extensions:
