@@ -150,9 +150,8 @@ class RV2(rvdata.core.models.base.RVDataModel):
             hduname = key
             if value == "PrimaryHDU":
                 head = fits.Header()
-                head = self.headers[key].copy()
-                # for keyword, content in self.headers[key].items():
-                #     head[keyword] = content
+                for keyword, content in self.headers[key].items():
+                    head[keyword] = content
                 hdu = fits.PrimaryHDU(header=head)
                 hdu_list.insert(0, hdu)
             elif value == "ImageHDU":
