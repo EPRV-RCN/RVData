@@ -13,6 +13,7 @@ from collections import OrderedDict
 import git
 from git.exc import InvalidGitRepositoryError
 
+import numpy as np
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table
@@ -529,6 +530,14 @@ class RVDataModel(object):
         else:
             raise NameError("Name {} does not exist as extension".format(ext_name))
 
+    def _get_min_bit_depth(self, ext_name):
+        """Return the MinBitDepth requirement for an extension, or None.
+
+        Overridden in level-specific models to look up requirements
+        from the extensions config CSV.
+        """
+        return None
+
     def set_data(self, ext_name, data):
         """
         Set extension data
@@ -543,6 +552,35 @@ class RVDataModel(object):
             if ext_type == "BinTableHDU" and isinstance(data, pd.DataFrame):
                 data = Table.from_pandas(data)
             if isinstance(data, type(FITS_TYPE_MAP[ext_type]([]))):
+                # Enforce MinBitDepth for ImageHDU arrays
+                if ext_type == "ImageHDU" and isinstance(data, np.ndarray):
+                    min_depth = self._get_min_bit_depth(ext_name)
+                    if (min_depth is not None
+                            and data.size > 0
+                            and data.dtype.itemsize * 8 < min_depth):
+                        if np.issubdtype(data.dtype, np.floating):
+                            target = {32: np.float32, 64: np.float64}.get(
+                                min_depth, np.float64
+                            )
+                        elif np.issubdtype(data.dtype, np.unsignedinteger):
+                            target = {8: np.uint8, 16: np.uint16,
+                                      32: np.uint32, 64: np.uint64}.get(
+                                min_depth, np.uint64
+                            )
+                        else:
+                            target = {8: np.int8, 16: np.int16,
+                                      32: np.int32, 64: np.int64}.get(
+                                min_depth, np.int64
+                            )
+                        warnings.warn(
+                            f"Extension '{ext_name}' has dtype {data.dtype} "
+                            f"({data.dtype.itemsize * 8}-bit) but "
+                            f"MinBitDepth={min_depth}. "
+                            f"Upcasting to {target.__name__}.",
+                            UserWarning,
+                            stacklevel=2,
+                        )
+                        data = data.astype(target)
                 self.data[ext_name] = data
             else:
                 raise TypeError(
