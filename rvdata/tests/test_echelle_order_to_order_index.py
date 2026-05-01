@@ -1,6 +1,5 @@
 """Regression tests for echelle_order_to_order_index table-type compatibility."""
 
-import numpy as np
 import pandas as pd
 import pytest
 from astropy.table import Table
