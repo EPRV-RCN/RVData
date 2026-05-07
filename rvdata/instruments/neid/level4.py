@@ -76,13 +76,21 @@ class NEIDRV4(RV4):
         # Instrument header
         self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
         ext_table["Name"].append("INSTRUMENT_HEADER")
-        ext_table["Description"].append("Primary header of native instrument file")
+        ext_table["Description"].append("Inherited NEID instrument header (no data)")
 
         # Receipt
         ext_table["Name"].append("RECEIPT")
         ext_table["Description"].append(
             "Table of operations that have been performed on this file"
         )
+
+        # DRP Config
+        ext_table["Name"].append("DRP_CONFIG")
+        ext_table["Description"].append("Pipeline details (settings etc) to go from native data to L2")
+
+        # Extension table
+        ext_table["Name"].append("EXT_DESCRIPT")
+        ext_table["Description"].append("Table describing contents of each extension")
 
         # RV1 - turn the CCFS extension header into a table
 
@@ -259,12 +267,6 @@ class NEIDRV4(RV4):
         ext_table["Description"].append(
             "Table of activity diagnostics for NEID science fiber trace"
         )
-
-        ext_table["Name"].append("DRP_CONFIG")
-        ext_table["Description"].append("DRP configuration parameters.")
-
-        ext_table["Name"].append("EXT_DESCRIPT")
-        ext_table["Description"].append("Description of each extension.")
 
         # Set extension Description table
         self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))
