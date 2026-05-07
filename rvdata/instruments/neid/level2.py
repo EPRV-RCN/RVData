@@ -168,10 +168,10 @@ class NEIDRV2(RV2):
         # Order Table - after orders with zeroed wavelength array have been changed to nan
         order_table_data = pd.DataFrame(
             {
-                "ECHELLE_ORDER": 173 - np.arange(self.data['TRACE1_WAVE'].shape[0]),
-                "ORDER_INDEX": np.arange(self.data['TRACE1_WAVE'].shape[0]),
-                "WAVE_START": np.nanmin(self.data['TRACE1_WAVE'], axis=1),
-                "WAVE_END": np.nanmax(self.data['TRACE1_WAVE'], axis=1),
+                "ECHELLE_ORDER": 173 - np.arange(self.data["TRACE1_WAVE"].shape[0]),
+                "ORDER_INDEX": np.arange(self.data["TRACE1_WAVE"].shape[0]),
+                "WAVE_START": np.nanmin(self.data["TRACE1_WAVE"], axis=1),
+                "WAVE_END": np.nanmax(self.data["TRACE1_WAVE"], axis=1),
             }
         )
         self.set_data("ORDER_TABLE", order_table_data)
