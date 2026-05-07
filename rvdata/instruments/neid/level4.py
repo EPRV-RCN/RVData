@@ -160,7 +160,11 @@ class NEIDRV4(RV4):
                 rv_table_data["PIXEL_START"][order] = fsr_pixel_start
                 rv_table_data["PIXEL_END"][order] = fsr_pixel_end
 
+        # Set up RV1 extension header
+        rv1_meta = fits.Header({"RVMETHOD": "CCF", "SKYRMVD": False, "TELLRMVD": False})
+
         self.set_data("RV1", pd.DataFrame(rv_table_data))
+        self.set_header("RV1", rv1_meta)
         ext_table["Name"].append("RV1")
         ext_table["Description"].append(
             "Order-wise RV measurement table for NEID Science fiber trace"
