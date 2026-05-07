@@ -166,13 +166,13 @@ def bindensity_resampling_fixed(new_x, x, y, cov=None, kind="cubic"):
 
 def echelle_order_to_order_index(echelle_order, order_table):
     """
-    Convert echelle order number to order index using the order table DataFrame.
+    Convert echelle order number to order index using the order table.
     Parameters:
     -----------
     echelle_order : int
         The echelle order number to convert.
-    order_table : pandas.DataFrame
-        DataFrame containing 'ECHELLE_ORDER' and 'ORDER_INDEX' columns.
+    order_table : astropy.table.Table or pandas.DataFrame
+        Table containing 'ECHELLE_ORDER' and 'ORDER_INDEX' columns.
     Returns:
     --------
     int or None
@@ -180,10 +180,10 @@ def echelle_order_to_order_index(echelle_order, order_table):
     """
 
     try:
-        return order_table.loc[order_table["ECHELLE_ORDER"] == echelle_order][
-            "ORDER_INDEX"
-        ].values[0]
-    except IndexError:
+        mask = np.array(order_table["ECHELLE_ORDER"]) == echelle_order
+        matches = np.array(order_table["ORDER_INDEX"])[mask]
+        return int(matches[0])
+    except (IndexError, KeyError):
         return None
 
 

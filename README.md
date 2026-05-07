@@ -1,4 +1,11 @@
+[![Fast CI](https://github.com/EPRV-RCN/RVData/actions/workflows/ci-fast.yml/badge.svg?branch=develop)](https://github.com/EPRV-RCN/RVData/actions/workflows/ci-fast.yml)
+[![Full CI](https://github.com/EPRV-RCN/RVData/actions/workflows/ci-full.yml/badge.svg?branch=develop)](https://github.com/EPRV-RCN/RVData/actions/workflows/ci-full.yml)
+[![codecov](https://codecov.io/gh/EPRV-RCN/RVData/graph/badge.svg)](https://codecov.io/gh/EPRV-RCN/RVData)
 [![Documentation Status](https://readthedocs.org/projects/eprv-data-standard/badge/?version=latest)](https://eprv-data-standard.readthedocs.io/en/latest/?badge=latest)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![PyPI version](https://img.shields.io/pypi/v/rv-data-standard.svg)](https://pypi.org/project/rv-data-standard/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
 # EPRV_DataStandard
 Development of a community endorsed, standardized EPRV data format at the 1D extracted spectra level, and a set of translator tools
