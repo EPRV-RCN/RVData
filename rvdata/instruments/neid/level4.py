@@ -238,7 +238,12 @@ class NEIDRV4(RV4):
         # Add CCF activity indicators as well
         diagnostics_table_data["metric_name"].append("CCF_FWHM")
         diagnostics_table_data["value"].append(hdul["CCFS"].header["FWHMMOD"])
-        diagnostics_table_data["uncertainty"].append(np.nan)
+        if "EFWHMMOD" in hdul["CCFS"].header:
+            diagnostics_table_data["uncertainty"].append(
+                hdul["CCFS"].header["EFWHMMOD"]
+            )
+        else:
+            diagnostics_table_data["uncertainty"].append(np.nan)
 
         diagnostics_table_data["metric_name"].append("CCF_BIS")
         diagnostics_table_data["value"].append(hdul["CCFS"].header["BISMOD"])
