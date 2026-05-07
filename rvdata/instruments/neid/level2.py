@@ -73,7 +73,8 @@ class NEIDRV2(RV2):
 
         # Set up extension description table - read in base csv from config
         ext_table = pd.read_csv(
-            os.path.join(os.path.dirname(__file__), "config", "neid_l2_ext_table.csv")
+            os.path.join(os.path.dirname(__file__), "config", "neid_l2_ext_table.csv"),
+            usecols=["Name", "Description"],
         )
 
         # Instrument header
@@ -128,6 +129,7 @@ class NEIDRV2(RV2):
             # Blaze
             blaze_array = hdul[blaze_ext].data
             blaze_meta = hdul[blaze_ext].header
+            blaze_meta["BLZNORM"] = False
 
             # Output extensions into base model. If first fiber, extension already exists in object
             if i_fiber == 0:
@@ -161,9 +163,6 @@ class NEIDRV2(RV2):
                     data=blaze_array,
                     header=blaze_meta,
                 )
-
-                # Add blaze normalization extnesion header entry
-                self.headers[out_prefix + "BLAZE"]["BLZNORM"] = False
 
         # Order Table - after orders with zeroed wavelength array have been changed to nan
         order_table_data = pd.DataFrame(
