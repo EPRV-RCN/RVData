@@ -162,6 +162,9 @@ class NEIDRV2(RV2):
                     header=blaze_meta,
                 )
 
+                # Add blaze normalization extnesion header entry
+                self.headers[out_prefix + "BLAZE"]["BLZNORM"] = False
+
         # Order Table - after orders with zeroed wavelength array have been changed to nan
         order_table_data = pd.DataFrame(
             {
