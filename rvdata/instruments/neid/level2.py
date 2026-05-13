@@ -73,22 +73,12 @@ class NEIDRV2(RV2):
 
         # Set up extension description table - read in base csv from config
         ext_table = pd.read_csv(
-            os.path.join(os.path.dirname(__file__), "config", "neid_l2_ext_table.csv")
+            os.path.join(os.path.dirname(__file__), "config", "neid_l2_ext_table.csv"),
+            usecols=["Name", "Description"],
         )
 
         # Instrument header
         self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
-
-        # Order Table
-        order_table_data = pd.DataFrame(
-            {
-                "ECHELLE_ORDER": 173 - np.arange(hdul["SCIWAVE"].data.shape[0]),
-                "ORDER_INDEX": np.arange(hdul["SCIWAVE"].data.shape[0]),
-                "WAVE_START": np.nanmin(hdul["SCIWAVE"].data, axis=1),
-                "WAVE_END": np.nanmax(hdul["SCIWAVE"].data, axis=1),
-            }
-        )
-        self.set_data("ORDER_TABLE", order_table_data)
 
         # Prepare fiber-related extensions
 
@@ -139,6 +129,7 @@ class NEIDRV2(RV2):
             # Blaze
             blaze_array = hdul[blaze_ext].data
             blaze_meta = hdul[blaze_ext].header
+            blaze_meta["BLZNORM"] = False
 
             # Output extensions into base model. If first fiber, extension already exists in object
             if i_fiber == 0:
@@ -172,6 +163,17 @@ class NEIDRV2(RV2):
                     data=blaze_array,
                     header=blaze_meta,
                 )
+
+        # Order Table - after orders with zeroed wavelength array have been changed to nan
+        order_table_data = pd.DataFrame(
+            {
+                "ECHELLE_ORDER": 173 - np.arange(self.data["TRACE1_WAVE"].shape[0]),
+                "ORDER_INDEX": np.arange(self.data["TRACE1_WAVE"].shape[0]),
+                "WAVE_START": np.nanmin(self.data["TRACE1_WAVE"], axis=1),
+                "WAVE_END": np.nanmax(self.data["TRACE1_WAVE"], axis=1),
+            }
+        )
+        self.set_data("ORDER_TABLE", order_table_data)
 
         # Barycentric correction and timing related extensions
 
