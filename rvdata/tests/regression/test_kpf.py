@@ -58,9 +58,9 @@ def test_kpf():
     kpf3 = RV3.from_fits(l2_standard, instrument="KPF")
     l3_standard = kpf3.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l3_standard)), \
-        f"L3 filename '{os.path.basename(standard_l3_file)}' does not match EPRV convention"
-    assert os.path.basename(standard_l3_file).startswith("kpf_SL3_"), \
-        f"L3 filename should start with 'kpf_SL3_', got '{os.path.basename(standard_l3_file)}'"
+        f"L3 filename '{os.path.basename(l3_standard)}' does not match EPRV convention"
+    assert os.path.basename(l3_standard).startswith("kpf_SL3_"), \
+        f"L3 filename should start with 'kpf_SL3_', got '{os.path.basename(l3_standard)}'"
     check_l3_compliance(l3_standard)
 
     # Check L4 - use auto-generated filename

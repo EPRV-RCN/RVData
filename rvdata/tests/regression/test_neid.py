@@ -38,9 +38,9 @@ def test_neid():
     neidl2 = RV2.from_fits(native_l2_file, instrument="NEID")
     standard_l2_file = neidl2.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(standard_l2_file)), \
-        f"L2 filename '{os.path.basename(l2_standard)}' does not match EPRV convention"
-    assert os.path.basename(l2_standard).startswith("neid_SL2_"), \
-        f"L2 filename should start with 'neid_SL2_', got '{os.path.basename(l2_standard)}'"
+        f"L2 filename '{os.path.basename(standard_l2_file)}' does not match EPRV convention"
+    assert os.path.basename(standard_l2_file).startswith("neid_SL2_"), \
+        f"L2 filename should start with 'neid_SL2_', got '{os.path.basename(standard_l2_file)}'"
     check_l2_compliance(standard_l2_file)
 
     # Check L3 - use auto-generated filename
@@ -56,9 +56,9 @@ def test_neid():
     neidl4 = RV4.from_fits(native_l2_file, instrument="NEID")
     standard_l4_file = neidl4.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(standard_l4_file)), \
-        f"L4 filename '{os.path.basename(l4_standard)}' does not match EPRV convention"
-    assert os.path.basename(l4_standard).startswith("neid_SL4_"), \
-        f"L4 filename should start with 'neid_SL4_', got '{os.path.basename(l4_standard)}'"
+        f"L4 filename '{os.path.basename(standard_l4_file)}' does not match EPRV convention"
+    assert os.path.basename(l4_stanstandard_l4_filedard).startswith("neid_SL4_"), \
+        f"L4 filename should start with 'neid_SL4_', got '{os.path.basename(standard_l4_file)}'"
     check_l4_compliance(standard_l4_file)
 
 
