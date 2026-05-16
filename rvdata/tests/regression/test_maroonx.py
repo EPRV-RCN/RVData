@@ -73,7 +73,7 @@ def test_maroonx():
     # Check blue camera
     rv4_obj.createL4(fits.open(l2_obj_blue.filename), rv_blue, channel="BLUE")
     l4_standard_blue = f"./MAROONXBLUE_SL4_{timestamp}.fits"
-    rv4_obj.to_fits(l4_standard_blue)
+    rv4_obj.to_fits(out_filename=l4_standard_blue)
     l4_obj_blue = RV4.from_fits(l4_standard_blue)
 
     check_l4_extensions(l4_standard_blue)
@@ -83,7 +83,7 @@ def test_maroonx():
     rv4_obj = MAROONXRV4()
     rv4_obj.createL4(fits.open(l2_obj_red.filename), rv_red, channel="RED")
     l4_standard_red = f"./MAROONXRED_SL4_{timestamp}.fits"
-    rv4_obj.to_fits(l4_standard_red)
+    rv4_obj.to_fits(out_filename=l4_standard_red)
     l4_obj_red = RV4.from_fits(l4_standard_red)
 
     check_l4_extensions(l4_standard_red)

@@ -211,6 +211,6 @@ class TestToFitsAutoFilename:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             explicit_name = os.path.join(tmpdir, "my_custom_name.fits")
-            filename = obj.to_fits(explicit_name)
+            filename = obj.to_fits(out_filename=explicit_name)
             assert filename == explicit_name
             assert os.path.exists(filename)
