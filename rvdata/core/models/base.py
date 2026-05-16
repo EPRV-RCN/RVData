@@ -240,10 +240,10 @@ class RVDataModel(object):
         Collect the content of this instance into a monolithic FITS file
 
         Args:
-            out_filedir (str, optional): file path. If not provided, 
+            out_filedir (str, optional): file path. If not provided,
                 automatically set to the current working directory.
-            out_filename (str, optional): file base name. If not 
-                provided, automatically generates a filename following 
+            out_filename (str, optional): file base name. If not
+                provided, automatically generates a filename following
                 the EPRV standard naming convention.
 
         Returns:
