@@ -57,7 +57,7 @@ def test_neid():
     standard_l4_file = neidl4.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(standard_l4_file)), \
         f"L4 filename '{os.path.basename(standard_l4_file)}' does not match EPRV convention"
-    assert os.path.basename(l4_stanstandard_l4_filedard).startswith("neid_SL4_"), \
+    assert os.path.basename(standard_l4_file).startswith("neid_SL4_"), \
         f"L4 filename should start with 'neid_SL4_', got '{os.path.basename(standard_l4_file)}'"
     check_l4_compliance(standard_l4_file)
 
