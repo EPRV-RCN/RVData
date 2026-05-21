@@ -1,0 +1,78 @@
+"""Tests for RECEIPT extension population and round-tripping.
+
+Covers the three issues raised in EPRV-RCN/RVData#168:
+  (a) row keys written by receipt_add_entry match the BASE-RECEIPT-columns.csv
+      schema (UPPERCASE: TIME, CODE_RELEASE, BRANCH_NAME, COMMIT_HASH,
+      FUNCTION, ARGS, STATUS),
+  (b) self.receipt entries actually land in the RECEIPT BinTableHDU on disk
+      (the sync is done in to_fits via _sync_receipt_to_extension),
+  (c) RECEIPT extension columns are string-typed even when no entries have
+      been added (empty-init uses object dtype).
+"""
+
+import os
+import tempfile
+
+import numpy as np
+from astropy.io import fits
+from astropy.table import Table
+
+from rvdata.core.models.definitions import BASE_RECEIPT_COLUMNS
+from rvdata.core.models.level2 import RV2
+
+EXPECTED_COLUMNS = BASE_RECEIPT_COLUMNS["Name"].tolist()
+
+
+def _byte_string_dtype(col):
+    """Astropy serializes string columns as fixed-width bytes (S<n>)."""
+    return col.dtype.kind in ("S", "U", "O")
+
+
+def test_receipt_add_entry_uses_csv_column_names():
+    rv2 = RV2()
+    rv2.receipt_add_entry("foo", "bar=1", "PASS")
+    assert list(rv2.receipt.columns) == EXPECTED_COLUMNS
+    row = rv2.receipt.iloc[-1]
+    assert row["FUNCTION"] == "foo"
+    assert row["ARGS"] == "bar=1"
+    assert row["STATUS"] == "PASS"
+
+
+def test_receipt_extension_empty_columns_are_string_typed():
+    """RECEIPT is initialised string-typed even before any entries are added."""
+    rv2 = RV2()
+    receipt_ext = rv2.data["RECEIPT"]
+    assert isinstance(receipt_ext, Table)
+    assert list(receipt_ext.colnames) == EXPECTED_COLUMNS
+    for col in EXPECTED_COLUMNS:
+        assert not np.issubdtype(receipt_ext[col].dtype, np.floating), (
+            f"RECEIPT column {col!r} initialised as floating dtype "
+            f"{receipt_ext[col].dtype}; expected string/object dtype"
+        )
+
+
+def test_receipt_roundtrips_to_fits():
+    rv2 = RV2()
+    rv2.set_header("PRIMARY", {"INSTRUME": "TEST", "DATE-OBS": "2026-01-01T00:00:00"})
+    rv2.receipt_add_entry("user_step", "x=1", "PASS")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        fn = os.path.join(tmp, "test_SL2_20260101T000000.fits")
+        rv2.to_fits(fn)
+        with fits.open(fn) as hdul:
+            assert "RECEIPT" in [hdu.name for hdu in hdul]
+            receipt = Table.read(hdul["RECEIPT"])
+
+    assert list(receipt.colnames) == EXPECTED_COLUMNS
+    # Two rows: the explicit user_step + the implicit to_fits entry.
+    assert len(receipt) == 2
+    functions = [str(v) for v in receipt["FUNCTION"]]
+    statuses = [str(v) for v in receipt["STATUS"]]
+    assert "user_step" in functions
+    assert "to_fits" in functions
+    assert set(statuses) == {"PASS"}
+    # Every column should be string-typed (bytes/str/object — never float).
+    for col in EXPECTED_COLUMNS:
+        assert _byte_string_dtype(receipt[col]), (
+            f"RECEIPT column {col!r} has non-string dtype {receipt[col].dtype}"
+        )

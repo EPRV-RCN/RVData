@@ -69,7 +69,7 @@ class RVDataModel(object):
         provided methods to make any adjustments, such as:
             >>> from core.models.level1 import RV1
             >>> data = RV1()
-            >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
+            >>> data.receipt_add_entry('primitive1', 'param1=value', 'PASS')
     """
 
     def __init__(self):
@@ -131,7 +131,7 @@ class RVDataModel(object):
         with open(fn, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 md5.update(chunk)
-        this_data.receipt_add_entry("from_fits", "PASS")
+        this_data.receipt_add_entry("from_fits", fn, "PASS")
 
         # Return this instance
         return this_data
@@ -260,7 +260,7 @@ class RVDataModel(object):
             raise NameError("filename must end with .fits")
 
         # Add receipt entry before writing (so it's included in the file)
-        self.receipt_add_entry("to_fits", "PASS")
+        self.receipt_add_entry("to_fits", fn, "PASS")
         # Check filename convention and warn if it doesn't match
         self.check_filename_convention(fn)
 
@@ -268,6 +268,10 @@ class RVDataModel(object):
         basename = os.path.basename(fn)
         if "PRIMARY" in self.headers:
             self.headers["PRIMARY"]["FILENAME"] = (basename, "Name of the FITS file")
+
+        # Materialize the accumulated receipt entries into the RECEIPT
+        # extension so they get serialized below.
+        self._sync_receipt_to_extension()
 
         hdu_list = self._create_hdul()
         # finish up writing
@@ -388,13 +392,15 @@ class RVDataModel(object):
 
     # =============================================================================
     # Receipt related members
-    def receipt_add_entry(self, module, status):
+    def receipt_add_entry(self, function, args, status):
         """
         Add an entry to the receipt
 
         Args:
-            module (str): Name of the module making this entry
-            status (str): status to be recorded
+            function (str): Name of the function/primitive making this entry
+            args (str): Arguments or parameters relevant to this entry
+                (use ``""`` if not applicable)
+            status (str): Status to be recorded
         """
 
         # time of execution in ISO format
@@ -442,17 +448,32 @@ class RVDataModel(object):
             git_branch = get_git_branch()
             git_tag = get_git_tag()
 
-        # add the row to the bottom of the table
+        # add the row to the bottom of the table. Column names match
+        # BASE-RECEIPT-columns.csv (the published RECEIPT schema).
         row = {
-            "Time": time,
-            "Code_Release": git_tag,
-            "Commit_Hash": git_commit_hash,
-            "Branch_Name": git_branch,
-            "Module_Name": module,
-            "Status": status,
+            "TIME": time,
+            "CODE_RELEASE": git_tag,
+            "BRANCH_NAME": git_branch,
+            "COMMIT_HASH": git_commit_hash,
+            "FUNCTION": function,
+            "ARGS": args,
+            "STATUS": status,
         }
 
         self.receipt = pd.concat([self.receipt, pd.DataFrame([row])], ignore_index=True)
+
+    def _sync_receipt_to_extension(self):
+        """
+        Copy ``self.receipt`` (the live DataFrame) into ``self.data["RECEIPT"]``
+        so the RECEIPT extension serializes with the correct rows and string-
+        typed columns.
+
+        Values are coerced to strings (with NaN/None becoming ``""``) so
+        ``Table.from_pandas`` produces string Astropy columns rather than the
+        ``float64`` columns it would infer from an empty/numeric DataFrame.
+        """
+        df = self.receipt.fillna("").astype(str)
+        self.set_data("RECEIPT", df)
 
     def receipt_info(self):
         """
