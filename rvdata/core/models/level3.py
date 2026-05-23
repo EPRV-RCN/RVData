@@ -11,6 +11,7 @@ from astropy.io import fits
 from astropy.table import Table, vstack
 
 import rvdata.core.models.base
+from rvdata.core.models.base import receipt_logged
 from rvdata.core.models.definitions import (
     BASE_DRP_CONFIG_COLUMNS,
     BASE_ORDER_TABLE_COLUMNS,
@@ -185,6 +186,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 head += row
         print(head)
 
+    @receipt_logged
     def convert_level2_to_level3(self, l2obj) -> None:
         """
         Read data from a Level 2 RVDataModel object and populate Level 3 fields
@@ -343,6 +345,6 @@ class RV3(rvdata.core.models.base.RVDataModel):
         self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
         self.set_header("ORDER_TABLE", l2obj.headers["ORDER_TABLE"])
 
-        # Inherit receipt from L2 object and add conversion entry
+        # Inherit receipt from L2 object; @receipt_logged on this method
+        # adds the conversion entry after this function returns.
         self.receipt = l2obj.receipt.copy()
-        self.receipt_add_entry("convert_level2_to_level3", "", "PASS")

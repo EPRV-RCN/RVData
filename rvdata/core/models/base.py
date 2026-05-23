@@ -3,8 +3,10 @@ Standard models for RV data
 """
 
 import datetime
+import functools
 import hashlib
 import importlib
+import inspect
 import os
 import re
 import warnings
@@ -28,6 +30,70 @@ from rvdata.core.models.definitions import (
 )
 from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 from rvdata.core.tools.headers import parse_value_to_datatype
+
+
+def _format_receipt_args(bound_args):
+    """Render bound call arguments as a key=value string for the RECEIPT ARGS column.
+
+    Skips ``self`` and ``cls`` (so the receipt only shows real parameters).
+    Long or multi-line values are replaced with ``<TypeName>`` to keep the
+    string readable in the U256 column. The final string is truncated to
+    240 characters to stay safely under the column width.
+    """
+    parts = []
+    for name, value in bound_args.arguments.items():
+        if name in ("self", "cls"):
+            continue
+        try:
+            rendered = str(value)
+        except Exception:
+            rendered = f"<{type(value).__name__}>"
+        # Default object repr (``<module.Class object at 0x...>``) is noise;
+        # collapse it to ``<Class>``. Same for anything too long/multi-line.
+        if rendered.startswith("<") and " object at 0x" in rendered:
+            rendered = f"<{type(value).__name__}>"
+        if "\n" in rendered or len(rendered) > 80:
+            rendered = f"<{type(value).__name__}>"
+        parts.append(f"{name}={rendered}")
+    out = ", ".join(parts)
+    if len(out) > 240:
+        out = out[:237] + "..."
+    return out
+
+
+def receipt_logged(func):
+    """Wrap an ``RVDataModel`` instance method so each call adds a RECEIPT entry.
+
+    The wrapped method's parameters are rendered key=value into the ARGS
+    column. A successful return logs ``STATUS=PASS``; an exception logs
+    ``STATUS=FAIL`` and is re-raised unchanged.
+
+    Intended for high-level public methods (e.g. ``read``,
+    ``convert_level2_to_level3``). Avoid decorating low-level data ops like
+    ``set_data``/``set_header`` — they are called heavily from internal code
+    paths and would flood the receipt.
+    """
+    sig = inspect.signature(func)
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            bound = sig.bind(self, *args, **kwargs)
+            bound.apply_defaults()
+            args_str = _format_receipt_args(bound)
+        except TypeError:
+            # If signature binding fails, fall back to a generic marker so
+            # the underlying function's TypeError still surfaces below.
+            args_str = "<unbindable>"
+        try:
+            result = func(self, *args, **kwargs)
+        except Exception:
+            self.receipt_add_entry(func.__name__, args_str, "FAIL")
+            raise
+        self.receipt_add_entry(func.__name__, args_str, "PASS")
+        return result
+
+    return wrapper
 
 
 class RVDataModel(object):
@@ -131,12 +197,15 @@ class RVDataModel(object):
         with open(fn, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 md5.update(chunk)
-        this_data.receipt_add_entry("from_fits", fn, "PASS")
+        this_data.receipt_add_entry(
+            "from_fits", f"fn={fn}, instrument={instrument}", "PASS"
+        )
 
         # Return this instance
         return this_data
 
     # TODO: overwrite is not yet used
+    @receipt_logged
     def read(self, hdu_list, instrument=None, overwrite=False, **kwargs):
         """
         Read the content of a RVData standard .fits file and populate this
@@ -259,8 +328,11 @@ class RVDataModel(object):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
 
-        # Add receipt entry before writing (so it's included in the file)
-        self.receipt_add_entry("to_fits", fn, "PASS")
+        # Add receipt entry before writing (so it's included in the file).
+        # Kept manual (not @receipt_logged) because the entry must be added
+        # *before* _sync_receipt_to_extension below, so the to_fits row
+        # actually lands in the serialized RECEIPT extension.
+        self.receipt_add_entry("to_fits", f"fn={fn}", "PASS")
         # Check filename convention and warn if it doesn't match
         self.check_filename_convention(fn)
 
@@ -392,6 +464,17 @@ class RVDataModel(object):
 
     # =============================================================================
     # Receipt related members
+    def receipt_info(self):
+        """
+        Print the short version of the receipt to stdout.
+        """
+        rec = self.receipt
+        if rec.empty:
+            print("(receipt is empty)")
+            return
+        cols = [c for c in ("TIME", "FUNCTION", "STATUS") if c in rec.columns]
+        print(rec[cols].to_string(index=False))
+
     def receipt_add_entry(self, function, args, status):
         """
         Add an entry to the receipt
@@ -474,17 +557,6 @@ class RVDataModel(object):
         """
         df = self.receipt.fillna("").astype(str)
         self.set_data("RECEIPT", df)
-
-    def receipt_info(self):
-        """
-        Print the short version of the receipt
-
-        Args:
-            receipt_name (string): name of the receipt
-        """
-        rec = self.receipt
-        msg = rec["Time", "Module_Name", "Status"]
-        print(msg)
 
     # =============================================================================
     # Extension methods
