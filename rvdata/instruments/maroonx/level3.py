@@ -48,7 +48,6 @@ class MAROONXRV3(RV3):
     """
 
     def _read(self, hdul2: fits.HDUList, **kwargs) -> None:
-        
         l2obj = RV2()
         l2obj.read(hdul2, instrument=None)
         self.convert_level2_to_level3(l2obj)
