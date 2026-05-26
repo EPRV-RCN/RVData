@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import numpy as np
+from numpy.exceptions import VisibleDeprecationWarning
 import pandas as pd
 import h5py
 import pickle
@@ -11,34 +12,29 @@ import astropy.units as u
 from collections import OrderedDict
 import os
 from astroquery.simbad import Simbad
+import warnings
 
 
 def read_hdfstore(filepath, key):
-    """
-    Read a pandas DataFrame or Series from an HDF5 file that was
-    created by pd.HDFStore, using h5py instead of pytables.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to the HDF5 file.
-    key : str
-        Key (group name) to read from the file.
-
-    Returns
-    -------
-    pandas.DataFrame or pandas.Series
-        The reconstructed data with the same structure as
-        pd.HDFStore would return.
-    """
+    warning_msg = r"dtype\(\): align should be passed"
     with h5py.File(filepath, 'r') as f:
         group = f[key]
 
         if 'block0_values' in group:
             columns = [x.decode() for x in group['axis0'][:]]
-            raw_data = pickle.loads(
-                group['block0_values'][0].tobytes()
-            )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
+                                        message=warning_msg,
+                                        category=DeprecationWarning)
+                warnings.filterwarnings("ignore",
+                                        message=warning_msg,
+                                        category=VisibleDeprecationWarning)
+                warnings.filterwarnings("ignore",
+                                        message="numpy.core",
+                                        category=DeprecationWarning)
+                raw_data = pickle.loads(
+                    group['block0_values'][0].tobytes()
+                )
 
             if 'axis1_level0' in group:
                 level0 = group['axis1_level0'][:]
@@ -50,14 +46,23 @@ def read_hdfstore(filepath, key):
                 )
             else:
                 idx = range(raw_data.shape[0])
-
             return pd.DataFrame(raw_data, index=idx, columns=columns)
 
         elif 'values' in group:
             index = [x.decode() for x in group['index'][:]]
-            values = pickle.loads(
-                group['values'][0].tobytes()
-            )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
+                                        message=warning_msg,
+                                        category=DeprecationWarning)
+                warnings.filterwarnings("ignore",
+                                        message=warning_msg,
+                                        category=VisibleDeprecationWarning)
+                warnings.filterwarnings("ignore",
+                                        message="numpy.core",
+                                        category=DeprecationWarning)
+                values = pickle.loads(
+                    group['values'][0].tobytes()
+                )
             return pd.Series(values, index=index)
 
 
@@ -106,8 +111,9 @@ def clean_key(header):
     """
     cleanheader = {}
     for key, value in header.items():
-        k = key.replace("MAROONX", "")
-        cleanheader[f"HIERARCH {k}" if len(k) > 8 else k] = value
+        k = key.replace("MAROONX", "").strip()
+        needs_hierarch = len(k) > 8 or ' ' in k
+        cleanheader[f"HIERARCH {k}" if needs_hierarch else k] = value
     return cleanheader
 
 
@@ -210,7 +216,8 @@ def standardizeMXHeader(prime, file, obstype, channel, datalvl='L2'):
     """
 
     # Build path to header_map.csv relative to this module, not the current
-    # working directory, so it works regardless of where the process is started.
+    # working directory, so it works regardless of where the
+    # process is started.
     module_dir = os.path.dirname(__file__)
     maroonx_root = os.path.dirname(module_dir)
     hmap_path = os.path.join(maroonx_root, 'config', 'header_map.csv')
@@ -232,7 +239,9 @@ def standardizeMXHeader(prime, file, obstype, channel, datalvl='L2'):
     catg = get_catalogInfo(target)
     era = fetch_instEra(float(prime['JD_UTC_START']))
     header_conv = {
+        'INSTRUME': 'MAROONX' + channel.upper(),
         'OBSTYPE': obstype,
+        'NUMTRACE': 6,
         'NUMORDER': numorder,
         'FILENAME': name,
         'DATALVL': datalvl,
@@ -347,11 +356,11 @@ def create_wavehead(spec, fiber, channel):
         wave = spec['wavelengths'][fiber][order]
         if wave is None:
             continue
-        CRVAL = float(wave[CRPIX - 1])
-        CDELT = float(wave[CRPIX] - wave[CRPIX - 1])
+        CRVAL = float(wave[CRPIX - 1]) * 10  # convert from nm to Angstroms
+        CDELT = float(wave[CRPIX] - wave[CRPIX - 1]) * 10
         wave_meta[f"CTYPE{i}"] = "WAVE"
         wave_meta[f"CPDIS{i}"] = "Non-Parametric"
-        wave_meta[f"CUNIT{i}"] = "nanometer"
+        wave_meta[f"CUNIT{i}"] = "Angstrom"
         wave_meta[f"CRPIX{i}"] = CRPIX
         wave_meta[f"CRVAL{i}"] = CRVAL
         wave_meta[f"CDELT{i}"] = CDELT
@@ -382,20 +391,20 @@ def make_orderTable(spec):
         wavelength start/end values for each order.
     """
     orders = spec.index.levels[1]
-
+    orders = orders[::-1]
     wave_start = []
     wave_end = []
 
     for order in orders:
         w = spec['wavelengths'][3][order]  # fiber 3 is reference
-        wave_start.append(np.nanmin(w))
-        wave_end.append(np.nanmax(w))
+        wave_start.append(np.nanmin(w)*10)  # convert from nm to Angstroms
+        wave_end.append(np.nanmax(w)*10)  # convert from nm to Angstroms
 
     order_table = pd.DataFrame({
-        "echelle_order": np.array(orders, dtype=np.float32),
-        "order_index":   np.arange(len(orders), dtype=np.float32),
-        "wave_start":    np.array(wave_start, dtype=np.float32),
-        "wave_end":      np.array(wave_end, dtype=np.float32),
+        "ECHELLE_ORDER": list(int(o) for o in orders),
+        "ORDER_INDEX": list(range(len(orders))),
+        "WAVE_START": np.array(wave_start),
+        "WAVE_END": np.array(wave_end),
     })
 
     return order_table
