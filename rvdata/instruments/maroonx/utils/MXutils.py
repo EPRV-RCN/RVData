@@ -16,6 +16,27 @@ import warnings
 
 
 def read_hdfstore(filepath, key):
+    """Read a pandas HDFStore group from an HDF5 file directly with ``h5py``.
+
+    Reconstructs the ``key`` group written in pandas' PyTables/HDFStore format
+    without depending on PyTables: ``block0``-style frames are returned as a
+    :class:`pandas.DataFrame` (with a ``MultiIndex`` when the group carries
+    ``axis1`` levels), and ``values``-style groups as a :class:`pandas.Series`.
+    Numpy dtype-alignment deprecation warnings emitted while unpickling the
+    stored block are suppressed.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the ``.hd5`` file.
+    key : str
+        Name of the HDFStore group to read.
+
+    Returns
+    -------
+    pandas.DataFrame or pandas.Series
+        The reconstructed object for ``key``.
+    """
     warning_msg = r"dtype\(\): align should be passed"
     with h5py.File(filepath, 'r') as f:
         group = f[key]

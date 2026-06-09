@@ -87,8 +87,9 @@ def test_maroonx():
 
     # Check L4
     mx4 = MAROONXRV4()
-    mx4.createL4(fits.open(l2_standardR), rv_red, channel="RED")
-    l4_standard = mx4.to_fits()
+    with fits.open(l2_standardR) as l2hdul_red:
+        mx4.createL4(l2hdul_red, rv_red, channel="RED")
+        l4_standard = mx4.to_fits()
     match4 = RVDataModel.FILENAME_PATTERN.match(os.path.basename(l4_standard))
     assert match4, (
         f"L4 filename '{l4_standard}' does not match EPRV convention"

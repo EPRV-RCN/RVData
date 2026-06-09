@@ -273,8 +273,8 @@ class MAROONXRV2(RV2):
         from input_filename.
 
         Example filenames produced:
-            MAROONXBLUE_SL2_YYYYMMDDTHHMMSS.fits
-            MAROONXRED_SL2_YYYYMMDDTHHMMSS.fits
+            maroonxblue_SL2_YYYYMMDDTHHMMSS.fits
+            maroonxred_SL2_YYYYMMDDTHHMMSS.fits
         """
         base = os.path.basename(input_filename)
         timestamp = base.split("_")[0].replace("Z", "")

@@ -39,12 +39,12 @@ class MAROONXRV3(RV3):
     Example
     -------
     >>> from rvdata.core.models.level3 import RV3
-    >>> blue_l3 = RV3.from_fits("MAROONXBLUE_SL2_YYYYMMDDTHHMMSS.fits",
+    >>> blue_l3 = RV3.from_fits("maroonxblue_SL2_YYYYMMDDTHHMMSS.fits",
     ...                          instrument="MAROONX")
-    >>> blue_l3.to_fits("MAROONXBLUE_SL3_YYYYMMDDTHHMMSS.fits")
-    >>> red_l3 = RV3.from_fits("MAROONXRED_SL2_YYYYMMDDTHHMMSS.fits",
+    >>> blue_l3.to_fits("maroonxblue_SL3_YYYYMMDDTHHMMSS.fits")
+    >>> red_l3 = RV3.from_fits("maroonxred_SL2_YYYYMMDDTHHMMSS.fits",
     ...                         instrument="MAROONX")
-    >>> red_l3.to_fits("MAROONXRED_SL3_YYYYMMDDTHHMMSS.fits")
+    >>> red_l3.to_fits("maroonxred_SL3_YYYYMMDDTHHMMSS.fits")
     """
 
     def _read(self, hdul2: fits.HDUList, **kwargs) -> None:
