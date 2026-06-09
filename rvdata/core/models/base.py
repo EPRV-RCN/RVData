@@ -201,6 +201,11 @@ class RVDataModel(object):
             "from_fits", f"fn={fn}, instrument={instrument}", "PASS"
         )
 
+        # Keep the RECEIPT extension in sync with the live receipt DataFrame so
+        # the read/from_fits entries added above are visible without a
+        # write/read cycle.
+        this_data._sync_receipt_to_extension()
+
         # Return this instance
         return this_data
 

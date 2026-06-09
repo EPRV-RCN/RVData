@@ -177,3 +177,28 @@ def test_receipt_info_does_not_raise():
     rv2.receipt_add_entry("step_a", "x=1", "PASS")
     # Should not raise (previously KeyError on 'Time'/'Module_Name'/'Status').
     rv2.receipt_info()
+
+
+def test_from_fits_syncs_receipt_extension():
+    """RECEIPT extension is in sync with self.receipt right after from_fits,
+    without needing a write/read roundtrip (raised in review of #170).
+
+    read() (decorated) and from_fits both append rows in memory; without an
+    explicit sync, self.data["RECEIPT"] lags self.receipt until the next write.
+    """
+    rv2 = RV2()
+    rv2.set_header("PRIMARY", {"INSTRUME": "TEST", "DATE-OBS": "2026-01-01T00:00:00"})
+    rv2.receipt_add_entry("user_step", "x=1", "PASS")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        fn = os.path.join(tmp, "test_SL2_20260101T000000.fits")
+        rv2.to_fits(fn)
+        reloaded = RV2.from_fits(fn)
+
+    receipt_ext = reloaded.data["RECEIPT"]
+    assert isinstance(receipt_ext, Table)
+    # The extension must reflect every row in the live DataFrame, including the
+    # read and from_fits entries added in memory during the read.
+    assert len(receipt_ext) == len(reloaded.receipt)
+    functions = [str(v) for v in receipt_ext["FUNCTION"]]
+    assert "from_fits" in functions
