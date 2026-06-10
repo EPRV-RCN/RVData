@@ -73,4 +73,9 @@ INSTRUMENT_READERS = {
         "class": "EXPRESRV2",
         "method": "_read",
     },
+    "MAROONX": {
+        "module": "rvdata.instruments.maroonx.level2",
+        "class": "MAROONXRV2",
+        "method": "_read",
+    },
 }
