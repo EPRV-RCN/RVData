@@ -66,7 +66,7 @@ def test_receipt_roundtrips_to_fits():
 
     with tempfile.TemporaryDirectory() as tmp:
         fn = os.path.join(tmp, "test_SL2_20260101T000000.fits")
-        rv2.to_fits(fn)
+        rv2.to_fits(out_filename=fn)
         with fits.open(fn) as hdul:
             assert "RECEIPT" in [hdu.name for hdu in hdul]
             receipt = Table.read(hdul["RECEIPT"])
@@ -80,10 +80,10 @@ def test_receipt_roundtrips_to_fits():
     assert "user_step" in functions
     assert "to_fits" in functions
     assert set(statuses) == {"PASS"}
-    # to_fits should log its filename as a key=value pair (PR #170 fix).
+    # to_fits should log its output path as a key=value pair (PR #170 fix).
     to_fits_args = args[functions.index("to_fits")]
-    assert to_fits_args.startswith("fn="), (
-        f"to_fits ARGS should be 'fn=<path>', got {to_fits_args!r}"
+    assert to_fits_args.startswith("out_filepath="), (
+        f"to_fits ARGS should be 'out_filepath=<path>', got {to_fits_args!r}"
     )
     # Every column should be string-typed (bytes/str/object — never float).
     for col in EXPECTED_COLUMNS:
@@ -192,7 +192,7 @@ def test_from_fits_syncs_receipt_extension():
 
     with tempfile.TemporaryDirectory() as tmp:
         fn = os.path.join(tmp, "test_SL2_20260101T000000.fits")
-        rv2.to_fits(fn)
+        rv2.to_fits(out_filename=fn)
         reloaded = RV2.from_fits(fn)
 
     receipt_ext = reloaded.data["RECEIPT"]

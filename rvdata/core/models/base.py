@@ -309,40 +309,56 @@ class RVDataModel(object):
                 parsed_value = parse_value_to_datatype(key, row["DataType"], value)
                 self.headers["PRIMARY"][key] = parsed_value
 
-    def to_fits(self, fn=None):
+    def to_fits(self, out_filedir=None, out_filename=None):
         """
         Collect the content of this instance into a monolithic FITS file
 
         Args:
-            fn (str, optional): file path. If not provided, automatically
-                generates a filename following the EPRV naming convention.
+            out_filedir (str, optional): file path. If not provided,
+                automatically set to the current working directory.
+            out_filename (str, optional): file base name. If not
+                provided, automatically generates a filename following
+                the EPRV standard naming convention.
 
         Returns:
-            str: The filename that was written to
+            out_filepath (str): The full path to the output file.
 
         Note:
             Filename should follow the EPRV naming convention:
             inst_SL#_YYYYMMDDThhmmss.fits
 
         """
-        # Auto-generate filename if not provided
-        if fn is None:
-            fn = self.generate_standard_filename()
+        # Set the output file path to working directory if not given one
+        if out_filedir is None:
+            out_filedir = os.getcwd()
 
-        if not fn.endswith(".fits"):
+        # Auto-generate filename if not provided
+        if out_filename is None:
+            out_filename = self.generate_standard_filename()
+        # If filename is provided, see if it has a path attached
+        else:
+            if os.path.dirname(out_filename):
+                out_filedir = os.path.dirname(out_filename)
+                out_filename = os.path.basename(out_filename)
+
+        # Ensure that the output file name is a fits file!
+        if not out_filename.endswith(".fits"):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
+
+        # Construct full output path
+        out_filepath = os.path.join(out_filedir, out_filename)
 
         # Add receipt entry before writing (so it's included in the file).
         # Kept manual (not @receipt_logged) because the entry must be added
         # *before* _sync_receipt_to_extension below, so the to_fits row
         # actually lands in the serialized RECEIPT extension.
-        self.receipt_add_entry("to_fits", f"fn={fn}", "PASS")
+        self.receipt_add_entry("to_fits", f"out_filepath={out_filepath}", "PASS")
         # Check filename convention and warn if it doesn't match
-        self.check_filename_convention(fn)
+        self.check_filename_convention(out_filepath)
 
         # Update FILENAME header to match the actual filename being written
-        basename = os.path.basename(fn)
+        basename = os.path.basename(out_filepath)
         if "PRIMARY" in self.headers:
             self.headers["PRIMARY"]["FILENAME"] = (basename, "Name of the FITS file")
 
@@ -353,13 +369,13 @@ class RVDataModel(object):
         hdu_list = self._create_hdul()
         # finish up writing
         hdul = fits.HDUList(hdu_list)
-        dirname = os.path.dirname(fn)
+        dirname = os.path.dirname(out_filepath)
         if dirname and not os.path.isdir(dirname):
             os.makedirs(dirname, exist_ok=True)
-        hdul.writeto(fn, overwrite=True, output_verify="silentfix")
+        hdul.writeto(out_filepath, overwrite=True, output_verify="silentfix")
         hdul.close()
 
-        return fn
+        return out_filepath
 
     # =============================================================================
     # Filename convention methods
