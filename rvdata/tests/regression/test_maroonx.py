@@ -80,9 +80,11 @@ def test_maroonx():
     mx3 = RV3.from_fits(l2_standardR, instrument="MAROONX")
     l3_standard = mx3.to_fits()
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l3_standard)), \
-        f"L3 filename '{l3_standard}' does not match EPRV convention"
-    assert l3_standard.startswith("maroonxred_SL3_"), \
-        f"L3 filename should start with 'maroonxred_SL3_', got '{l3_standard}'"
+        f"L3 filename '{os.path.basename(l3_standard)}' does not match \
+            EPRV convention"
+    assert os.path.basename(l3_standard).startswith("maroonxred_SL3_"), \
+        f"L3 filename should start with 'maroonxred_SL3_', \
+            got '{os.path.basename(l3_standard)}'"
     check_l3_compliance(l3_standard)
 
     # Check L4
@@ -92,10 +94,12 @@ def test_maroonx():
         l4_standard = mx4.to_fits()
     match4 = RVDataModel.FILENAME_PATTERN.match(os.path.basename(l4_standard))
     assert match4, (
-        f"L4 filename '{l4_standard}' does not match EPRV convention"
+        f"L4 filename '{os.path.basename(l4_standard)}' does not match "
+        f"EPRV convention"
     )
-    assert l4_standard.startswith("maroonxred_SL4_"), \
-        f"L4 filename should start with 'maroonxred_SL4_', got '{l4_standard}'"
+    assert os.path.basename(l4_standard).startswith("maroonxred_SL4_"), \
+        f"L4 filename should start with 'maroonxred_SL4_', \
+            got '{os.path.basename(l4_standard)}'"
     check_l4_compliance(l4_standard)
 
 

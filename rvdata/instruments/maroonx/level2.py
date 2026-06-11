@@ -285,7 +285,7 @@ class MAROONXRV2(RV2):
             os.path.join(out_dir, f"maroonxred_SL2_{timestamp}.fits")
         )
 
-        self.blue_product.to_fits(blue_name)
-        self.red_product.to_fits(red_name)
+        self.blue_product.to_fits(out_filename=blue_name)
+        self.red_product.to_fits(out_filename=red_name)
 
         return blue_name, red_name

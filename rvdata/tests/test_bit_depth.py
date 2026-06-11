@@ -128,7 +128,7 @@ class TestComplianceImageBitdepth:
         rv2.set_data("BARYCORR_KMS", np.array([1.0]))
         rv2.set_data("BARYCORR_Z", np.array([1e-5]))
         rv2.set_data("BJD_TDB", np.array([2460000.0], dtype=np.float64))
-        rv2.to_fits(filepath)
+        rv2.to_fits(out_filename=filepath)
 
         # If we need to downcast for testing, rewrite just that extension
         if dtype != np.float64:

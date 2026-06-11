@@ -47,9 +47,9 @@ def test_kpf():
     kpf2 = RV2.from_fits(l1file, l0file=l0file, instrument="KPF")
     l2_standard = kpf2.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l2_standard)), \
-        f"L2 filename '{l2_standard}' does not match EPRV convention"
-    assert l2_standard.startswith("kpf_SL2_"), \
-        f"L2 filename should start with 'kpf_SL2_', got '{l2_standard}'"
+        f"L2 filename '{os.path.basename(l2_standard)}' does not match EPRV convention"
+    assert os.path.basename(l2_standard).startswith("kpf_SL2_"), \
+        f"L2 filename should start with 'kpf_SL2_', got '{os.path.basename(l2_standard)}'"
     check_l2_compliance(l2_standard)
 
     # Check L3
@@ -58,18 +58,18 @@ def test_kpf():
     kpf3 = RV3.from_fits(l2_standard, instrument="KPF")
     l3_standard = kpf3.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l3_standard)), \
-        f"L3 filename '{l3_standard}' does not match EPRV convention"
-    assert l3_standard.startswith("kpf_SL3_"), \
-        f"L3 filename should start with 'kpf_SL3_', got '{l3_standard}'"
+        f"L3 filename '{os.path.basename(l3_standard)}' does not match EPRV convention"
+    assert os.path.basename(l3_standard).startswith("kpf_SL3_"), \
+        f"L3 filename should start with 'kpf_SL3_', got '{os.path.basename(l3_standard)}'"
     check_l3_compliance(l3_standard)
 
     # Check L4 - use auto-generated filename
     kpf4 = RV4.from_fits(l2file, instrument="KPF")
     l4_standard = kpf4.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l4_standard)), \
-        f"L4 filename '{l4_standard}' does not match EPRV convention"
-    assert l4_standard.startswith("kpf_SL4_"), \
-        f"L4 filename should start with 'kpf_SL4_', got '{l4_standard}'"
+        f"L4 filename '{os.path.basename(l4_standard)}' does not match EPRV convention"
+    assert os.path.basename(l4_standard).startswith("kpf_SL4_"), \
+        f"L4 filename should start with 'kpf_SL4_', got '{os.path.basename(l4_standard)}'"
     check_l4_compliance(l4_standard)
 
 
