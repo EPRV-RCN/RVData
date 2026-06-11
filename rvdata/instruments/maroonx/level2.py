@@ -55,7 +55,7 @@ class MAROONXRV2(RV2):
     from the BLUE and RED channels, and it extracts and organizes
     data for all the MAROON-X fibers.
     - To construct RVData Level 2 object, a MAROONX hdf5 data product
-      and a MAROONX flat files are required.
+      and a MAROONX flat file are required.
       The classmethod 'from_fits' cannot be used to read the hd5 files,
     hence, 'createL2' method should be used as per the example below.
     The '_read' method is not intended to be called directly by users.
@@ -159,8 +159,9 @@ class MAROONXRV2(RV2):
                     if fiber == 5
                     else spec_red[flux_key][fiber][:]
                 )
-                blue_wav = spec_blue['wavelengths'][fiber][:]
-                red_wav = spec_red['wavelengths'][fiber][:]
+                # convert from nm to Angstroms
+                blue_wav = spec_blue['wavelengths'][fiber][:] * 10
+                red_wav = spec_red['wavelengths'][fiber][:] * 10
                 blue_var = (
                     np.full(ref_shape_blue, np.nan)
                     if obstype == 'CAL'
@@ -272,13 +273,17 @@ class MAROONXRV2(RV2):
         from input_filename.
 
         Example filenames produced:
-            MAROONXBLUE_SL2_YYYYMMDDTHHMMSS.fits
-            MAROONXRED_SL2_YYYYMMDDTHHMMSS.fits
+            maroonxblue_SL2_YYYYMMDDTHHMMSS.fits
+            maroonxred_SL2_YYYYMMDDTHHMMSS.fits
         """
         base = os.path.basename(input_filename)
         timestamp = base.split("_")[0].replace("Z", "")
-        blue_name = os.path.join(out_dir, f"MAROONXBLUE_SL2_{timestamp}.fits")
-        red_name = os.path.join(out_dir, f"MAROONXRED_SL2_{timestamp}.fits")
+        blue_name = os.path.normpath(
+            os.path.join(out_dir, f"maroonxblue_SL2_{timestamp}.fits")
+        )
+        red_name = os.path.normpath(
+            os.path.join(out_dir, f"maroonxred_SL2_{timestamp}.fits")
+        )
 
         self.blue_product.to_fits(out_filename=blue_name)
         self.red_product.to_fits(out_filename=red_name)
