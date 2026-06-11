@@ -7,4 +7,5 @@
 
    tutorials/DataStandard_Overview
    tutorials/KPF_Tutorial
+   tutorials/MAROONX_Tutorial
    tutorials/NEID_Tutorial
