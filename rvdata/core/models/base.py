@@ -3,8 +3,10 @@ Standard models for RV data
 """
 
 import datetime
+import functools
 import hashlib
 import importlib
+import inspect
 import os
 import re
 import warnings
@@ -13,6 +15,7 @@ from collections import OrderedDict
 import git
 from git.exc import InvalidGitRepositoryError
 
+import numpy as np
 import pandas as pd
 from astropy.io import fits
 from astropy.table import Table
@@ -27,6 +30,70 @@ from rvdata.core.models.definitions import (
 )
 from rvdata.core.tools.git import get_git_branch, get_git_revision_hash, get_git_tag
 from rvdata.core.tools.headers import parse_value_to_datatype
+
+
+def _format_receipt_args(bound_args):
+    """Render bound call arguments as a key=value string for the RECEIPT ARGS column.
+
+    Skips ``self`` and ``cls`` (so the receipt only shows real parameters).
+    Long or multi-line values are replaced with ``<TypeName>`` to keep the
+    string readable in the U256 column. The final string is truncated to
+    240 characters to stay safely under the column width.
+    """
+    parts = []
+    for name, value in bound_args.arguments.items():
+        if name in ("self", "cls"):
+            continue
+        try:
+            rendered = str(value)
+        except Exception:
+            rendered = f"<{type(value).__name__}>"
+        # Default object repr (``<module.Class object at 0x...>``) is noise;
+        # collapse it to ``<Class>``. Same for anything too long/multi-line.
+        if rendered.startswith("<") and " object at 0x" in rendered:
+            rendered = f"<{type(value).__name__}>"
+        if "\n" in rendered or len(rendered) > 80:
+            rendered = f"<{type(value).__name__}>"
+        parts.append(f"{name}={rendered}")
+    out = ", ".join(parts)
+    if len(out) > 240:
+        out = out[:237] + "..."
+    return out
+
+
+def receipt_logged(func):
+    """Wrap an ``RVDataModel`` instance method so each call adds a RECEIPT entry.
+
+    The wrapped method's parameters are rendered key=value into the ARGS
+    column. A successful return logs ``STATUS=PASS``; an exception logs
+    ``STATUS=FAIL`` and is re-raised unchanged.
+
+    Intended for high-level public methods (e.g. ``read``,
+    ``convert_level2_to_level3``). Avoid decorating low-level data ops like
+    ``set_data``/``set_header`` — they are called heavily from internal code
+    paths and would flood the receipt.
+    """
+    sig = inspect.signature(func)
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            bound = sig.bind(self, *args, **kwargs)
+            bound.apply_defaults()
+            args_str = _format_receipt_args(bound)
+        except TypeError:
+            # If signature binding fails, fall back to a generic marker so
+            # the underlying function's TypeError still surfaces below.
+            args_str = "<unbindable>"
+        try:
+            result = func(self, *args, **kwargs)
+        except Exception:
+            self.receipt_add_entry(func.__name__, args_str, "FAIL")
+            raise
+        self.receipt_add_entry(func.__name__, args_str, "PASS")
+        return result
+
+    return wrapper
 
 
 class RVDataModel(object):
@@ -68,7 +135,7 @@ class RVDataModel(object):
         provided methods to make any adjustments, such as:
             >>> from core.models.level1 import RV1
             >>> data = RV1()
-            >>> data.receipt_add_entry('primitive1', 'param1', 'PASS')
+            >>> data.receipt_add_entry('primitive1', 'param1=value', 'PASS')
     """
 
     def __init__(self):
@@ -130,12 +197,20 @@ class RVDataModel(object):
         with open(fn, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 md5.update(chunk)
-        this_data.receipt_add_entry("from_fits", "PASS")
+        this_data.receipt_add_entry(
+            "from_fits", f"fn={fn}, instrument={instrument}", "PASS"
+        )
+
+        # Keep the RECEIPT extension in sync with the live receipt DataFrame so
+        # the read/from_fits entries added above are visible without a
+        # write/read cycle.
+        this_data._sync_receipt_to_extension()
 
         # Return this instance
         return this_data
 
     # TODO: overwrite is not yet used
+    @receipt_logged
     def read(self, hdu_list, instrument=None, overwrite=False, **kwargs):
         """
         Read the content of a RVData standard .fits file and populate this
@@ -234,50 +309,73 @@ class RVDataModel(object):
                 parsed_value = parse_value_to_datatype(key, row["DataType"], value)
                 self.headers["PRIMARY"][key] = parsed_value
 
-    def to_fits(self, fn=None):
+    def to_fits(self, out_filedir=None, out_filename=None):
         """
         Collect the content of this instance into a monolithic FITS file
 
         Args:
-            fn (str, optional): file path. If not provided, automatically
-                generates a filename following the EPRV naming convention.
+            out_filedir (str, optional): file path. If not provided,
+                automatically set to the current working directory.
+            out_filename (str, optional): file base name. If not
+                provided, automatically generates a filename following
+                the EPRV standard naming convention.
 
         Returns:
-            str: The filename that was written to
+            out_filepath (str): The full path to the output file.
 
         Note:
             Filename should follow the EPRV naming convention:
             inst_SL#_YYYYMMDDThhmmss.fits
 
         """
-        # Auto-generate filename if not provided
-        if fn is None:
-            fn = self.generate_standard_filename()
+        # Set the output file path to working directory if not given one
+        if out_filedir is None:
+            out_filedir = os.getcwd()
 
-        if not fn.endswith(".fits"):
+        # Auto-generate filename if not provided
+        if out_filename is None:
+            out_filename = self.generate_standard_filename()
+        # If filename is provided, see if it has a path attached
+        else:
+            if os.path.dirname(out_filename):
+                out_filedir = os.path.dirname(out_filename)
+                out_filename = os.path.basename(out_filename)
+
+        # Ensure that the output file name is a fits file!
+        if not out_filename.endswith(".fits"):
             # we only want to write to a '.fits file
             raise NameError("filename must end with .fits")
 
-        # Add receipt entry before writing (so it's included in the file)
-        self.receipt_add_entry("to_fits", "PASS")
+        # Construct full output path
+        out_filepath = os.path.join(out_filedir, out_filename)
+
+        # Add receipt entry before writing (so it's included in the file).
+        # Kept manual (not @receipt_logged) because the entry must be added
+        # *before* _sync_receipt_to_extension below, so the to_fits row
+        # actually lands in the serialized RECEIPT extension.
+        self.receipt_add_entry("to_fits", f"out_filepath={out_filepath}", "PASS")
         # Check filename convention and warn if it doesn't match
-        self.check_filename_convention(fn)
+        self.check_filename_convention(out_filepath)
 
         # Update FILENAME header to match the actual filename being written
-        basename = os.path.basename(fn)
+        basename = os.path.basename(out_filepath)
         if "PRIMARY" in self.headers:
             self.headers["PRIMARY"]["FILENAME"] = (basename, "Name of the FITS file")
+
+        # Materialize the accumulated receipt entries into the RECEIPT
+        # extension so they get serialized below.
+        self._sync_receipt_to_extension()
 
         hdu_list = self._create_hdul()
         # finish up writing
         hdul = fits.HDUList(hdu_list)
-        dirname = os.path.dirname(fn)
+        dirname = os.path.dirname(out_filepath)
         if dirname and not os.path.isdir(dirname):
             os.makedirs(dirname, exist_ok=True)
-        hdul.writeto(fn, overwrite=True, output_verify="silentfix")
+        hdul.writeto(out_filepath, overwrite=True, output_verify="silentfix")
         hdul.close()
 
-        return fn
+        return out_filepath
 
     # =============================================================================
     # Filename convention methods
@@ -387,13 +485,26 @@ class RVDataModel(object):
 
     # =============================================================================
     # Receipt related members
-    def receipt_add_entry(self, module, status):
+    def receipt_info(self):
+        """
+        Print the short version of the receipt to stdout.
+        """
+        rec = self.receipt
+        if rec.empty:
+            print("(receipt is empty)")
+            return
+        cols = [c for c in ("TIME", "FUNCTION", "STATUS") if c in rec.columns]
+        print(rec[cols].to_string(index=False))
+
+    def receipt_add_entry(self, function, args, status):
         """
         Add an entry to the receipt
 
         Args:
-            module (str): Name of the module making this entry
-            status (str): status to be recorded
+            function (str): Name of the function/primitive making this entry
+            args (str): Arguments or parameters relevant to this entry
+                (use ``""`` if not applicable)
+            status (str): Status to be recorded
         """
 
         # time of execution in ISO format
@@ -441,28 +552,32 @@ class RVDataModel(object):
             git_branch = get_git_branch()
             git_tag = get_git_tag()
 
-        # add the row to the bottom of the table
+        # add the row to the bottom of the table. Column names match
+        # BASE-RECEIPT-columns.csv (the published RECEIPT schema).
         row = {
-            "Time": time,
-            "Code_Release": git_tag,
-            "Commit_Hash": git_commit_hash,
-            "Branch_Name": git_branch,
-            "Module_Name": module,
-            "Status": status,
+            "TIME": time,
+            "CODE_RELEASE": git_tag,
+            "BRANCH_NAME": git_branch,
+            "COMMIT_HASH": git_commit_hash,
+            "FUNCTION": function,
+            "ARGS": args,
+            "STATUS": status,
         }
 
         self.receipt = pd.concat([self.receipt, pd.DataFrame([row])], ignore_index=True)
 
-    def receipt_info(self):
+    def _sync_receipt_to_extension(self):
         """
-        Print the short version of the receipt
+        Copy ``self.receipt`` (the live DataFrame) into ``self.data["RECEIPT"]``
+        so the RECEIPT extension serializes with the correct rows and string-
+        typed columns.
 
-        Args:
-            receipt_name (string): name of the receipt
+        Values are coerced to strings (with NaN/None becoming ``""``) so
+        ``Table.from_pandas`` produces string Astropy columns rather than the
+        ``float64`` columns it would infer from an empty/numeric DataFrame.
         """
-        rec = self.receipt
-        msg = rec["Time", "Module_Name", "Status"]
-        print(msg)
+        df = self.receipt.fillna("").astype(str)
+        self.set_data("RECEIPT", df)
 
     # =============================================================================
     # Extension methods
@@ -529,6 +644,14 @@ class RVDataModel(object):
         else:
             raise NameError("Name {} does not exist as extension".format(ext_name))
 
+    def _get_min_bit_depth(self, ext_name):
+        """Return the MinBitDepth requirement for an extension, or None.
+
+        Overridden in level-specific models to look up requirements
+        from the extensions config CSV.
+        """
+        return None
+
     def set_data(self, ext_name, data):
         """
         Set extension data
@@ -543,6 +666,35 @@ class RVDataModel(object):
             if ext_type == "BinTableHDU" and isinstance(data, pd.DataFrame):
                 data = Table.from_pandas(data)
             if isinstance(data, type(FITS_TYPE_MAP[ext_type]([]))):
+                # Enforce MinBitDepth for ImageHDU arrays
+                if ext_type == "ImageHDU" and isinstance(data, np.ndarray):
+                    min_depth = self._get_min_bit_depth(ext_name)
+                    if (min_depth is not None
+                            and data.size > 0
+                            and data.dtype.itemsize * 8 < min_depth):
+                        if np.issubdtype(data.dtype, np.floating):
+                            target = {32: np.float32, 64: np.float64}.get(
+                                min_depth, np.float64
+                            )
+                        elif np.issubdtype(data.dtype, np.unsignedinteger):
+                            target = {8: np.uint8, 16: np.uint16,
+                                      32: np.uint32, 64: np.uint64}.get(
+                                min_depth, np.uint64
+                            )
+                        else:
+                            target = {8: np.int8, 16: np.int16,
+                                      32: np.int32, 64: np.int64}.get(
+                                min_depth, np.int64
+                            )
+                        warnings.warn(
+                            f"Extension '{ext_name}' has dtype {data.dtype} "
+                            f"({data.dtype.itemsize * 8}-bit) but "
+                            f"MinBitDepth={min_depth}. "
+                            f"Upcasting to {target.__name__}.",
+                            UserWarning,
+                            stacklevel=2,
+                        )
+                        data = data.astype(target)
                 self.data[ext_name] = data
             else:
                 raise TypeError(

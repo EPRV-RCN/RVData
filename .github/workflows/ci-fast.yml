@@ -1,7 +1,14 @@
 name: Fast CI - Code Style and Standard Regression Tests
 
+# CI split: ci-fast provides a quick signal on feature-branch pushes;
+# ci-full covers pull requests and the protected branches (main, develop).
+# main/develop are ignored here because ci-full already runs the same
+# codestyle and ubuntu/py3.13 test jobs on pushes to those branches.
 on:
   push:
+    branches-ignore:
+      - main
+      - develop
   workflow_dispatch: {}
 
 concurrency:
@@ -21,10 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -43,10 +50,10 @@ jobs:
     needs: codestyle
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           cache: 'pip'

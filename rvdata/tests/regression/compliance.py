@@ -1,4 +1,5 @@
 import importlib
+import re
 
 import pandas as pd
 from astropy.io import fits
@@ -35,6 +36,9 @@ def check_l2_extensions(inpfile):
             assert (
                 hdu.name in ext_names_in_table
             ), f"Extension {hdu.name} present in data but missing from EXT_DESCRIPT table."
+
+        # Check MinBitDepth requirements for ImageHDU extensions
+        _check_image_bitdepth(hdul, extdf)
 
 
 def check_l2_header(header):
@@ -87,7 +91,8 @@ def check_l3_extensions(inpfile):
                 hdu.name in ext_names_in_table
             ), f"Extension {hdu.name} present in data but missing from EXT_DESCRIPT table."
 
-    hdul.close()
+        # Check MinBitDepth requirements for ImageHDU extensions
+        _check_image_bitdepth(hdul, extdf)
 
 
 def check_l3_header(header):
@@ -180,6 +185,99 @@ def check_l4_header(header):
             continue
 
 
+# Maps FITS BinTableHDU TFORM type codes to their bit depth.
+# TFORM codes appear in TFORMn header keywords and describe
+# the data type of each column in a binary table extension.
+TFORM_BIT_DEPTHS = {
+    'B': 8,   # unsigned byte
+    'I': 16,  # 16-bit int
+    'J': 32,  # 32-bit int
+    'K': 64,  # 64-bit int
+    'E': 32,  # single-precision float
+    'D': 64,  # double-precision float
+}
+
+
+def _tform_to_depth(tform):
+    """Return the bit depth for a FITS TFORM code string.
+
+    Handles repeat-count prefixes like '1D', '10E', etc.
+    Returns None if the type code is not recognized.
+    """
+    type_char = tform.lstrip('0123456789')
+    return TFORM_BIT_DEPTHS.get(type_char.upper())
+
+
+def _check_image_bitdepth(hdul, extdf):
+    """Check that ImageHDU extensions meet their MinBitDepth requirement."""
+    if "MinBitDepth" not in extdf.columns:
+        return
+
+    for _, row in extdf.iterrows():
+        ext_name = row["Name"]
+        min_depth = row["MinBitDepth"]
+
+        if pd.isna(min_depth) or str(min_depth).strip() == "":
+            continue
+        min_depth = int(min_depth)
+
+        # Handle multiplicity: find all HDUs matching the pattern
+        if row.get("Multiplicity", False):
+            pattern = re.sub(r'1(?=_)', r'\\d+', ext_name)
+            candidate_names = [
+                h.name for h in hdul
+                if re.fullmatch(pattern, h.name)
+            ]
+        else:
+            candidate_names = [ext_name] if ext_name in hdul else []
+
+        for name in candidate_names:
+            hdu = hdul[name]
+            if not isinstance(hdu, fits.ImageHDU):
+                continue
+            actual_bitpix = hdu.header.get("BITPIX", None)
+            if actual_bitpix is None:
+                continue
+            actual_depth = abs(actual_bitpix)
+            assert actual_depth >= min_depth, (
+                f"Extension '{name}' has BITPIX={actual_bitpix} "
+                f"({actual_depth}-bit) but MinBitDepth={min_depth} is required."
+            )
+
+
+def _check_table_column_bitdepth(hdul, coldf, ext_name):
+    """Check that BinTableHDU columns meet their MinBitDepth requirement."""
+    if "MinBitDepth" not in coldf.columns:
+        return
+    if ext_name not in hdul:
+        return
+
+    hdu = hdul[ext_name]
+    col_formats = {col.name: col.format for col in hdu.columns}
+
+    for _, row in coldf.iterrows():
+        col_name = row["Name"]
+        min_depth = row["MinBitDepth"]
+
+        if pd.isna(min_depth) or str(min_depth).strip() == "":
+            continue
+        min_depth = int(min_depth)
+
+        if col_name not in col_formats:
+            continue  # presence check is handled elsewhere
+
+        tform = col_formats[col_name]
+        actual_depth = _tform_to_depth(tform)
+
+        if actual_depth is None:
+            continue  # string or complex types
+
+        assert actual_depth >= min_depth, (
+            f"Column '{col_name}' in '{ext_name}' has TFORM='{tform}' "
+            f"({actual_depth}-bit) but MinBitDepth={min_depth} is required."
+        )
+
+
 def _check_table_columns(
     inpfile, ext_name, csv_filename,
     allowed_extra_prefixes=(), strict=False,
@@ -252,12 +350,22 @@ def _check_table_columns(
 
 
 def check_l4_rv_columns(inpfile):
-    """Check that RV1 columns use standard names from the CSV spec."""
+    """Check that RV1 columns use standard names and meet bit depth requirements."""
     _check_table_columns(
         inpfile, "RV1", "L4-RV_TABLE-columns.csv",
         allowed_extra_prefixes=("RV_TRACE",),
         strict=True,
     )
+    # Check MinBitDepth requirements for RV table columns
+    csv_path = (
+        importlib.resources.files("rvdata.core.models.config")
+        / "L4-RV_TABLE-columns.csv"
+    )
+    coldf = pd.read_csv(csv_path)
+    with fits.open(inpfile) as hdul:
+        for hdu in hdul:
+            if hdu.name.startswith("RV"):
+                _check_table_column_bitdepth(hdul, coldf, hdu.name)
 
 
 def check_order_table_columns(inpfile):

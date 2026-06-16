@@ -2,6 +2,8 @@
 Level 3 Data Model for RV spectral data
 """
 
+import re
+
 import numpy as np
 import pandas as pd
 import importlib.resources
@@ -9,6 +11,7 @@ from astropy.io import fits
 from astropy.table import Table, vstack
 
 import rvdata.core.models.base
+from rvdata.core.models.base import receipt_logged
 from rvdata.core.models.definitions import (
     BASE_DRP_CONFIG_COLUMNS,
     BASE_ORDER_TABLE_COLUMNS,
@@ -67,9 +70,14 @@ class RV3(rvdata.core.models.base.RVDataModel):
         # Initialize INSTRUMENT_HEADER with a dummy zero image
         self.set_data("INSTRUMENT_HEADER", np.zeros((1,), dtype=np.float32))
 
-        # Initialize RECEIPT with receipt columns
+        # Initialize RECEIPT with receipt columns as a string-typed empty
+        # Table. Pandas + Table.from_pandas collapses empty columns to
+        # float64 regardless of pandas dtype, so we build the Table directly.
         receipt_columns = BASE_RECEIPT_COLUMNS["Name"].tolist()
-        self.set_data("RECEIPT", pd.DataFrame(columns=receipt_columns))
+        self.set_data(
+            "RECEIPT",
+            Table({c: np.array([], dtype="U256") for c in receipt_columns}),
+        )
 
         # Initialize DRP_CONFIG with columns from definition
         drp_config_columns = BASE_DRP_CONFIG_COLUMNS["Name"].tolist()
@@ -78,6 +86,23 @@ class RV3(rvdata.core.models.base.RVDataModel):
         # Initialize ORDER_TABLE with columns from definition
         order_table_columns = BASE_ORDER_TABLE_COLUMNS["Name"].tolist()
         self.set_data("ORDER_TABLE", pd.DataFrame(columns=order_table_columns))
+
+    def _get_min_bit_depth(self, ext_name):
+        """Look up MinBitDepth for an ImageHDU extension from the L3 config."""
+        # Handle multiplicity:
+        #   STITCHED_CORR_TRACE2_WAVE -> STITCHED_CORR_TRACE1_WAVE
+        #   STITCHED_CUSTOMCORR2_TRACE2_WAVE -> STITCHED_CUSTOMCORR1_TRACE1_WAVE
+        canonical = re.sub(r'(?<=CUSTOMCORR)\d+', '1', ext_name)
+        canonical = re.sub(r'(?<=TRACE)\d+', '1', canonical)
+        row = LEVEL3_EXTENSIONS[LEVEL3_EXTENSIONS["Name"] == canonical]
+        if row.empty:
+            row = LEVEL3_EXTENSIONS[LEVEL3_EXTENSIONS["Name"] == ext_name]
+        if row.empty:
+            return None
+        val = row.iloc[0]["MinBitDepth"]
+        if pd.isna(val):
+            return None
+        return int(val)
 
     def _read(self, hdul: fits.HDUList) -> None:
         import warnings
@@ -161,6 +186,7 @@ class RV3(rvdata.core.models.base.RVDataModel):
                 head += row
         print(head)
 
+    @receipt_logged
     def convert_level2_to_level3(self, l2obj) -> None:
         """
         Read data from a Level 2 RVDataModel object and populate Level 3 fields
@@ -319,6 +345,6 @@ class RV3(rvdata.core.models.base.RVDataModel):
         self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
         self.set_header("ORDER_TABLE", l2obj.headers["ORDER_TABLE"])
 
-        # Inherit receipt from L2 object and add conversion entry
+        # Inherit receipt from L2 object; @receipt_logged on this method
+        # adds the conversion entry after this function returns.
         self.receipt = l2obj.receipt.copy()
-        self.receipt_add_entry("convert_level2_to_level3", "PASS")

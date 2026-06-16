@@ -3,6 +3,8 @@ Level 2 Data Model for RV spectral data
 """
 
 # External dependencies
+import re
+
 from astropy.io import fits
 from astropy.table import Table
 import numpy as np
@@ -62,9 +64,14 @@ class RV2(rvdata.core.models.base.RVDataModel):
         # Initialize INSTRUMENT_HEADER with a dummy zero image
         self.set_data("INSTRUMENT_HEADER", np.zeros((1,), dtype=np.float32))
 
-        # Initialize RECEIPT with receipt columns
+        # Initialize RECEIPT with receipt columns as a string-typed empty
+        # Table. Pandas + Table.from_pandas collapses empty columns to
+        # float64 regardless of pandas dtype, so we build the Table directly.
         receipt_columns = BASE_RECEIPT_COLUMNS["Name"].tolist()
-        self.set_data("RECEIPT", pd.DataFrame(columns=receipt_columns))
+        self.set_data(
+            "RECEIPT",
+            Table({c: np.array([], dtype="U256") for c in receipt_columns}),
+        )
 
         # Initialize DRP_CONFIG with columns from definition
         drp_config_columns = BASE_DRP_CONFIG_COLUMNS["Name"].tolist()
@@ -100,6 +107,21 @@ class RV2(rvdata.core.models.base.RVDataModel):
                 self.set_data(hdu.name, data)
 
             self.set_header(hdu.name, hdu.header)
+
+    def _get_min_bit_depth(self, ext_name):
+        """Look up MinBitDepth for an ImageHDU extension from the L2 config."""
+        # Handle multiplicity: CUSTOM2_TRACE2_WAVE -> CUSTOM1_TRACE1_WAVE
+        canonical = re.sub(r'(?<=CUSTOM)\d+', '1', ext_name)
+        canonical = re.sub(r'(?<=TRACE)\d+', '1', canonical)
+        row = LEVEL2_EXTENSIONS[LEVEL2_EXTENSIONS["Name"] == canonical]
+        if row.empty:
+            row = LEVEL2_EXTENSIONS[LEVEL2_EXTENSIONS["Name"] == ext_name]
+        if row.empty:
+            return None
+        val = row.iloc[0]["MinBitDepth"]
+        if pd.isna(val):
+            return None
+        return int(val)
 
     def info(self):
         """
@@ -138,63 +160,3 @@ class RV2(rvdata.core.models.base.RVDataModel):
                 row = "|{:20s} |{:20s} |{:20s}\n".format(name, "table", str(len(ext)))
                 head += row
         print(head)
-
-    def _create_hdul(self):
-        """
-        Create an hdul in FITS format.
-        This is used by the base model for writing data context to file
-        """
-        hdu_list = []
-        hdu_definitions = self.extensions.items()
-        for key, value in hdu_definitions:
-            hduname = key
-            if value == "PrimaryHDU":
-                head = fits.Header()
-                for keyword, content in self.headers[key].items():
-                    head[keyword] = content
-                hdu = fits.PrimaryHDU(header=head)
-                hdu_list.insert(0, hdu)
-            elif value == "ImageHDU":
-                data = self.data[key]
-                if data is None:
-                    ndim = 0
-                else:
-                    ndim = len(data.shape)
-                self.headers[key]["NAXIS"] = ndim
-                if ndim == 0:
-                    self.headers[key]["NAXIS1"] = 0
-                else:
-                    for d in range(ndim):
-                        self.headers[key]["NAXIS{}".format(d + 1)] = data.shape[d]
-                head = fits.Header(self.headers[key])
-                try:
-                    hdu = fits.ImageHDU(data=data, header=head)
-                    hdu.name = hduname
-                    hdu_list.append(hdu)
-                except KeyError as ke:
-                    print("KeyError exception raised: -->ke=" + str(ke))
-                    print("Attempting to handle it...")
-                    if str(ke) == "'bool'":
-                        data = data.astype(float)
-                        print("------>SHAPE=" + str(data.shape))
-                        hdu = fits.ImageHDU(data=data, header=head)
-                        hdu_list.append(hdu)
-                    else:
-                        raise KeyError("A different error...")
-            elif value == "BinTableHDU":
-                table = self.data[key]
-                self.headers[key]["NAXIS2"] = len(table)
-                head = fits.Header(self.headers[key])
-                hdu = fits.BinTableHDU(data=table, header=head)
-                hdu.name = hduname
-                self._restore_column_metadata(hdu, self.headers[key])
-                hdu_list.append(hdu)
-            else:
-                print(
-                    "Can't translate {} into a valid FITS format.".format(
-                        type(self.data[key])
-                    )
-                )
-                continue
-
-        return hdu_list

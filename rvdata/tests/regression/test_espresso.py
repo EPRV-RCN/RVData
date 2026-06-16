@@ -70,18 +70,18 @@ def test_espresso():
     espr2 = RV2.from_fits(str(raw_file), instrument="ESPRESSO")
     l2_standard = espr2.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l2_standard)), \
-        f"L2 filename '{l2_standard}' does not match EPRV convention"
-    assert l2_standard.startswith("espresso_SL2_"), \
-        f"L2 filename should start with 'espresso_SL2_', got '{l2_standard}'"
+        f"L2 filename '{os.path.basename(l2_standard)}' does not match EPRV convention"
+    assert os.path.basename(l2_standard).startswith("espresso_SL2_"), \
+        f"L2 filename should start with 'espresso_SL2_', got '{os.path.basename(l2_standard)}'"
     check_l2_compliance(l2_standard)
 
     # Test Level 4 - use auto-generated filename
     espr4 = RV4.from_fits(str(raw_file), instrument="ESPRESSO")
     l4_standard = espr4.to_fits()  # Auto-generate filename
     assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l4_standard)), \
-        f"L4 filename '{l4_standard}' does not match EPRV convention"
-    assert l4_standard.startswith("espresso_SL4_"), \
-        f"L4 filename should start with 'espresso_SL4_', got '{l4_standard}'"
+        f"L4 filename '{os.path.basename(l4_standard)}' does not match EPRV convention"
+    assert os.path.basename(l4_standard).startswith("espresso_SL4_"), \
+        f"L4 filename should start with 'espresso_SL4_', got '{os.path.basename(l4_standard)}'"
     check_l4_compliance(l4_standard)
 
 

@@ -3,11 +3,12 @@
 
 from astropy.io import fits
 import numpy as np
+from numpy.exceptions import VisibleDeprecationWarning
 import pandas as pd
 from collections import OrderedDict
 import pickle
 from rvdata.core.models.level4 import RV4
-# from rvdata.core.models.level2 import RV2
+import warnings
 
 
 class MAROONXRV4(RV4):
@@ -81,6 +82,7 @@ class MAROONXRV4(RV4):
         Reads a standard L2 fits for MAROONX and creates
         a standard L4 fits data product
         """
+        warning_msg = r"dtype\(\): align should be passed"
         ext_table = {
             "Name": [],
             "Description": [],
@@ -96,7 +98,18 @@ class MAROONXRV4(RV4):
             raise ValueError("Invalid channel specified. Use 'RED' or 'BLUE'.")
 
         with open(RVfile, "rb") as f:
-            data = pickle.load(f)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
+                                        message=warning_msg,
+                                        category=DeprecationWarning)
+                warnings.filterwarnings("ignore",
+                                        message=warning_msg,
+                                        category=VisibleDeprecationWarning)
+                warnings.filterwarnings("ignore",
+                                        message="numpy.core",
+                                        category=DeprecationWarning)
+                data = pickle.load(f)
+
         # Extract relevant data from the pickle file
         bjds_pk = np.array(data["bjd"])
         rvs_comb = np.array(data["RV"])
@@ -117,7 +130,6 @@ class MAROONXRV4(RV4):
         idx = np.argmin(diff)
         if diff[idx] > tol:
             raise ValueError("No matching BJD found within tolerance!")
-        print(f"Matched BJD to SERVAL index: {idx}")
 
         rv_serval = rvs_ord[idx][::-1]
         erv_serval = erv_ord[idx][::-1]
@@ -134,7 +146,7 @@ class MAROONXRV4(RV4):
         phead = phdr
         phead["DATALVL"] = 'L4'
         # Add RV specific entries to the primary header
-        phead["BJDTDB"] = bjd_tdb
+        phead["BJD_TDB"] = bjd_tdb
         phead["RV"] = rv_sel/1000
         phead["RVERR"] = erv_sel/1000
         phead["RVMETHOD"] = "SERVAL"
@@ -158,12 +170,12 @@ class MAROONXRV4(RV4):
         # Order-wise RV data
         rv_table_data = OrderedDict([
             ("BJD_TDB", np.full(len(orders), bjd_tdb)),
-            ("echelle_order", orders),
-            ("order_index", order_tab["order_index"]),
-            ("wave_start", order_tab["wave_start"]),
-            ("wave_end", order_tab["wave_end"]),
-            ("rv", rv_full),
-            ("rv_err", erv_full),
+            ("ECHELLE_ORDER", orders),
+            ("ORDER_INDEX", order_tab["order_index"]),
+            ("WAVE_START", order_tab["wave_start"]),
+            ("WAVE_END", order_tab["wave_end"]),
+            ("RV", rv_full),
+            ("RV_ERR", erv_full),
             ("BERV", berv)
         ])
         self.set_data("RV1", pd.DataFrame(rv_table_data))
@@ -203,9 +215,9 @@ class MAROONXRV4(RV4):
             errors.append(error)
         activity_dict = OrderedDict([
             ("BJD_TDB",     BJD_column),
-            ("metric_name", metric_names),
-            ("Value",       values),
-            ("Error",       errors),
+            ("METRIC_NAME", metric_names),
+            ("VALUE",       values),
+            ("ERROR",       errors),
         ])
 
         # Output the diagnostics table

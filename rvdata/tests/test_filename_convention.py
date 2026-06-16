@@ -193,7 +193,7 @@ class TestToFitsAutoFilename:
             # Use explicit path to avoid changing directory (which breaks git repo lookup)
             expected_filename = "test_SL2_20250208T045125.fits"
             full_path = os.path.join(tmpdir, expected_filename)
-            filename = obj.to_fits(full_path)
+            filename = obj.to_fits(out_filename=full_path)
             assert filename == full_path
             assert os.path.exists(filename)
             assert os.path.basename(filename) == expected_filename
@@ -211,6 +211,6 @@ class TestToFitsAutoFilename:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             explicit_name = os.path.join(tmpdir, "my_custom_name.fits")
-            filename = obj.to_fits(explicit_name)
+            filename = obj.to_fits(out_filename=explicit_name)
             assert filename == explicit_name
             assert os.path.exists(filename)
