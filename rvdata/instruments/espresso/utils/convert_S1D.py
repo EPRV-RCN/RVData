@@ -59,7 +59,7 @@ def convert_S1D(
     Returns:
         None
     """
-    
+
     RV3.headers['PRIMARY']["BLZCORR"] = (True, 'Has blaze been removed?')
     RV3.headers['PRIMARY']["LMPCORR"] = (True, 'Has lamp SED been removed?')
     RV3.headers['PRIMARY']["SEDCORR"] = (False, 'Has SED been removed?')
