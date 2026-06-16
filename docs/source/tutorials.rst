@@ -35,3 +35,13 @@ The :doc:`NEID Tutorial <tutorials/NEID_Tutorial>` provides a comprehensive guid
 - **Level 2**: Creating L2 from native NEID L2 file,access headers, examine extensions, plot spectra
 - **Level 3**: Creating stitched 1D spectra from L2, accessing full stitched spectra, examining spectral features
 - **Level 4**: Creating RV measurements from native NEID L2, analyzing velocities
+
+ESPRESSO Tutorial
+------------
+
+The :doc:`ESPRESSO Tutorial <tutorials/ESPRESSO_Tutorial>` provides a comprehensive guide to working with ESPRESSO data at all levels:
+
+- **Level 2**: Creating L2 from native ESPRESSO files (raw S2D and drift), examining echelle spectra
+- **Level 3**: Creating stitched 1D spectra from ESPRESSO files (raw and S1D), plotting spectral features
+- **Level 4**: Creating RV measurements from native ESPRESSO files (raw and CCF), analyzing velocities
+
