@@ -1,7 +1,14 @@
 name: Fast CI - Code Style and Standard Regression Tests
 
+# CI split: ci-fast provides a quick signal on feature-branch pushes;
+# ci-full covers pull requests and the protected branches (main, develop).
+# main/develop are ignored here because ci-full already runs the same
+# codestyle and ubuntu/py3.13 test jobs on pushes to those branches.
 on:
   push:
+    branches-ignore:
+      - main
+      - develop
   workflow_dispatch: {}
 
 concurrency:

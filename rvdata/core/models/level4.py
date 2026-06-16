@@ -65,9 +65,14 @@ class RV4(rvdata.core.models.base.RVDataModel):
         # Initialize INSTRUMENT_HEADER with a dummy zero image
         self.set_data("INSTRUMENT_HEADER", np.zeros((1,), dtype=np.float32))
 
-        # Initialize RECEIPT with receipt columns
+        # Initialize RECEIPT with receipt columns as a string-typed empty
+        # Table. Pandas + Table.from_pandas collapses empty columns to
+        # float64 regardless of pandas dtype, so we build the Table directly.
         receipt_columns = BASE_RECEIPT_COLUMNS["Name"].tolist()
-        self.set_data("RECEIPT", pd.DataFrame(columns=receipt_columns))
+        self.set_data(
+            "RECEIPT",
+            Table({c: np.array([], dtype="U256") for c in receipt_columns}),
+        )
 
         # Initialize DRP_CONFIG with columns from definition
         drp_config_columns = BASE_DRP_CONFIG_COLUMNS["Name"].tolist()

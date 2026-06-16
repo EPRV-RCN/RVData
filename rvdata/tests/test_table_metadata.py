@@ -97,7 +97,7 @@ def test_bintable_metadata_roundtrip():
 
         # Round-trip through RV4
         obj = RV4.from_fits(src)
-        obj.to_fits(dst)
+        obj.to_fits(out_filename=dst)
 
         # Read back and compare
         with fits.open(dst) as hdul_out:
