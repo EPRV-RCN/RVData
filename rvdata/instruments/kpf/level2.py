@@ -1,5 +1,6 @@
 from astropy.io import fits
 from astropy.table import Table
+from astropy import constants
 import numpy as np
 import pandas as pd
 import os
@@ -216,7 +217,7 @@ class KPFRV2(RV2):
         self.set_header("BARYCORR_KMS", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_header("BARYCORR_Z", OrderedDict(hdul1["BARY_CORR"].header))
         self.set_data("BARYCORR_KMS", bary_kms)
-        self.set_data("BARYCORR_Z", bary_kms / 3e5)  # aproximate!!!
+        self.set_data("BARYCORR_Z", (bary_kms / constants.c.to("km/s")).value)
 
         self.create_extension(
             "EXPMETER",
