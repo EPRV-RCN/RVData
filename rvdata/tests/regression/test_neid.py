@@ -1,9 +1,11 @@
 import requests
 import os
+from astropy.io import fits
 from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
+from rvdata.instruments.neid.level2 import NEIDRV2
 
 from rvdata.tests.regression.compliance import (
     check_l2_compliance, check_l3_compliance, check_l4_compliance,
@@ -60,6 +62,39 @@ def test_neid():
     assert os.path.basename(standard_l4_file).startswith("neid_SL4_"), \
         f"L4 filename should start with 'neid_SL4_', got '{os.path.basename(standard_l4_file)}'"
     check_l4_compliance(standard_l4_file)
+
+
+def test_l3_conversion_does_not_mutate_l2():
+    """convert_level2_to_level3 must not mutate the input L2 object.
+
+    Regression test for header aliasing: the L3 PRIMARY/INSTRUMENT_HEADER/
+    ORDER_TABLE headers were the same objects as the source L2's, so the
+    conversion flipped the caller's L2 to DATALVL='L3' and leaked stitching
+    keywords (e.g. BLZCORR) into it.
+    """
+    native_l2_file = download_files()
+
+    l2 = NEIDRV2()
+    l2.read(fits.open(native_l2_file), instrument="NEID")
+    datalvl_before = l2.headers["PRIMARY"].get("DATALVL")
+    keys_before = set(l2.headers["PRIMARY"].keys())
+
+    l3 = RV3()
+    l3.convert_level2_to_level3(l2)
+
+    # The source L2 object must be untouched by the conversion.
+    assert l2.headers["PRIMARY"].get("DATALVL") == datalvl_before
+    assert set(l2.headers["PRIMARY"].keys()) == keys_before
+    assert "BLZCORR" not in l2.headers["PRIMARY"]
+
+    # The L3 object must not share header objects with the source L2.
+    assert l2.headers["PRIMARY"] is not l3.headers["PRIMARY"]
+    assert (l2.headers["INSTRUMENT_HEADER"]
+            is not l3.headers["INSTRUMENT_HEADER"])
+    assert l2.headers["ORDER_TABLE"] is not l3.headers["ORDER_TABLE"]
+
+    # ...and the conversion still produced a Level 3 header.
+    assert l3.headers["PRIMARY"].get("DATALVL") == "L3"
 
 
 def test_neid_benchmark(benchmark):
