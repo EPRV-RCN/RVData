@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 from astropy.io import fits
+from astropy.constants import c
 import os
 
 # import base class
@@ -228,8 +229,8 @@ class MAROONXRV2(RV2):
 
         berv_kms_b = float(header_blue['BERV_FLUXWEIGHTED_FRD'])/1000.0
         berv_kms_r = float(header_red['BERV_FLUXWEIGHTED_FRD'])/1000.0
-        berv_z_b = berv_kms_b / 3e5
-        berv_z_r = berv_kms_r / 3e5
+        berv_z_b = (berv_kms_b / c.to("km/s")).value
+        berv_z_r = (berv_kms_r / c.to("km/s")).value
         bjd_tdb_b = MXutils.compute_bjd_from_header(header_blue)
         bjd_tdb_r = MXutils.compute_bjd_from_header(header_red)
 
