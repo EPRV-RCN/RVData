@@ -16,7 +16,7 @@ Branch Structure
 Code Standards
 ==============
 
-Code in this repository must be compatable with the `flake8 <https://flake8.pycqa.org/en/latest/>` standard and `Google style <https://flake8.pycqa.org/en/latest/>` docstrings.
+Code in this repository must be compatible with the `flake8 <https://flake8.pycqa.org/en/latest/>` standard and `Google style <https://flake8.pycqa.org/en/latest/>` docstrings.
 
 
 Developer Overview

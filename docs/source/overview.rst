@@ -61,7 +61,7 @@ and places requirements on filenames, structure, and contents.
 
 #. All compliant files will be named using the following scheme: **<inst>_SL<#>_<timestamp>.fits**
 
-   * **<inst>** : Instrument name or abbreviation, in lower-case. (e.g., neid, kpf, expres). Different cameras are treated as separate instruments (e.g., for Maroon-X: mxred, mxblue)
+   * **<inst>** : Instrument name or abbreviation, in lower-case. (e.g., neid, kpf, expres). Different cameras are treated as separate instruments (e.g., for Maroon-X: maroonxred, maroonxblue)
    * **<SL#>** : Standard Level #, where # is typically 2, 3, 4, etc.
    * **<timestamp>** : Start of Exposure, corresponding to header DATE-OBS keyword. Limited to *YYYYMMDDTHHMMSS*. In cases where fractional seconds are required to distinguish files, add milliseconds as *sss*.
 
