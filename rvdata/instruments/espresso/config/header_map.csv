@@ -67,7 +67,7 @@ INHUM,,Null,,,,True,[%] Relative humidity inside dome,Null
 INHUMT,,Null,,,,False,INHUM timestamp,Null
 OUTTMP,HIERARCH ESO TEL%UT% AMBI TEMP,,PRIMARY,S2D_BLAZE_A,,False,[C] Outside temperature,Null
 OUTTMPT,,Null,,,,False,OUTTMP timestamp,Null
-OUTHUM,HIERARCH ESO TEL%UT% AMBI RHUM,,PRIMARY,S2D_BLAZE_A,?,False,[%] Outiside relative humidity,Null
+OUTHUM,HIERARCH ESO TEL%UT% AMBI RHUM,,PRIMARY,S2D_BLAZE_A,?,False,[%] Outside relative humidity,Null
 OUTHUMT,,Null,,,,False,OUTHUM timestamp,Null
 OUTPRES,HIERARCH ESO TEL%UT% AMBI PRES START,,PRIMARY,S2D_BLAZE_A,,False,[Pa] Outdoor Atmospheric Pressure,Null
 OUTPREST,,Null,,,,False,OUTPRES timestamp,Null

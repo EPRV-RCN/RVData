@@ -37,7 +37,7 @@ The :doc:`NEID Tutorial <tutorials/NEID_Tutorial>` provides a comprehensive guid
 - **Level 4**: Creating RV measurements from native NEID L2, analyzing velocities
 
 ESPRESSO Tutorial
-------------
+-----------------
 
 The :doc:`ESPRESSO Tutorial <tutorials/ESPRESSO_Tutorial>` provides a comprehensive guide to working with ESPRESSO data at all levels:
 

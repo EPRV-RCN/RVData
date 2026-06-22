@@ -58,7 +58,7 @@ ESPRESSO
 
 **Change log**
 
-A list of news about the instrument ca be found at https://www.eso.org/sci/facilities/paranal/instruments/espresso/news.html
+A list of news about the instrument can be found at https://www.eso.org/sci/facilities/paranal/instruments/espresso/news.html
 
 **Instrument-Specific Level 2 Header and Extension Details**
 

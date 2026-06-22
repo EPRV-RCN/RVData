@@ -34,10 +34,10 @@ ext_descript = {
     }
 
 
-def add_to_ext_descript(RV4, ext_name, description):
+def add_to_ext_descript(rv3_obj, ext_name, description):
     """Add a row to the EXT_DESCRIPT table for the given extension."""
     row = AstropyTable({"Name": [ext_name], "Description": [description]})
-    RV4.data["EXT_DESCRIPT"] = vstack([RV4.data["EXT_DESCRIPT"], row])
+    rv3_obj.data["EXT_DESCRIPT"] = vstack([rv3_obj.data["EXT_DESCRIPT"], row])
 
 
 def convert_S1D(
@@ -74,7 +74,7 @@ def convert_S1D(
                     ext_type = LEVEL3_EXTENSIONS.query(f"Name == '{extname}'")["DataType"].values[0]
                     if ("_B" in file):
                         continue
-                    corr = 'SKYSUBCORR' if 'skysub' in file else ('TELLCORR' if 'tell_corr' in file else 'CORR')
+                    corr = 'SKYSUB' if 'skysub' in file else ('TELLCORR' if 'tell_corr' in file else 'CORR')
                     extname = extname.replace('CORR', corr)
                     if extname not in RV3.extensions:
                         # If the extension does not exist, create it
