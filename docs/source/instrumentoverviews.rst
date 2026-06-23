@@ -577,10 +577,10 @@ MAROON-X
 * Link to data archive: https://archive.gemini.edu
 * Person/email for translator maintenance & bug reports: Tanya Das (tanyadas@uchicago.edu)
 * Naming convention for all data standard products:
-   * L2 : 
-   * L3 : 
-   * L4 : 
-* Date of last translator update and current version number: 06-20-2025; v1.0.0
+   * L2 : maroonxblue_SL2_YYYYMMDDTHHMMSS.fits/ maroonxred_SL2_YYYYMMDDTHHMMSS.fits
+   * L3 : maroonxblue_SL3_YYYYMMDDTHHMMSS.fits/ maroonxred_SL3_YYYYMMDDTHHMMSS.fits
+   * L4 : maroonxblue_SL4_YYYYMMDDTHHMMSS.fits/ maroonxred_SL4_YYYYMMDDTHHMMSS.fits
+* Date of last translator update and current version number: 06-10-2026; v1.0.0
 
 **Instrument era (INSTERA keyword) date ranges**
 
@@ -592,11 +592,94 @@ MAROON-X
      - UT_start_date
      - UT_end_date
      - Comments
-   * - 
+   * - 1.0.0
+     - September 1, 2020
+     - September 14, 2020
      - 
+   * - 2.0.0
+     - November 27, 2020
+     - November 30, 2020
      - 
+   * - 3.0.0
+     - February 17, 2021
+     - March 3, 2021
      - 
-
+   * - 4.0.0
+     - April 15, 2021
+     - April 29, 2021
+     - 
+   * - 5.0.0
+     - May 20, 2021
+     - June 3, 2021
+     - 
+   * - 6.0.0
+     - August 10, 2021
+     - August 22, 2021
+     - 
+   * - 7.0.0
+     - October 26, 2021
+     - November 22, 2021
+     - 
+   * - 8.0.0
+     - March 23, 2022
+     - April 26, 2022
+     - 
+   * - 9.0.0
+     - May 23, 2022
+     - June 1, 2022
+     - 
+   * - 10.0.0
+     - July 7, 2022
+     - August 14, 2022
+     - 
+   * - 11.0.0
+     - June 20, 2023
+     - July 10, 2023
+     - 
+   * - 12.0.0
+     - October 9, 2023
+     - October 27, 2023
+     - 
+   * - 13.0.0
+     - November 20, 2023
+     - November 28, 2023
+     - 
+   * - 14.0.0
+     - December 4, 2023
+     - January 2, 2024
+     - 
+   * - 15.0.1
+     - February 22, 2024
+     - April 23, 2024
+     - 
+   * - 15.0.2
+     - May 3, 2024
+     - June 12, 2024
+     - 
+   * - 15.0.3
+     - June 18, 2024
+     - September 1, 2024
+     - 
+   * - 15.0.4
+     - September 12, 2024
+     - October 13, 2024
+     - 
+   * - 15.0.5
+     - November 13, 2024
+     - March 31, 2025
+     - 
+   * - 15.1.6
+     - April 3, 2025
+     - September 14, 2025
+     - 
+   * - 15.1.7
+     - September 15, 2025
+     - January 7, 2026
+     - 
+   * - 15.1.8
+     - January 8, 2026
+     - Present
+     - 
 
 **Change log**
 
@@ -606,21 +689,22 @@ TBD
 
 * Fundamental Parameters
    * Trace 1: Sky fiber 1 (currently empty)
-   * Trace 2: Science fiber 2. Contains data from the blue and red channels stacked
-   * Trace 3: Science fiber 3. Contains data from the blue and red channels stacked
-   * Trace 4: Science fiber 4. Contains data from the blue and red channels stacked
-   * Trace 5: Simultaneous calibration fiber 5 with etalon. Contains data from the blue and red channels stacked
+   * Trace 2: Science fiber 2.
+   * Trace 3: Science fiber 3.
+   * Trace 4: Science fiber 4. 
+   * Trace 5: Simultaneous calibration fiber 5 with etalon.
    * Trace 6: Virtual fiber. Created by resampling fiber 2 and 4 onto the wavelength grid of fiber 3, then applying outlier rejection and proper weighting to combine the 3 fibers into a virtual one.
    * Wavelength Solution: Non-parametric
    * Extraction Type: Fibers 2-4 uses flat optimal extraction. Fiber 5 uses box (sum) extraction.
 * Corrections and Models
-   * Barycentric Correction: 
+   * Barycentric Correction: Flux-weighting is based on exposuremeter data and barycentric velocity is calculated using barycorrpy. The correction is not applied but stored in the header for use by SERVAL. BJD_TDB value produced is calculated at flux weighted midpoint.
+   * Drift Correction: The drift correction is calculated per extracted pixel using an offset derived from the master calibration frames taken every night.
 * Ancillary Data
-   * 
+   * Exposure Meter: N/A
 
 **Useful details or tutorials for working with 1-D data**
 
-TBD
+Specific flat files are required to create MAROON-X standard level2 fits file. Please contact Tanya Das (tanyadas@uchicago.edu) to request for the translator compatible flat files, with the following information: Target name and the date, month and year of the observations.
 
 
 ----------
