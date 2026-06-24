@@ -202,8 +202,10 @@ class RV3(rvdata.core.models.base.RVDataModel):
             This method modifies the current RV3 object in place.
         """
 
-        # Set up the primary header
-        l3prihdr = l2obj.headers["PRIMARY"]
+        # Set up the primary header. Copy so that mutating the L3 header
+        # below does not corrupt the caller's L2 object (set_header stores
+        # the reference, it does not copy).
+        l3prihdr = l2obj.headers["PRIMARY"].copy()
         l3prihdr["DATALVL"] = "L3"
 
         # get the order table from level 2 data
@@ -342,8 +344,10 @@ class RV3(rvdata.core.models.base.RVDataModel):
         self.set_data("ORDER_TABLE", order_table)
         # set the headers into the level 3 object
         self.set_header("PRIMARY", l3prihdr)
-        self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"])
-        self.set_header("ORDER_TABLE", l2obj.headers["ORDER_TABLE"])
+        # Copy so the L3 object does not share header objects with the
+        # caller's L2 object (set_header stores the reference, not a copy).
+        self.set_header("INSTRUMENT_HEADER", l2obj.headers["INSTRUMENT_HEADER"].copy())
+        self.set_header("ORDER_TABLE", l2obj.headers["ORDER_TABLE"].copy())
 
         # Inherit receipt from L2 object; @receipt_logged on this method
         # adds the conversion entry after this function returns.
