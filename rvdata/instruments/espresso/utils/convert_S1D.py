@@ -17,10 +17,27 @@ Libraries
 """
 
 from astropy.io import fits
+from astropy.table import Table as AstropyTable, vstack
 from rvdata.core.models.level3 import RV3
 import rvdata.instruments.espresso.config.config as config
 from rvdata.core.models.definitions import LEVEL3_EXTENSIONS
 import os
+
+
+ext_descript = {
+        'STITCHED_TELLCORR_SCI_FLUX' : 'Order stitched blaze and telluric corrected flux co-added across all science traces',
+        'STITCHED_TELLCORR_SCI_WAVE': 'Order stitched barycentric- and drift-corrected wavelength solution for STITCHED_TELLCORR_SCI_FLUX',
+        'STITCHED_TELLCORR_SCI_VAR' : 'Order stitched variance for STITCHED_TELLCORR_SCI_FLUX',
+        'STITCHED_SKYSUB_SCI_FLUX' : 'Order stitched blaze-corrected and sky-subtracted flux co-added across all science traces',
+        'STITCHED_SKYSUB_SCI_WAVE': 'Order stitched barycentric- and drift-corrected wavelength solution for STITCHED_SKYSUB_SCI_FLUX',
+        'STITCHED_SKYSUB_SCI_VAR' : 'Order stitched variance for STITCHED_SKYSUB_SCI_FLUX'
+    }
+
+
+def add_to_ext_descript(rv3_obj, ext_name, description):
+    """Add a row to the EXT_DESCRIPT table for the given extension."""
+    row = AstropyTable({"Name": [ext_name], "Description": [description]})
+    rv3_obj.data["EXT_DESCRIPT"] = vstack([rv3_obj.data["EXT_DESCRIPT"], row])
 
 
 def convert_S1D(
@@ -42,6 +59,7 @@ def convert_S1D(
     Returns:
         None
     """
+
     RV3.headers['PRIMARY']["BLZCORR"] = (True, 'Has blaze been removed?')
     RV3.headers['PRIMARY']["LMPCORR"] = (True, 'Has lamp SED been removed?')
     RV3.headers['PRIMARY']["SEDCORR"] = (False, 'Has SED been removed?')
@@ -54,9 +72,9 @@ def convert_S1D(
             for col in config.extnames_s1d.keys():
                 for extname in config.extnames_s1d[col]:
                     ext_type = LEVEL3_EXTENSIONS.query(f"Name == '{extname}'")["DataType"].values[0]
-                    trace = 'TRACE1' if '_A' in file else 'TRACE2'
-                    extname = extname.replace('TRACE1', trace)
-                    corr = 'SKYSUBCORR' if 'skysub' in file else ('TELLCORR' if 'tell_corr' in file else 'CORR')
+                    if ("_B" in file):
+                        continue
+                    corr = 'SKYSUB' if 'skysub' in file else ('TELLCORR' if 'tell_corr' in file else 'CORR')
                     extname = extname.replace('CORR', corr)
                     if extname not in RV3.extensions:
                         # If the extension does not exist, create it
@@ -68,3 +86,5 @@ def convert_S1D(
                     else:
                         # If the extension exists, update its data and header
                         RV3.set_data(extname, data[col])
+                    if extname not in RV3.data['EXT_DESCRIPT']['Name']:
+                        add_to_ext_descript(RV3, extname, ext_descript[extname])

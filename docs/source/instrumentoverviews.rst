@@ -35,7 +35,7 @@ ESPRESSO
    * L2 : espre_SL2_20220824T033756.fits
    * L3 : espre_SL3_20220824T033756.fits
    * L4 : espre_SL4_20220824T033756.fits
-* Date of last translator update and current version number: June 2025 
+* Date of last translator update and current version number: June 2026 
 
 **Instrument era (INSTERA keyword) date ranges**
 
@@ -48,17 +48,17 @@ ESPRESSO
      - UT_end_date
      - Comments
    * - ESPRESSO18
-     - 
-     - 
-     - 
+     - Start
+     - June 27, 2019
+     - /
    * - ESPRESSO19
-     - 
-     - 
-     - 
+     - June 28, 2019
+     - Present
+     - Fiber upgrade
 
 **Change log**
 
-TBD
+A list of news about the instrument can be found at https://www.eso.org/sci/facilities/paranal/instruments/espresso/news.html
 
 **Instrument-Specific Level 2 Header and Extension Details**
 
@@ -67,13 +67,12 @@ TBD
    * Trace 2: Science fiber, slice #2
    * Trace 3: Calibration fiber, slice #1
    * Trace 4: Calibration fiber, slice #2
-   * Wavelength Solution: 
-   * Extraction Type: 
+   * Wavelength Solution: Either using ThAr lamp with Fabry-Perot, or Laser Frequency Comb
+   * Extraction Type: Optimal extraction
 * Corrections and Models
    * Barycentric Correction: applied to all orders based on the same BERV value
 * Ancillary Data
-   * Exposure Meter: 
-   * Ancillary Spectrum: 
+   * Exposure Meter: Table of exposure meter measurements.
 
 **Useful details or tutorials for working with 1-D data**
 

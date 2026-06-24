@@ -248,7 +248,7 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int, lev
     rv_z = round(rv / (c / 1e3).value, 8)
     catalog_data["CZ"] = rv_z
 
-    # Keywords qui dependent du numéro de la TRACE
+    # Keywords depending on TRACE number
     keyword_list = [
         "CSRC",
         "CID",
@@ -419,6 +419,11 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int, lev
         header_map[header_map["Keyword"] == "THA1"]["Description"].iloc[0],
     )
 
+    # Changing units of OUTPRES from hPa to Pa
+    if "OUTPRES" in l2_hdu.header and isinstance(
+        l2_hdu.header["OUTPRES"], (int, float)
+    ):
+        l2_hdu.header["OUTPRES"] *= 100
     # MOONANG/MOONEL/MOONILLU/MOONRV/SUNEL KEYWORDS
     if (len(active_UTs) == 1):
         moon_sun_params = get_moon_sun_info(
