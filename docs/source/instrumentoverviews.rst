@@ -708,10 +708,10 @@ NEID
 * Link to data archive: https://neid.ipac.caltech.edu 
 * Person/email for translator maintenance & bug reports: Chad Bender (cbender@arizona.edu) 
 * Naming convention for all data standard products:
-   * L2 : 
-   * L3 : 
-   * L4 : 
-* Date of last translator update and current version number: 
+   * L2 : neid_SL2_YYYYMMDDThhmmss.fits
+   * L3 : neid_SL3_YYYYMMDDThhmmss.fits
+   * L4 : neid_SL4_YYYYMMDDThhmmss.fits
+* Date of last translator update and current version number: 2026-05-14, v0.3.2
 
 **Instrument era (INSTERA keyword) date ranges**
 
@@ -726,33 +726,38 @@ NEID
    * - 1.0
      - November 6, 2019
      - November 30, 2019
-     - 
+     - Commissioning Run 1
    * - 2.0
      - November 30, 2019 
      - February 27, 2020
-     - 
+     - Commissioning Run 2 
    * - 3.0
      - February 27, 2020 
      - March 31, 2020
-     - 
+     - Commissioning Run 3
    * - 4.0
      - October 26, 2020 
      - June 16, 2022
-     -  
+     - Science Run 1 (Until Contreras Fire interruption)
    * - 5.0 
      - October 18, 2022 
      - August 19, 2024
-     - 
+     - Science Run 2 (Post-Contreras Fire restart)
    * - 6.0
      - August 24, 2024 
+     - December 8, 2025
+     - Science Run 3 (due to significant upgrade in LFC hardware)
+   * - 7.0
+     - December 9, 2025
      - Present
-     - 
+     - Science Run 4 (due to thermal instability event in December 2025)
 
 Note: these are not in the default NEID data product headers, but are added in the translator
 
 **Change log**
 
-TBD
+- 2026/06/24: NEID translator is ready for first release, and has all functionality for compliance 
+  with the standard.
 
 **Instrument-Specific Level 2 Header and Extension Details**
 
@@ -764,19 +769,21 @@ TBD
    * Extraction Type: Flat relative extraction is used (optimal for continuum sources)
 * Corrections and Models
    * Barycentric Correction: Barycorrpy is used to calculate a per-order barycentric correction at the per-order flux weighted midpoint as 
-      measured by the chromatic exposure meter. The relevant extensions include array data of length 122, with a value for each echelle order.
+     measured by the chromatic exposure meter. The relevant extensions include array data of length 122, with a value for each echelle order.
    * Drift Correction: The provided drift extension is a single value in km/s that represents the drift relative to the calibration session at 
-      the start of the observing window (evening calibrations for nighttime, morning calibrations for solar).
+     the start of the observing window (evening calibrations for nighttime, morning calibrations for solar).
    * Telluric Model: a line and continuum absorption telluric model. The model is only applicable for zero-indexed orders 55 through 110. The rest 
-      of the orders have the model values set to 1. The model includes water and molecular oxygen.
+     of the orders have the model values set to 1. The model includes water and molecular oxygen.
 * Ancillary Data
    * Exposure Meter: This extension includes processed chromatic exposure meter data in table format. Rows are temporal sampling and columns are 
-      wavelength sampling. The first column are the timestamps for each exposure meter frame. The rest of the columns are labeled with the wavelength 
-      corresponding to that spectral bin. 
+     wavelength sampling. The first column are the timestamps for each exposure meter frame. The rest of the columns are labeled with the wavelength 
+     corresponding to that spectral bin. 
 
 **Useful details or tutorials for working with 1-D data**
 
-TBD
+See the :doc:`NEID Tutorial <tutorials/NEID_Tutorial>` that provides a guide to working with 
+standardized NEID data at all levels, including appliying telluric corrections and inspecting 
+radial velocities by order.
 
 
 ----------
