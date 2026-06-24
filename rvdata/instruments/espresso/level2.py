@@ -195,7 +195,6 @@ class ESPRESSORV2(RV2):
         nb_fiber = len(fibers)
         nb_trace = nb_fiber * slice_nb
         create_PRIMARY(self, names, nb_trace, slice_nb)
-
         # Filling the EXT_DESCRIPT and ORDER_TABLE extensions
         try:
             # Get the parent directory of the "utils" folder

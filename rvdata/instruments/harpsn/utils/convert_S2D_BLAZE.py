@@ -71,7 +71,7 @@ def convert_S2D_BLAZE(
 
                 # Remove barycentric correction if applicable
                 if "BARY" in field:
-                    single_cam_values = doppler_shift(
+                    single_cam_values = undo_BERV(
                         single_cam_values, RV2.data["BARYCORR_KMS"][0]
                     )
 
@@ -103,7 +103,7 @@ def convert_S2D_BLAZE(
                     )
 
 
-def doppler_shift(wave: np.ndarray, rv: float) -> np.ndarray:
+def undo_BERV(wave: np.ndarray, rv: float) -> np.ndarray:
     """
     Performs the doppler shift on the wavelength values.
 
@@ -114,9 +114,8 @@ def doppler_shift(wave: np.ndarray, rv: float) -> np.ndarray:
     Returns:
         wave_shifted (np.ndarray): the doppler shifted wavelength values
     """
-
-    wave_shifted = wave + wave * rv / (c / 1e3).value
-    return wave_shifted
+    factor = (1+1.55e-8) * (1 + rv / (c / 1e3).value)
+    return wave/factor
 
 
 def add_fits_extension(rv2_obj: RV2, name: str, value: float) -> None:

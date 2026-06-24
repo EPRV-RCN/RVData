@@ -61,12 +61,16 @@ MOONANG,,,PRIMARY,,,True,[deg] Target-Moon Angle,Null
 MOONEL,,,PRIMARY,,,True,[deg] Moon Elevation Angle,Null
 MOONILLU,,,PRIMARY,,,True,[%] Moon illumination,Null
 MOONRV,,,PRIMARY,,,True,[km/s] RV of reflected sunlight off moon,Null
+M1TMP,HIERARCH ESO TEL%UT% TH M1 TEMP,,PRIMARY,S2D_BLAZE_A,,False,[deg C] Primary mirror temperature,Null
+M1TMPT,,Null,,,,False,M1TMP timestamp,Null
 INHUM,,Null,,,,True,[%] Relative humidity inside dome,Null
 INHUMT,,Null,,,,False,INHUM timestamp,Null
 OUTTMP,HIERARCH ESO TEL%UT% AMBI TEMP,,PRIMARY,S2D_BLAZE_A,,False,[C] Outside temperature,Null
 OUTTMPT,,Null,,,,False,OUTTMP timestamp,Null
-OUTHUM,HIERARCH ESO TEL%UT% AMBI RHUM,,PRIMARY,S2D_BLAZE_A,?,False,[%] Outiside relative humidity,Null
+OUTHUM,HIERARCH ESO TEL%UT% AMBI RHUM,,PRIMARY,S2D_BLAZE_A,?,False,[%] Outside relative humidity,Null
 OUTHUMT,,Null,,,,False,OUTHUM timestamp,Null
+OUTPRES,HIERARCH ESO TEL%UT% AMBI PRES START,,PRIMARY,S2D_BLAZE_A,,False,[Pa] Outdoor Atmospheric Pressure,Null
+OUTPREST,,Null,,,,False,OUTPRES timestamp,Null
 ENVWINDS,HIERARCH ESO TEL%UT% AMBI WINDSP,,PRIMARY,S2D_BLAZE_A,,False,[m/s] Wind speed,Null
 ENVWINDD,HIERARCH ESO TEL%UT% AMBI WINDDIR,,PRIMARY,S2D_BLAZE_A,,False,[angle] Wind direction,Null
 DRPTAG,HIERARCH ESO PRO REC1 PIPE ID,,PRIMARY,S2D_BLAZE_A,,False,RV DRP version,UNKNOWN

@@ -6,9 +6,11 @@ import requests
 
 from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
+from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
 from rvdata.tests.regression.compliance import (
     check_l2_compliance,
+    check_l3_compliance,
     check_l4_compliance,
 )
 
@@ -74,6 +76,15 @@ def test_espresso():
     assert os.path.basename(l2_standard).startswith("espresso_SL2_"), \
         f"L2 filename should start with 'espresso_SL2_', got '{os.path.basename(l2_standard)}'"
     check_l2_compliance(l2_standard)
+
+    # Test Level 3 - use auto-generated filename
+    espr3 = RV3.from_fits(str(raw_file), instrument="ESPRESSO")
+    l3_standard = espr3.to_fits()  # Auto-generate filename
+    assert RVDataModel.FILENAME_PATTERN.match(os.path.basename(l3_standard)), \
+        f"L3 filename '{os.path.basename(l3_standard)}' does not match EPRV convention"
+    assert os.path.basename(l3_standard).startswith("espresso_SL3_"), \
+        f"L3 filename should start with 'espresso_SL3_', got '{os.path.basename(l3_standard)}'"
+    check_l3_compliance(l3_standard)
 
     # Test Level 4 - use auto-generated filename
     espr4 = RV4.from_fits(str(raw_file), instrument="ESPRESSO")
