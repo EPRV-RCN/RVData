@@ -519,8 +519,11 @@ class RVDataModel(object):
         time = datetime.datetime.now().isoformat()
 
         # get version control info (git)
-        repo = git.Repo(search_parent_directories=True)
         try:
+            # git.Repo() must be inside the try: it raises InvalidGitRepositoryError
+            # when run outside a checkout (e.g. a pip-installed package), which the
+            # except clause below is meant to handle by falling back to package metadata.
+            repo = git.Repo(search_parent_directories=True)
             git_commit_hash = repo.head.object.hexsha
             git_branch = repo.active_branch.name
             git_tag = str(repo.tags[-1])

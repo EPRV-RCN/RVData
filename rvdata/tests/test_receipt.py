@@ -17,6 +17,7 @@ Also covers the ``@receipt_logged`` decorator introduced in PR #170:
 
 import os
 import tempfile
+from unittest import mock
 
 import numpy as np
 import pytest
@@ -44,6 +45,35 @@ def test_receipt_add_entry_uses_csv_column_names():
     assert row["FUNCTION"] == "foo"
     assert row["ARGS"] == "bar=1"
     assert row["STATUS"] == "PASS"
+
+
+def test_receipt_add_entry_survives_without_git_repo():
+    """Regression for EPRV-RCN/RVData#181.
+
+    A pip-installed package run outside any git checkout makes
+    ``git.Repo(search_parent_directories=True)`` raise
+    InvalidGitRepositoryError. That call must sit inside the try block so the
+    except clause can fall back to package metadata; previously it was one line
+    above the try, so the error escaped and crashed every ``from_fits`` call.
+    """
+    from rvdata.core.models import base
+    from git.exc import InvalidGitRepositoryError
+
+    def _no_repo(*args, **kwargs):
+        raise InvalidGitRepositoryError("simulated pip-installed, no git checkout")
+
+    with mock.patch.object(base.git, "Repo", _no_repo):
+        rv2 = RV2()
+        # Must not raise; should fall back to importlib package metadata.
+        rv2.receipt_add_entry("from_fits", "", "PASS")
+
+    row = rv2.receipt.iloc[-1]
+    assert row["FUNCTION"] == "from_fits"
+    assert row["STATUS"] == "PASS"
+    # Fallback populates version fields from package metadata (string-typed,
+    # never raising); they exist as strings rather than the git values.
+    for col in ("CODE_RELEASE", "BRANCH_NAME", "COMMIT_HASH"):
+        assert isinstance(row[col], str)
 
 
 def test_receipt_extension_empty_columns_are_string_typed():
