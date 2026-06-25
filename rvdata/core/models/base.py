@@ -304,10 +304,18 @@ class RVDataModel(object):
             [LEVEL2_PRIMARY_KEYWORDS, LEVEL3_PRIMARY_KEYWORDS, LEVEL4_PRIMARY_KEYWORDS]
         ).iterrows():
             key = row["Keyword"]
-            if key in self.headers["PRIMARY"]:
-                value = self.headers["PRIMARY"][key]
+            header = self.headers["PRIMARY"]
+            if key in header:
+                # A fits.Header keeps the comment in a parallel store, so
+                # indexing returns only the scalar. Pass the comment through
+                # as a (value, comment) tuple so the recast preserves it
+                # rather than overwriting it with an empty string.
+                if isinstance(header, fits.Header):
+                    value = (header[key], header.comments[key])
+                else:
+                    value = header[key]
                 parsed_value = parse_value_to_datatype(key, row["DataType"], value)
-                self.headers["PRIMARY"][key] = parsed_value
+                header[key] = parsed_value
 
     def to_fits(self, out_filedir=None, out_filename=None):
         """
@@ -730,9 +738,18 @@ class RVDataModel(object):
         for key, value in hdu_definitions:
             hduname = key
             if value == "PrimaryHDU":
-                head = fits.Header()
-                for keyword, content in self.headers[key].items():
-                    head[keyword] = content
+                # Preserve comments regardless of the in-memory header form.
+                # A fits.Header (e.g. set by from_fits) keeps comments in a
+                # parallel store, so iterating .items() would yield bare
+                # scalars and silently drop them; copy it directly instead.
+                # A plain dict holds (value, comment) tuples, which the
+                # element-wise assignment expands correctly.
+                if isinstance(self.headers[key], fits.Header):
+                    head = self.headers[key].copy()
+                else:
+                    head = fits.Header()
+                    for keyword, content in self.headers[key].items():
+                        head[keyword] = content
                 hdu = fits.PrimaryHDU(header=head)
                 hdu_list.insert(0, hdu)
             elif value == "ImageHDU":
