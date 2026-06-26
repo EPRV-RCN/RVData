@@ -73,38 +73,29 @@ class NEIDRV2(RV2):
 
         # Set up extension description table - read in base csv from config
         ext_table = pd.read_csv(
-            os.path.join(os.path.dirname(__file__), "config", "neid_l2_ext_table.csv")
+            os.path.join(os.path.dirname(__file__), "config", "neid_l2_ext_table.csv"),
+            usecols=["Name", "Description"],
         )
 
         # Instrument header
         self.set_header("INSTRUMENT_HEADER", hdul["PRIMARY"].header)
 
-        # Order Table
-        order_table_data = pd.DataFrame(
-            {
-                "echelle_order": 173 - np.arange(hdul["SCIWAVE"].data.shape[0]),
-                "order_index": np.arange(hdul["SCIWAVE"].data.shape[0]),
-                "wave_start": np.nanmin(hdul["SCIWAVE"].data, axis=1),
-                "wave_end": np.nanmax(hdul["SCIWAVE"].data, axis=1),
-            }
-        )
-        self.set_data("ORDER_TABLE", order_table_data)
-
         # Prepare fiber-related extensions
 
         # Check observation mode to set fiber list
-        if hdul[0].header["OBS-MODE"] == "HR":
+        if hdul["PRIMARY"].header["OBS-MODE"] == "HR":
             fiber_list = ["SCI", "SKY", "CAL"]
             expmeter_index = 4
-        elif hdul[0].header["OBS-MODE"] == "HE":
+        elif hdul["PRIMARY"].header["OBS-MODE"] == "HE":
             fiber_list = ["SCI", "SKY"]
             expmeter_index = 3
 
         # Change the observation mode in the extension description table
-        ext_table.replace("MODE", hdul[0].header["OBS-MODE"], regex=True, inplace=True)
+        ext_table.replace(
+            "MODE", hdul["PRIMARY"].header["OBS-MODE"], regex=True, inplace=True
+        )
 
         for i_fiber, fiber in enumerate(fiber_list):
-
             # Set the input extension names for this fiber
             flux_ext = f"{fiber}FLUX"
             wave_ext = f"{fiber}WAVE"
@@ -112,10 +103,10 @@ class NEIDRV2(RV2):
             blaze_ext = f"{fiber}BLAZE"
 
             # Change the fiber name in the extension description table
-            ext_table.replace(f"FIBER{i_fiber+1}", fiber, regex=True, inplace=True)
+            ext_table.replace(f"FIBER{i_fiber + 1}", fiber, regex=True, inplace=True)
 
             # Set the output extension name prefix for this fiber (1-indexed)
-            out_prefix = f"TRACE{i_fiber+1}_"
+            out_prefix = f"TRACE{i_fiber + 1}_"
 
             # Flux
             flux_array = hdul[flux_ext].data
@@ -125,6 +116,12 @@ class NEIDRV2(RV2):
             wave_array = hdul[wave_ext].data
             wave_meta = hdul[wave_ext].header
 
+            # Replace 0-values with nans for NEID orders that do not have wavelength solutions
+            neid_no_wave_orders = [0, 1, 2, 119, 120, 121]
+            wave_array[neid_no_wave_orders] = np.full(
+                (len(neid_no_wave_orders), wave_array.shape[1]), np.nan
+            )
+
             # Variance
             var_array = hdul[var_ext].data
             var_meta = hdul[var_ext].header
@@ -132,6 +129,7 @@ class NEIDRV2(RV2):
             # Blaze
             blaze_array = hdul[blaze_ext].data
             blaze_meta = hdul[blaze_ext].header
+            blaze_meta["BLZNORM"] = False
 
             # Output extensions into base model. If first fiber, extension already exists in object
             if i_fiber == 0:
@@ -166,17 +164,28 @@ class NEIDRV2(RV2):
                     header=blaze_meta,
                 )
 
+        # Order Table - after orders with zeroed wavelength array have been changed to nan
+        order_table_data = pd.DataFrame(
+            {
+                "ECHELLE_ORDER": 173 - np.arange(self.data["TRACE1_WAVE"].shape[0]),
+                "ORDER_INDEX": np.arange(self.data["TRACE1_WAVE"].shape[0]),
+                "WAVE_START": np.nanmin(self.data["TRACE1_WAVE"], axis=1),
+                "WAVE_END": np.nanmax(self.data["TRACE1_WAVE"], axis=1),
+            }
+        )
+        self.set_data("ORDER_TABLE", order_table_data)
+
         # Barycentric correction and timing related extensions
 
         # Extract barycentric velocities, redshifts, and JDs from NEID primary header
         bary_kms = np.array(
-            [hdul[0].header[f"SSBRV{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBRV{173 - order:03d}"] for order in range(122)]
         )
         bary_z = np.array(
-            [hdul[0].header[f"SSBZ{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBZ{173 - order:03d}"] for order in range(122)]
         )
         bjd = np.array(
-            [hdul[0].header[f"SSBJD{173-order:03d}"] for order in range(122)]
+            [hdul["PRIMARY"].header[f"SSBJD{173 - order:03d}"] for order in range(122)]
         )
 
         # Output (these currently do not have headers to inherit from the NEID data format)
@@ -187,7 +196,7 @@ class NEIDRV2(RV2):
         # Drift
 
         # Just set the value of driftrv0 from the header in km/s
-        drift_data = np.array([hdul[0].header["driftrv0"] / 1e3])
+        drift_data = np.array([hdul["PRIMARY"].header["driftrv0"] / 1e3])
         drift_meta = fits.Header(
             {"COMMENT": "NEID drift relative to start of observing session"}
         )
@@ -227,8 +236,10 @@ class NEIDRV2(RV2):
         # Images - Nothing for now
 
         # Standardized primary header
-        phead = make_neid_primary_header.make_base_primary_header(hdul[0].header)
-        phead["DATALVL"] = 2
+        phead = make_neid_primary_header.make_base_primary_header(
+            hdul["PRIMARY"].header
+        )
+        phead["DATALVL"] = "L2"
 
         self.set_header("PRIMARY", phead)
 

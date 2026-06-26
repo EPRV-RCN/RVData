@@ -32,10 +32,10 @@ ESPRESSO
 * Link to data archive: https://archive.eso.org/cms.html
 * Person/email for translator maintenance & bug reports: Emile Fontanet [emile.fontanet@unige.ch]
 * Naming convention for all data standard products:
-   * L2 : ESPRE_L2_2022-08-24T03:37:56.276.fits
-   * L3 : ESPRE_L3_2022-08-24T03:37:56.276.fits
-   * L4 : ESPRE_L4_2022-08-24T03:37:56.276.fits
-* Date of last translator update and current version number: June 2025 
+   * L2 : espre_SL2_20220824T033756.fits
+   * L3 : espre_SL3_20220824T033756.fits
+   * L4 : espre_SL4_20220824T033756.fits
+* Date of last translator update and current version number: June 2026 
 
 **Instrument era (INSTERA keyword) date ranges**
 
@@ -48,17 +48,17 @@ ESPRESSO
      - UT_end_date
      - Comments
    * - ESPRESSO18
-     - 
-     - 
-     - 
+     - Start
+     - June 27, 2019
+     - /
    * - ESPRESSO19
-     - 
-     - 
-     - 
+     - June 28, 2019
+     - Present
+     - Fiber upgrade
 
 **Change log**
 
-TBD
+A list of news about the instrument can be found at https://www.eso.org/sci/facilities/paranal/instruments/espresso/news.html
 
 **Instrument-Specific Level 2 Header and Extension Details**
 
@@ -67,13 +67,12 @@ TBD
    * Trace 2: Science fiber, slice #2
    * Trace 3: Calibration fiber, slice #1
    * Trace 4: Calibration fiber, slice #2
-   * Wavelength Solution: 
-   * Extraction Type: 
+   * Wavelength Solution: Either using ThAr lamp with Fabry-Perot, or Laser Frequency Comb
+   * Extraction Type: Optimal extraction
 * Corrections and Models
    * Barycentric Correction: applied to all orders based on the same BERV value
 * Ancillary Data
-   * Exposure Meter: 
-   * Ancillary Spectrum: 
+   * Exposure Meter: Table of exposure meter measurements.
 
 **Useful details or tutorials for working with 1-D data**
 
@@ -261,9 +260,9 @@ HARPS
 * Link to data archive: https://archive.eso.org/cms.html
 * Person/email for translator maintenance & bug reports: Emile Fontanet (emile.fontanet@unige.ch)
 * Naming convention for all data standard products:
-   * L2 : HARPS_L2_2022-08-24T03:37:56.276.fits
-   * L3 : HARPS_L3_2022-08-24T03:37:56.276.fits
-   * L4 : HARPS_L4_2022-08-24T03:37:56.276.fits
+   * L2 : harps_SL2_20220824T033756.fits
+   * L3 : harps_SL3_20220824T033756.fits
+   * L4 : harps_SL4_20220824T033756.fits
 * Date of last translator update and current version number: June 2025
 
 **Instrument era (INSTERA keyword) date ranges**
@@ -328,9 +327,9 @@ HARPS-N
 * Link to data archive: http://archives.ia2.inaf.it/tng/
 * Person/email for translator maintenance & bug reports: Emile Fontanet (emile.fontanet@unige.ch)
 * Naming convention for all data standard products:
-   * L2 : HARPN_L2_2022-08-24T03:37:56.276.fits
-   * L3 : HARPN_L3_2022-08-24T03:37:56.276.fits
-   * L4 : HARPN_L4_2022-08-24T03:37:56.276.fits
+   * L2 : harpn_SL2_20220824T033756.fits
+   * L3 : harpn_SL3_20220824T033756.fits
+   * L4 : harpn_SL4_20220824T033756.fits
 * Date of last translator update and current version number: June 2025
 
 **Instrument era (INSTERA keyword) date ranges**
@@ -480,9 +479,9 @@ KPF
 * Link to data archive: https://koa.ipac.caltech.edu/
 * Person/email for translator maintenance & bug reports: BJ Fulton [bjfulton@ipac.caltech.edu]
 * Naming convention for all data standard products:
-   * L2 : KPFL2_20250208T045125.fits
-   * L3 : KPFL3_20250208T045125.fits
-   * L4 : KPFL4_20250208T045125.fits
+   * L2 : kpf_SL2_20250208T045125.fits
+   * L3 : kpf_SL3_20250208T045125.fits
+   * L4 : kpf_SL4_20250208T045125.fits
 * Date of last translator update and current version number: 2025-06-17 v0.2.0
 
 **Instrument era (INSTERA keyword) date ranges**
@@ -577,10 +576,10 @@ MAROON-X
 * Link to data archive: https://archive.gemini.edu
 * Person/email for translator maintenance & bug reports: Tanya Das (tanyadas@uchicago.edu)
 * Naming convention for all data standard products:
-   * L2 : 
-   * L3 : 
-   * L4 : 
-* Date of last translator update and current version number: 06-20-2025; v1.0.0
+   * L2 : maroonxblue_SL2_YYYYMMDDTHHMMSS.fits/ maroonxred_SL2_YYYYMMDDTHHMMSS.fits
+   * L3 : maroonxblue_SL3_YYYYMMDDTHHMMSS.fits/ maroonxred_SL3_YYYYMMDDTHHMMSS.fits
+   * L4 : maroonxblue_SL4_YYYYMMDDTHHMMSS.fits/ maroonxred_SL4_YYYYMMDDTHHMMSS.fits
+* Date of last translator update and current version number: 06-10-2026; v1.0.0
 
 **Instrument era (INSTERA keyword) date ranges**
 
@@ -592,11 +591,94 @@ MAROON-X
      - UT_start_date
      - UT_end_date
      - Comments
-   * - 
+   * - 1.0.0
+     - September 1, 2020
+     - September 14, 2020
      - 
+   * - 2.0.0
+     - November 27, 2020
+     - November 30, 2020
      - 
+   * - 3.0.0
+     - February 17, 2021
+     - March 3, 2021
      - 
-
+   * - 4.0.0
+     - April 15, 2021
+     - April 29, 2021
+     - 
+   * - 5.0.0
+     - May 20, 2021
+     - June 3, 2021
+     - 
+   * - 6.0.0
+     - August 10, 2021
+     - August 22, 2021
+     - 
+   * - 7.0.0
+     - October 26, 2021
+     - November 22, 2021
+     - 
+   * - 8.0.0
+     - March 23, 2022
+     - April 26, 2022
+     - 
+   * - 9.0.0
+     - May 23, 2022
+     - June 1, 2022
+     - 
+   * - 10.0.0
+     - July 7, 2022
+     - August 14, 2022
+     - 
+   * - 11.0.0
+     - June 20, 2023
+     - July 10, 2023
+     - 
+   * - 12.0.0
+     - October 9, 2023
+     - October 27, 2023
+     - 
+   * - 13.0.0
+     - November 20, 2023
+     - November 28, 2023
+     - 
+   * - 14.0.0
+     - December 4, 2023
+     - January 2, 2024
+     - 
+   * - 15.0.1
+     - February 22, 2024
+     - April 23, 2024
+     - 
+   * - 15.0.2
+     - May 3, 2024
+     - June 12, 2024
+     - 
+   * - 15.0.3
+     - June 18, 2024
+     - September 1, 2024
+     - 
+   * - 15.0.4
+     - September 12, 2024
+     - October 13, 2024
+     - 
+   * - 15.0.5
+     - November 13, 2024
+     - March 31, 2025
+     - 
+   * - 15.1.6
+     - April 3, 2025
+     - September 14, 2025
+     - 
+   * - 15.1.7
+     - September 15, 2025
+     - January 7, 2026
+     - 
+   * - 15.1.8
+     - January 8, 2026
+     - Present
+     - 
 
 **Change log**
 
@@ -606,21 +688,22 @@ TBD
 
 * Fundamental Parameters
    * Trace 1: Sky fiber 1 (currently empty)
-   * Trace 2: Science fiber 2. Contains data from the blue and red channels stacked
-   * Trace 3: Science fiber 3. Contains data from the blue and red channels stacked
-   * Trace 4: Science fiber 4. Contains data from the blue and red channels stacked
-   * Trace 5: Simultaneous calibration fiber 5 with etalon. Contains data from the blue and red channels stacked
+   * Trace 2: Science fiber 2.
+   * Trace 3: Science fiber 3.
+   * Trace 4: Science fiber 4. 
+   * Trace 5: Simultaneous calibration fiber 5 with etalon.
    * Trace 6: Virtual fiber. Created by resampling fiber 2 and 4 onto the wavelength grid of fiber 3, then applying outlier rejection and proper weighting to combine the 3 fibers into a virtual one.
    * Wavelength Solution: Non-parametric
    * Extraction Type: Fibers 2-4 uses flat optimal extraction. Fiber 5 uses box (sum) extraction.
 * Corrections and Models
-   * Barycentric Correction: 
+   * Barycentric Correction: Flux-weighting is based on exposuremeter data and barycentric velocity is calculated using barycorrpy. The correction is not applied but stored in the header for use by SERVAL. BJD_TDB value produced is calculated at flux weighted midpoint.
+   * Drift Correction: The drift correction is calculated per extracted pixel using an offset derived from the master calibration frames taken every night.
 * Ancillary Data
-   * 
+   * Exposure Meter: N/A
 
 **Useful details or tutorials for working with 1-D data**
 
-TBD
+Specific flat files are required to create MAROON-X standard level2 fits file. Please contact Tanya Das (tanyadas@uchicago.edu) to request for the translator compatible flat files, with the following information: Target name and the date, month and year of the observations.
 
 
 ----------
@@ -708,10 +791,10 @@ NEID
 * Link to data archive: https://neid.ipac.caltech.edu 
 * Person/email for translator maintenance & bug reports: Chad Bender (cbender@arizona.edu) 
 * Naming convention for all data standard products:
-   * L2 : 
-   * L3 : 
-   * L4 : 
-* Date of last translator update and current version number: 
+   * L2 : neid_SL2_YYYYMMDDThhmmss.fits
+   * L3 : neid_SL3_YYYYMMDDThhmmss.fits
+   * L4 : neid_SL4_YYYYMMDDThhmmss.fits
+* Date of last translator update and current version number: 2026-05-14, v0.3.2
 
 **Instrument era (INSTERA keyword) date ranges**
 
@@ -726,33 +809,38 @@ NEID
    * - 1.0
      - November 6, 2019
      - November 30, 2019
-     - 
+     - Commissioning Run 1
    * - 2.0
      - November 30, 2019 
      - February 27, 2020
-     - 
+     - Commissioning Run 2 
    * - 3.0
      - February 27, 2020 
      - March 31, 2020
-     - 
+     - Commissioning Run 3
    * - 4.0
      - October 26, 2020 
      - June 16, 2022
-     -  
+     - Science Run 1 (Until Contreras Fire interruption)
    * - 5.0 
      - October 18, 2022 
      - August 19, 2024
-     - 
+     - Science Run 2 (Post-Contreras Fire restart)
    * - 6.0
      - August 24, 2024 
+     - December 8, 2025
+     - Science Run 3 (due to significant upgrade in LFC hardware)
+   * - 7.0
+     - December 9, 2025
      - Present
-     - 
+     - Science Run 4 (due to thermal instability event in December 2025)
 
 Note: these are not in the default NEID data product headers, but are added in the translator
 
 **Change log**
 
-TBD
+- 2026/06/24: NEID translator is ready for first release, and has all functionality for compliance 
+  with the standard.
 
 **Instrument-Specific Level 2 Header and Extension Details**
 
@@ -764,19 +852,21 @@ TBD
    * Extraction Type: Flat relative extraction is used (optimal for continuum sources)
 * Corrections and Models
    * Barycentric Correction: Barycorrpy is used to calculate a per-order barycentric correction at the per-order flux weighted midpoint as 
-      measured by the chromatic exposure meter. The relevant extensions include array data of length 122, with a value for each echelle order.
+     measured by the chromatic exposure meter. The relevant extensions include array data of length 122, with a value for each echelle order.
    * Drift Correction: The provided drift extension is a single value in km/s that represents the drift relative to the calibration session at 
-      the start of the observing window (evening calibrations for nighttime, morning calibrations for solar).
+     the start of the observing window (evening calibrations for nighttime, morning calibrations for solar).
    * Telluric Model: a line and continuum absorption telluric model. The model is only applicable for zero-indexed orders 55 through 110. The rest 
-      of the orders have the model values set to 1. The model includes water and molecular oxygen.
+     of the orders have the model values set to 1. The model includes water and molecular oxygen.
 * Ancillary Data
    * Exposure Meter: This extension includes processed chromatic exposure meter data in table format. Rows are temporal sampling and columns are 
-      wavelength sampling. The first column are the timestamps for each exposure meter frame. The rest of the columns are labeled with the wavelength 
-      corresponding to that spectral bin. 
+     wavelength sampling. The first column are the timestamps for each exposure meter frame. The rest of the columns are labeled with the wavelength 
+     corresponding to that spectral bin. 
 
 **Useful details or tutorials for working with 1-D data**
 
-TBD
+See the :doc:`NEID Tutorial <tutorials/NEID_Tutorial>` that provides a guide to working with 
+standardized NEID data at all levels, including appliying telluric corrections and inspecting 
+radial velocities by order.
 
 
 ----------

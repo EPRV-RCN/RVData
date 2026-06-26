@@ -1,7 +1,8 @@
 Name,Description
-TIME,
-CODE_RELEASE,
-BRANCH_NAME,
-COMMIT_HASH,
-MODULE_NAME,
-STATUS,
+TIME,time of operation
+CODE_RELEASE,code release version
+BRANCH_NAME,branch name of code
+COMMIT_HASH,commit hash of code
+FUNCTION,function name
+ARGS,arguments passed to function
+STATUS,return status of operation

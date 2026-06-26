@@ -1,0 +1,9 @@
+Keyword,Description,Units,DataType,Example Value,Default,Required,Notes
+XTENSION,Name of the extension type,N/A,,IMAGE,UNKNOWN,True,
+BITPIX,BitDepth,N/A,int,64,UNDEFINED,True,
+NAXIS,Number of array dimensions,N/A,int,2,UNDEFINED,True,Autopopulated by astropy
+NAXIS1,Number of pixels,N/A,uint,9216,UNDEFINED,True,Autopopulated by astropy
+NAXIS2,Number of orders,N/A,int,122,UNDEFINED,True,Autopopulated by astropy
+PCOUNT,integer used to define the data structure -- obseleted,N/A,int,0,'',False,required keywords that are obseleted
+GCOUNT,integer used to define the data structure -- obseleted,N/A,int,0,'',False,required keywords that are obseleted
+EXTNAME,Extension contents,N/A,string,traceN_flux,UNKNOWN,True,Description of what is in the extension

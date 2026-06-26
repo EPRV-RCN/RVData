@@ -59,9 +59,9 @@ extnames = {
 }
 #    "DLLDATA_VAC_BARY": "_DISP",
 extnames_s1d = {
-    'wavelength': ['COMBINED_STITCHED_CORR_WAVE'],
-    'flux': ['COMBINED_STITCHED_CORR_FLUX'],
-    'error': ['COMBINED_STITCHED_CORR_VAR'],
+    'wavelength': ['STITCHED_CORR_SCI_WAVE'],
+    'flux': ['STITCHED_CORR_SCI_FLUX'],
+    'error': ['STITCHED_CORR_SCI_VAR'],
 }
 
 # Allows the correction of TUNIT Keyword
