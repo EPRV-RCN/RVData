@@ -44,10 +44,20 @@ PRIMARY Header Keywords
 **MULTIPLICITY** : Keyword in the PRIMARY extension that indicates whether or not an extension can be duplicated to have
 multiple HDUs based on, e.g., the number of traces.
 
-**REQUIRED** : Keyword in the PRIMARY extension that indicates whether or not an extension must be present and 
+**REQUIRED** : Keyword in the PRIMARY extension that indicates whether or not an extension must be present and
 meaningfully populated in the FITS file in order for the file to be compliant with the EPRV Data Standard.
 
-**INSTERA** : Tag for the "instrument era" used to track permanent changes to instrument (e.g., 1.1.2). Major changes 
+**EPRVTAG** : Version of the EPRV Data Standard that the file conforms to, given as the bare semantic version of the
+standard (e.g., ``v1.1.0``). Required in every compliant file so that consumers know which revision of the standard
+the file was written against.
+
+**VOCLASS** : The same EPRV Data Standard version as **EPRVTAG**, expressed as a Virtual Observatory (VO) *class*
+string — the standard's name followed by its version (e.g., ``EPRVSTANDARDv1.1.0``). This follows the IVOA / Virtual
+Observatory convention in which ``VOCLASS`` declares a data product's class and version, allowing VO-aware archives
+and tooling to identify a file as an EPRV Data Standard product. It carries the same version information as
+**EPRVTAG**, just in a VO-discoverable form.
+
+**INSTERA** : Tag for the "instrument era" used to track permanent changes to instrument (e.g., 1.1.2). Major changes
 that result in RV offset are recorded in the first numeral space. Small but permanent changes, (changes in the calibration 
 light sources, etc) that don't necessarily introduce RV offsets but do represent an ongoing status change in the instrument, 
 are recorded in the second numeral. Anything that could impact the calibration or science outputs goes here. Even smaller 
