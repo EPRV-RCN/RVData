@@ -1,0 +1,98 @@
+Carmenes
+=================
+
+**Instrument Details**
+
+* Instrument Name: CARMENES (Calar Alto high-Resolution search for M dwarfs with Exoearths with Near-infrared and optical Échelle Spectrographs)
+* Telescope/Observatory: Calar Alto 3.5 m Telescope, Calar Alto Observatory / Centro Astronómico Hispano en Andalucía, Almería, Spain
+* Wavelength Range:
+  * VIS channel: 0.52 - 0.96 microns
+  * NIR channel: 0.96 - 1.71 microns
+* Resolution:
+  * VIS channel: R ~ 94,600
+  * NIR channel: R ~ 80,400
+* Fiber vs. slit: Fiber-fed, two-channel échelle spectrograph. The VIS and NIR spectrographs are fed simultaneously from the Cassegrain front end.
+
+**Documentation & Data Locations**
+
+* Link to instrument manual: https://carmenes.caha.es/ext/instrument/index.html
+* Link to data reduction pipeline manual: TBD
+* Link to data archive: http://carmenes.cab.inta-csic.es
+* Person/email for translator maintenance & bug reports: Adrian Kaminski (a.kaminski@lsw.uni-heidelberg.de)
+* Naming convention for all data standard products:
+  * L2 : carmenesvis_SL2_YYYYMMDDThhmmss.fits / carmenesnir_SL2_YYYYMMDDThhmmss.fits
+  * L3 : carmenesvis_SL3_YYYYMMDDThhmmss.fits / carmenesnir_SL3_YYYYMMDDThhmmss.fits
+  * L4 : carmenesvis_SL4_YYYYMMDDThhmmss.fits / carmenesnir_SL4_YYYYMMDDThhmmss.fits
+* Date of last translator update and current version number: July 2026
+
+**Instrument era (INSTERA keyword) date ranges**
+
+.. list-table::
+   :widths: 25 25 25 50
+   :header-rows: 1
+
+   * - INSTERA
+     - UT_start_date
+     - UT_end_date
+     - Comments
+   * -
+     -
+     -
+     -
+
+**Change log**
+
+TBD
+
+**Instrument-Specific Level 2 Header and Extension Details**
+
+* Fundamental Parameters
+  * Trace 1: Science spectrum extracted from science fiber A. For the initial CARMENES translator this corresponds to the extracted target spectrum in the selected channel. The flux is FOX-extracted, and therefore already unblazed.
+  * VIS channel: The native ``SUBSYS`` keyword should identify VIS products. VIS files are translated into separate EPRV products from NIR files.
+  * NIR channel: The native ``SUBSYS`` keyword should identify NIR products. NIR files are translated into separate EPRV products from VIS files.
+  * Wavelength Solution: Native CARMENES wavelength solutions (2015A&A...581A.117B) are propagated to ``TRACE1_WAVE`` for the corresponding VIS or NIR channel. ``TRACE1_WAVE`` contains the wavelength solution for the extracted spectrum and is drift corrected, as long as the result from the drift measurement from the FP in fiber B is present in the primary fits header.
+  * Extraction Type: FOX / CARACAL one-dimensional extraction.
+  * Number of Orders: ``NUMORDER`` and ``ORDER_TABLE`` are derived from the output trace wavelength array rather than hard-coded. Typically 61 for the VIS channel, and 28 for the NIR channel, respectively.
+
+* Corrections and Models
+  * Barycentric Correction: Native CARMENES headers contain barycentric information, including BERV-like values from CARACAL. ``BARYCORR_KMS``, ``BARYCORR_Z``, and ``BJD_TDB`` are consistently provided as one value for the whole spectrum.
+  * Drift Correction: CARMENES uses Fabry-Pérot etalons in fiber B for drift monitoring. The TRACE1_WAVE wavelenths are already drift corrected.
+  * Telluric Model: TBD.
+  * Sky Model: TBD.
+
+* Ancillary Data
+  * Exposure Meter: TBD.
+  * Telemetry: Native CARMENES headers contain telescope, ambient, detector, cryostat, calibration, and instrument-control metadata.
+  * Ancillary Spectrum: Fiber B spectra (typically FP or sky), if files provided during the translation process, are stored analoguous to TRACE1 as FIB_B_FLUX, ..._WAVE, etc.
+  * Images: Raw exposure image is stored as RAW_IMAGE (VIS) or RAW_IMAGE_SCA2/1 (NIR) if source file is provided during translation process.
+
+**Useful details or tutorials for working with 1-D data**
+
+*CARMENES VIS and NIR are separate spectrographs and should normally be treated
+as separate EPRV products.* Users should check ``SUBSYS``, ``INSTRUME``,
+``NUMORDER``, ``ORDER_TABLE``, and the wavelength range of ``TRACE1_WAVE``
+before combining VIS and NIR data.
+
+**Useful details or tutorials for working with the translator**
+
+
+.. code-block:: python
+
+   from rvdata.instruments.carmenes.level2 import CARMENESRV2
+
+   carm_l2 = CARMENESRV2.from_fits(
+       l1_file,
+       fiber_b_file=fibB_file,
+       raw_image_file=rawfile,
+       instrument="CARMENES",
+       query_catalog=False,
+       carmencita_query=True,
+   )
+   carm_l2.to_fits()
+
+* ``l1_file`` is supposed to be an extracted CARMENES fiber A file (``*_A.fits``).
+* ``fiber_b_file`` is the optional corresponding fiber B file (``*_B.fits``).
+* ``raw_image_file`` is the optional corresponding raw file (``*.fits``).
+* files for testing can be found in ../instruments/carmenes/reference_files directory
+* ``carmencita_query`` is ``True`` by default and pulls stellar information from the local Carmencita catalog in the ``catalogs`` directory.
+* ``query_catalog`` is ``False`` by default and pulls stellar information from Gaia DR3 if the identifier can be resolved by a SIMBAD query.

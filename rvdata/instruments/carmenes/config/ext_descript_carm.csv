@@ -1,0 +1,21 @@
+Name,Description
+PRIMARY,The primary header containing the keywords following the standard format
+INSTRUMENT_HEADER,The original instrument header
+RECEIPT,The list of operations performed on this file
+DRP_CONFIG,Pipeline details to go from the raw file to this file
+EXT_DESCRIPT,Contains the description of all the extensions in the file
+ORDER_TABLE,Table capturing the wavelength extent of each order as well as some extra info on SNR etc.
+TRACE1_FLUX,The flux measured in trace 1 (for now FOX extracted and therefore already unblazed)
+TRACE1_WAVE,The wavelength associated to the flux in trace 1
+TRACE1_VAR,The variance for trace 1
+TRACE1_BLAZE,The blaze for trace 1
+BARYCORR_KMS,The barycentric correction in km/s stored as a one-element image array
+BARYCORR_Z,The barycentric correction in redshift stored as a one-element image array
+BJD_TDB,Photon weighted midpoint in BJD TDB stored as a one-element image array
+FIB_B_FLUX,The flux measured in fiber B
+FIB_B_WAVE,The wavelength associated to the fiber B flux
+FIB_B_VAR,The variance for fiber B
+FIB_B_BLAZE,The blaze for fiber B
+RAW_IMAGE,The raw VIS detector image
+RAW_IMAGE_SCA2,The raw NIR SCA2 detector image
+RAW_IMAGE_SCA1,The raw NIR SCA1 detector image

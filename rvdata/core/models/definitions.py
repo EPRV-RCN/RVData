@@ -78,4 +78,9 @@ INSTRUMENT_READERS = {
         "class": "MAROONXRV2",
         "method": "_read",
     },
+    "CARMENES": {
+        "module": "rvdata.instruments.carmenes.level2",
+        "class": "CARMENESRV2",
+        "method": "_read",
+    },
 }
