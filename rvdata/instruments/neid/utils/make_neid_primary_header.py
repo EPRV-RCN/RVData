@@ -96,7 +96,10 @@ def make_base_primary_header(inst_pri_hdr):
 
     # Read in the trace information for each fiber
     for i_fiber, fiber in enumerate(fiber_list):
-        mode_dep_phead[f"TRACE{i_fiber + 1}"] = inst_pri_hdr[f"{fiber}-OBJ"]
+        # TRACE<n> records the *type* of object in the trace (SCI/CAL/SKY), not
+        # the object itself -- the fiber role is already exactly that value.
+        # The object in each fiber is recorded separately via CLSRC<n>/CID<n>.
+        mode_dep_phead[f"TRACE{i_fiber + 1}"] = fiber
 
         if inst_pri_hdr["OBSTYPE"] == "Cal":
             mode_dep_phead[f"CLSRC{i_fiber + 1}"] = inst_pri_hdr[f"{fiber}-OBJ"]
