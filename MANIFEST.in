@@ -4,6 +4,10 @@ include README.md
 include pyproject.toml
 
 # Include package data (CSV config files, reference FITS files needed by the package)
+# NOTE: the kpf line below is not a whitelist. Because pyproject.toml sets
+# include-package-data and setuptools_scm's file finder offers every
+# version-controlled file to the build, FITS files elsewhere under rvdata/ are
+# packaged unless a prune/exclude below removes them.
 recursive-include rvdata *.csv
 recursive-include rvdata/instruments/kpf/reference_fits *.fits
 
@@ -14,6 +18,12 @@ prune docs
 
 # Exclude sample data
 prune kpf_sample
+
+# Exclude CARMENES sample inputs (~82 MiB). Unlike kpf/reference_fits, which
+# rvdata/instruments/kpf/level2.py reads at runtime, nothing in the carmenes
+# package refers to these files -- they are sample inputs, not package data.
+# Shipping them pushed both artifacts past PyPI's 100 MB per-file limit.
+prune rvdata/instruments/carmenes/reference_files
 
 # Exclude build artifacts
 prune build
