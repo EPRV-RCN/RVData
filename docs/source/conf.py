@@ -13,8 +13,7 @@ print('sys.path: ',sys.path)
 from rvdata import __version__
 
 project = "RVdata"
-copyright = "2024, BJ Fulton"
-author = "BJ Fulton"
+author = "The EPRV Data Standardization Project"
 release = __version__
 
 # -- General configuration ---------------------------------------------------
@@ -50,5 +49,6 @@ exclude_patterns = []
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+html_show_copyright = False
 
 missing_value_placeholder = "TBD"

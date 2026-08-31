@@ -336,6 +336,17 @@ class RVDataModel(object):
             inst_SL#_YYYYMMDDThhmmss.fits
 
         """
+        # A .fits path in the first (out_filedir) slot is a filename from a
+        # caller predating the (out_filedir, out_filename) signature; without
+        # this, to_fits("name.fits") creates a directory called name.fits.
+        if (
+            out_filedir is not None
+            and out_filename is None
+            and str(out_filedir).endswith(".fits")
+        ):
+            out_filename = out_filedir
+            out_filedir = None
+
         # Set the output file path to working directory if not given one
         if out_filedir is None:
             out_filedir = os.getcwd()

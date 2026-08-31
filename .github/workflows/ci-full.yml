@@ -18,6 +18,9 @@ permissions:
 
 env:
   PIP_CACHE_DIR: ~/.cache/pip
+  # Bump to force a rebuild of the astropy download cache (DE430 is immutable,
+  # so under normal circumstances this never needs to change).
+  ASTROPY_CACHE_VERSION: v1
 
 jobs:
   codestyle:
@@ -41,10 +44,92 @@ jobs:
       - name: Run flake8 checks
         run: tox -e codestyle
 
+  # Populate the astropy download cache once per OS so the test matrix does not
+  # re-fetch the 114 MB JPL DE430 kernel in every job. This job is the only
+  # writer; every consumer restores read-only via actions/cache/restore, which
+  # has no post-job save step and so cannot race for the key.
+  ephemeris:
+    name: Warm ephemeris cache (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: codestyle
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      # No checkout and no pip cache on purpose: this job only needs astropy
+      # and jplephem to drive the download, not the project itself. (setup-
+      # python's pip cache requires a checked-out pyproject.toml to hash.)
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Cache astropy data
+        id: astropy-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.astropy/cache
+            ~/.cache/astropy
+          key: astropy-${{ runner.os }}-de430-${{ env.ASTROPY_CACHE_VERSION }}
+
+      # A cold-cache outage at naif.jpl.nasa.gov must not block the 29 jobs
+      # downstream -- without continue-on-error it would turn one flaky
+      # download into a hard failure for the whole matrix. Failing here just
+      # leaves the caches empty, which is the pre-cache behaviour.
+      - name: Populate astropy cache
+        if: steps.astropy-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install astropy jplephem
+          python - <<'PY'
+          import os
+          import shutil
+
+          from astropy.config.paths import get_cache_dir
+          from astropy.coordinates import (
+              get_body_barycentric_posvel,
+              solar_system_ephemeris,
+          )
+          from astropy.time import Time
+          from astropy.utils.data import is_url_in_cache
+
+          DE430 = (
+              "https://naif.jpl.nasa.gov/pub/naif/generic_kernels"
+              "/spk/planets/de430.bsp"
+          )
+
+          # Pulls de430.bsp (~114 MB) plus the IERS Earth-orientation tables.
+          with solar_system_ephemeris.set("jpl"):
+              get_body_barycentric_posvel("moon", Time(2458000.0, format="jd"))
+
+          # Fail loudly rather than saving an empty cache: a step that silently
+          # downloads nothing looks identical to a successful one.
+          assert is_url_in_cache(DE430), "de430.bsp did not reach the cache"
+
+          # astropy <8 caches in ~/.astropy/cache; astropy >=8 moved to
+          # ~/.cache/astropy. The tox matrix spans both (olddeps pins
+          # astropy 7.2), and the on-disk layout under either root is
+          # identical, so mirror into both and let each env find its own.
+          src = get_cache_dir()
+          home = os.path.expanduser("~")
+          print(f"astropy cache={src!r} home={home!r}")
+          for dest in (
+              os.path.join(home, ".astropy", "cache"),
+              os.path.join(home, ".cache", "astropy"),
+          ):
+              if os.path.normpath(dest) != os.path.normpath(src):
+                  shutil.copytree(src, dest, dirs_exist_ok=True)
+                  print(f"mirrored -> {dest}")
+          PY
+
   regression:
     name: Regression Tests - Python 3.${{ matrix.python-ver }} (${{ matrix.tox-env }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: codestyle
+    needs: [codestyle, ephemeris]
     strategy:
       fail-fast: false
       matrix:
@@ -61,6 +146,14 @@ jobs:
           python-version: '3.${{ matrix.python-ver }}'
           cache: 'pip'
 
+      - name: Restore astropy data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.astropy/cache
+            ~/.cache/astropy
+          key: astropy-${{ runner.os }}-de430-${{ env.ASTROPY_CACHE_VERSION }}
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -72,7 +165,7 @@ jobs:
   coverage:
     name: Coverage Report
     runs-on: ubuntu-latest
-    needs: codestyle
+    needs: [codestyle, ephemeris]
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -82,6 +175,14 @@ jobs:
         with:
           python-version: '3.13'
           cache: 'pip'
+
+      - name: Restore astropy data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.astropy/cache
+            ~/.cache/astropy
+          key: astropy-${{ runner.os }}-de430-${{ env.ASTROPY_CACHE_VERSION }}
 
       - name: Install dependencies
         run: |
@@ -117,6 +218,14 @@ jobs:
         with:
           python-version: '3.${{ matrix.python-ver }}'
           cache: 'pip'
+
+      - name: Restore astropy data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.astropy/cache
+            ~/.cache/astropy
+          key: astropy-${{ runner.os }}-de430-${{ env.ASTROPY_CACHE_VERSION }}
 
       - name: Install dependencies
         run: |

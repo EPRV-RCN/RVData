@@ -214,3 +214,43 @@ class TestToFitsAutoFilename:
             filename = obj.to_fits(out_filename=explicit_name)
             assert filename == explicit_name
             assert os.path.exists(filename)
+
+    def test_to_fits_positional_fits_path_treated_as_filename(self):
+        """Test that to_fits('name.fits') writes a file, not a directory.
+
+        The first parameter of to_fits() is out_filedir, but callers that
+        predate that signature pass a filename positionally. A .fits path
+        must be treated as the output filename rather than a directory.
+        """
+        import tempfile
+        import os
+
+        obj = RV2()
+        obj.headers["PRIMARY"] = OrderedDict()
+        obj.headers["PRIMARY"]["INSTRUME"] = "TEST"
+        obj.headers["PRIMARY"]["DATE-OBS"] = "2025-02-08T04:51:25"
+        obj.extensions["PRIMARY"] = None
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = os.path.join(tmpdir, "my_positional_name.fits")
+            filename = obj.to_fits(target)
+            assert filename == target
+            assert os.path.isfile(target), \
+                "positional .fits path must produce a file, not a directory"
+
+    def test_to_fits_positional_directory_still_works(self):
+        """Test that to_fits(directory) still auto-names a file inside it."""
+        import tempfile
+        import os
+
+        obj = RV2()
+        obj.headers["PRIMARY"] = OrderedDict()
+        obj.headers["PRIMARY"]["INSTRUME"] = "TEST"
+        obj.headers["PRIMARY"]["DATE-OBS"] = "2025-02-08T04:51:25"
+        obj.extensions["PRIMARY"] = None
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = obj.to_fits(tmpdir)
+            assert os.path.dirname(filename) == tmpdir
+            assert os.path.basename(filename) == "test_SL2_20250208T045125.fits"
+            assert os.path.isfile(filename)

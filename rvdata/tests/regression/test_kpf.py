@@ -1,5 +1,6 @@
 import requests
 import os
+from astropy.io import fits
 from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
@@ -40,6 +41,15 @@ def download_files():
     return l0file, l1file, l2file
 
 
+def assert_full_dateobs(standard_file):
+    # Native KPF headers keep only the date in DATE-OBS (the time lives in
+    # DATE-BEG); the standard requires a full ISO datetime, and a date-only
+    # value silently becomes T000000 in generated filenames.
+    dateobs = str(fits.getheader(standard_file)["DATE-OBS"])
+    assert "T" in dateobs, \
+        f"DATE-OBS '{dateobs}' in {standard_file} lacks a time component"
+
+
 def test_kpf():
     l0file, l1file, l2file = download_files()
 
@@ -50,6 +60,7 @@ def test_kpf():
         f"L2 filename '{os.path.basename(l2_standard)}' does not match EPRV convention"
     assert os.path.basename(l2_standard).startswith("kpf_SL2_"), \
         f"L2 filename should start with 'kpf_SL2_', got '{os.path.basename(l2_standard)}'"
+    assert_full_dateobs(l2_standard)
     check_l2_compliance(l2_standard)
 
     # Check L3
@@ -70,6 +81,7 @@ def test_kpf():
         f"L4 filename '{os.path.basename(l4_standard)}' does not match EPRV convention"
     assert os.path.basename(l4_standard).startswith("kpf_SL4_"), \
         f"L4 filename should start with 'kpf_SL4_', got '{os.path.basename(l4_standard)}'"
+    assert_full_dateobs(l4_standard)
     check_l4_compliance(l4_standard)
 
 

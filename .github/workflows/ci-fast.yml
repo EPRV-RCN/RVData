@@ -21,6 +21,9 @@ permissions:
 
 env:
   PIP_CACHE_DIR: ~/.cache/pip
+  # Must match ci-full.yml, which is what populates this cache. develop is the
+  # default branch, so caches it writes are readable from every branch here.
+  ASTROPY_CACHE_VERSION: v1
 
 jobs:
   codestyle:
@@ -57,6 +60,16 @@ jobs:
         with:
           python-version: '3.13'
           cache: 'pip'
+
+      # Read-only: ci-full is the only writer. A miss here just means the JPL
+      # ephemeris is downloaded as before.
+      - name: Restore astropy data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.astropy/cache
+            ~/.cache/astropy
+          key: astropy-${{ runner.os }}-de430-${{ env.ASTROPY_CACHE_VERSION }}
 
       - name: Install dependencies
         run: |
