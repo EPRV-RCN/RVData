@@ -285,3 +285,134 @@ def test_expres_l3_does_not_mutate_l2():
     assert l2.headers["PRIMARY"]["DATALVL"] == "L2"
     assert set(l2.headers["PRIMARY"].keys()) == keys_before
     assert l3.headers["PRIMARY"] is not l2.headers["PRIMARY"]
+
+
+# ---------------------------------------------------------------- Level 4
+
+
+def test_expres_l4_compliance():
+    _, ccf = expres_fixture_files()
+    l4 = RV4.from_fits(ccf, instrument="EXPRES")
+    out = l4.to_fits()
+    base = os.path.basename(out)
+    assert RVDataModel.FILENAME_PATTERN.match(base), base
+    assert base.startswith("expres_SL4_"), base
+    check_l4_compliance(out)
+
+
+def test_expres_l4_primary_and_rv1():
+    fitspec, ccf = expres_fixture_files()
+    l4 = RV4.from_fits(ccf, instrument="EXPRES")
+    with fits.open(ccf) as c:
+        ch = c[0].header
+        per_order = c[2].data
+        vgrid = c[1].data["V_grid"].astype(np.float64)
+        combined = c[1].data["ccf"].astype(np.float64)
+    with fits.open(fitspec) as f:
+        barymjd = f[1].header["BARYMJD"]
+        z_hdr = f[2].header["wtd_mdpt_bc"]
+        orders_l1 = f[1].data["orders"].astype(int)
+        wave_l1 = f[1].data["wavelength"].astype(np.float64)
+    h = l4.headers["PRIMARY"]
+    assert h["DATALVL"] == "L4"
+    assert h["INSTRUME"] == "EXPRES"
+    assert h["ISSOLAR"] is True
+    assert h["RVMETHOD"] == "CCF"
+    assert h["RV"] == pytest.approx(ch["V"] / 1e5)
+    assert h["RVERR"] == pytest.approx(ch["E_V"] / 1e5)
+    assert h["BJDTDB"] == pytest.approx(barymjd + 2400000.5, abs=1e-9)
+    assert h["BERV"] == pytest.approx(z_hdr * const.c.to("km/s").value, rel=1e-9)
+    assert h["SYSVEL"] == 0.0
+
+    rv1 = l4.data["RV1"]
+    assert len(rv1) == len(per_order) == 75
+    np.testing.assert_array_equal(rv1["ECHELLE_ORDER"].value, per_order["orders"].astype(int))
+    np.testing.assert_allclose(rv1["RV"].value, per_order["v"].astype(np.float64) / 1e5)
+    np.testing.assert_allclose(rv1["RV_ERR"].value, per_order["e_v"].astype(np.float64) / 1e5)
+    assert np.all(rv1["BJD_TDB"].value == h["BJDTDB"])
+    assert np.all(rv1["BERV"].value == h["BERV"])
+    # ORDER_INDEX and wavelength extent come from the matching fitspec row
+    for i, order in enumerate(rv1["ECHELLE_ORDER"].value[:5]):
+        row = int(np.where(orders_l1 == order)[0][0])
+        assert rv1["ORDER_INDEX"].value[i] == row
+        assert rv1["WAVE_START"].value[i] == pytest.approx(wave_l1[row].min())
+        assert rv1["WAVE_END"].value[i] == pytest.approx(wave_l1[row].max())
+    rv1h = l4.headers["RV1"]
+    assert rv1h["RVMETHOD"] == "CCF"
+    assert rv1h["SKYRMVD"] is False
+    assert rv1h["TELLRMVD"] == bool(ch["DIV_TELL"])
+
+    ccf1 = l4.data["CCF1"]
+    assert ccf1.shape == (75, 1001)
+    np.testing.assert_array_equal(ccf1, per_order["ccfs"].astype(np.float64))
+    c1h = l4.headers["CCF1"]
+    assert c1h["CCFSTART"] == pytest.approx(vgrid[0] / 1e5)
+    assert c1h["CCFSTEP"] == pytest.approx((vgrid[1] - vgrid[0]) / 1e5)
+    assert c1h["VELNSTEP"] == 1001
+    assert c1h["CCFMASK"] == ch["MASK"]
+
+    cc = l4.data["CUSTOM_CCF1"]
+    assert cc.shape == (1, 1001)
+    np.testing.assert_array_equal(cc[0], combined)
+    crv = l4.data["CUSTOM_RV1"]
+    assert len(crv) == 1
+    assert crv["RV"].value[0] == pytest.approx(ch["V"] / 1e5)
+    assert crv["RV_ERR"].value[0] == pytest.approx(ch["E_V"] / 1e5)
+
+    diag = l4.data["DIAGNOSTICS1"]
+    assert list(diag.colnames) == ["metric_name", "value", "uncertainty"]
+    names = list(diag["metric_name"].value)
+    for n in ("HALPHA", "HWIDTH", "CCFFWHM", "BIS", "CCFVSPAN", "BIGAUSS",
+              "SKEWNORM", "QUALITY", "SNR", "CHI2", "EXPCOUNT", "WATRCOL"):
+        assert n in names, n
+    fwhm = diag[diag["metric_name"] == "CCFFWHM"][0]
+    assert np.isfinite(fwhm["value"]) and np.isfinite(fwhm["uncertainty"])
+    ext = l4.data["EXT_DESCRIPT"]
+    assert list(ext.colnames) == ["Name", "Description"]
+    for n in ("PRIMARY", "INSTRUMENT_HEADER", "RECEIPT", "DRP_CONFIG",
+              "EXT_DESCRIPT", "RV1", "CCF1", "CUSTOM_CCF1", "CUSTOM_RV1",
+              "DIAGNOSTICS1"):
+        assert n in ext["Name"].value, n
+    drp = l4.data["DRP_CONFIG"]
+    assert any(e.startswith("ccf:MASK = ESPRESSO_G2.fits") for e in drp["ENTRY"].value)
+
+
+def test_expres_l4_explicit_l1_file(tmp_path):
+    fitspec, ccf = expres_fixture_files()
+    alone = tmp_path / "ccf_only" / FIXTURE_BASENAME
+    alone.parent.mkdir()
+    alone.write_bytes(open(ccf, "rb").read())
+    l4 = RV4.from_fits(str(alone), instrument="EXPRES", l1_file=fitspec)
+    assert l4.headers["PRIMARY"]["DATALVL"] == "L4"
+    assert len(l4.data["RV1"]) == 75
+
+
+def test_expres_l4_missing_fitspec(tmp_path):
+    _, ccf = expres_fixture_files()
+    alone = tmp_path / "ccf" / FIXTURE_BASENAME
+    alone.parent.mkdir()
+    alone.write_bytes(open(ccf, "rb").read())
+    with pytest.raises(FileNotFoundError) as err:
+        RV4.from_fits(str(alone), instrument="EXPRES")
+    msg = str(err.value)
+    assert str(tmp_path / "fitspec" / FIXTURE_BASENAME) in msg
+    assert "l1_file" in msg
+
+
+def test_expres_l4_diagnostics_optional_cards(tmp_path):
+    """An older fitspec without activity cards still translates."""
+    fitspec, ccf = expres_fixture_files()
+    root = tmp_path
+    (root / "fitspec").mkdir()
+    (root / "ccf").mkdir()
+    with fits.open(fitspec, memmap=False) as hdul:
+        for key in ("S-VALUE", "HALPHA", "HWIDTH", "CCFFWHM", "CCFFWHME", "BIS",
+                    "CCFVSPAN", "BIGAUSS", "SKEWNORM", "QUALITY", "WATRCOL"):
+            if key in hdul[1].header:
+                del hdul[1].header[key]
+        hdul.writeto(root / "fitspec" / FIXTURE_BASENAME)
+    (root / "ccf" / FIXTURE_BASENAME).write_bytes(open(ccf, "rb").read())
+    l4 = RV4.from_fits(str(root / "ccf" / FIXTURE_BASENAME), instrument="EXPRES")
+    names = list(l4.data["DIAGNOSTICS1"]["metric_name"].value)
+    assert "HALPHA" not in names
+    assert "SNR" in names and "CHI2" in names
