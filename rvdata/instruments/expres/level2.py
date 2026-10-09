@@ -67,11 +67,12 @@ obstype_map = {
 _STRUCTURAL_PREFIXES = (
     "XTENSION", "BITPIX", "NAXIS", "PCOUNT", "GCOUNT", "TFIELDS",
     "TTYPE", "TFORM", "TDIM", "TUNIT", "EXTNAME", "SIMPLE", "EXTEND",
+    "COMMENT", "HISTORY",
 )
 
 
 def _is_structural(key):
-    return any(key.startswith(p) for p in _STRUCTURAL_PREFIXES)
+    return key == "" or any(key.startswith(p) for p in _STRUCTURAL_PREFIXES)
 
 
 def drp_flag(hdul):
@@ -84,7 +85,10 @@ def drp_flag(hdul):
 
 
 def instrument_era(mjd):
-    """INSTERA tag for an observation at the given MJD."""
+    """INSTERA tag for an observation at the given MJD, or None if the MJD
+    predates the first recorded era (UNDEFINED rather than the newest era)."""
+    if mjd < epoch_start_mjd[0]:
+        return None
     return str(expres_epochs[np.sum(mjd >= epoch_start_mjd) - 1])
 
 
@@ -112,8 +116,14 @@ class EXPRESRV2(RV2):
         head2 = hdul[2].header
         data = hdul[1].data
 
-        is_solar = str(head0["OBJECT"]).strip() == "Sun"
-        obstype = obstype_map[str(head0["OBSTYPE"]).strip()]
+        raw_obstype = str(head0["OBSTYPE"]).strip()
+        is_solar = str(head0["OBJECT"]).strip() == "Sun" or raw_obstype == "Solar"
+        obstype = obstype_map.get(raw_obstype)
+        if obstype is None:
+            warnings.warn(
+                f"EXPRES OBSTYPE {raw_obstype!r} not recognised; "
+                "OBSTYPE left undefined"
+            )
         jd_utc = Time(head0["DATE-SHT"], format="isot", scale="utc").jd
         mid_mjd = Time(head0["MIDPOINT"], format="isot", scale="utc").mjd
         instflag = "Pass" if bool(head0.get("EXPMTR", False)) else "Fail"
@@ -237,6 +247,9 @@ class EXPRESRV2(RV2):
         self.set_data("TRACE1_VAR", (uncertainty * blaze) ** 2)
         describe("TRACE1_VAR", "Variance of TRACE1_FLUX")
         self.set_data("TRACE1_BLAZE", blaze)
+        blaze_head = fits.Header()
+        blaze_head["BLZNORM"] = (False, "EXPRES blaze is unnormalized e- counts")
+        self.set_header("TRACE1_BLAZE", blaze_head)
         describe("TRACE1_BLAZE", "Blaze function for trace 1")
 
         self.create_extension(
@@ -250,7 +263,12 @@ class EXPRESRV2(RV2):
             warnings.simplefilter("ignore", RuntimeWarning)
             bary_z = bary_wave / wave - 1.0
         self.set_data("BARYCORR_KMS", bary_z * const.c.to("km/s").value)
-        describe("BARYCORR_KMS", "Barycentric correction per pixel in km/s (lambda_bary = lambda * (1 + v/c))")
+        describe(
+            "BARYCORR_KMS",
+            "Barycentric correction per pixel in km/s (lambda_bary = lambda * "
+            "(1 + v/c)); for solar data this includes the solar gravitational "
+            "redshift, not a purely kinematic velocity",
+        )
         self.set_data("BARYCORR_Z", bary_z)
         describe("BARYCORR_Z", "Barycentric correction per pixel as redshift z")
 
@@ -269,8 +287,15 @@ class EXPRESRV2(RV2):
         expm_table = OrderedDict({"TIME": expm_times})
         for wl, counts in zip(expm_waves, expm_counts):
             expm_table[f"{wl:.3f}"] = counts
+        # Strip the native HDU2 structural cards (TFIELDS, TTYPE1, EXTNAME,
+        # etc.) so the in-memory header does not misdescribe the EXPMETER
+        # table, which has different columns than the native extension.
+        expm_head = fits.Header()
+        for card in head2.cards:
+            if card.keyword and not _is_structural(card.keyword):
+                expm_head.append(card)
         self.create_extension(
-            "EXPMETER", "BinTableHDU", header=head2, data=pd.DataFrame(expm_table)
+            "EXPMETER", "BinTableHDU", header=expm_head, data=pd.DataFrame(expm_table)
         )
         describe("EXPMETER", "Chromatic exposure meter counts; TIME in seconds from exposure start, one column per wavelength (nm)")
 

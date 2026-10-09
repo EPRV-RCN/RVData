@@ -9,6 +9,7 @@ named by the EXPRES_FIXTURE_DIR environment variable with the same layout:
     $EXPRES_FIXTURE_DIR/ccf/Sun_20240126.5073.fits
 """
 import os
+import re
 
 import numpy as np
 import pytest
@@ -20,7 +21,7 @@ from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
-from rvdata.instruments.expres.level2 import EXPRESRV2
+from rvdata.instruments.expres.level2 import EXPRESRV2, instrument_era
 from rvdata.tests.regression.compliance import (
     check_l2_compliance,
     check_l3_compliance,
@@ -94,6 +95,7 @@ def test_expres_l2_primary_header_values():
     assert h["DATE-OBS"] == h0["DATE-SHT"]
     assert h["EXPTIME"] == float(h0["AEXPTIME"])
     assert h["INSTERA"] == "5.10.0"
+    assert instrument_era(50000.0) is None
     assert h["DRPTAG"] == "0.4.1"
     assert h["EXTRACT"] == "optimal"
     assert h["SUMMFLAG"] in ("Pass", "Fail")
@@ -116,6 +118,7 @@ def test_expres_l2_flux_var_wave_blaze():
     np.testing.assert_allclose(flux, spectrum * blaze, equal_nan=True)
     np.testing.assert_allclose(var, (unc * blaze) ** 2, equal_nan=True)
     np.testing.assert_array_equal(l2.data["TRACE1_BLAZE"], blaze)
+    assert l2.headers["TRACE1_BLAZE"]["BLZNORM"] is False
     assert l2.data["TRACE1_WAVE"].dtype == np.float64
     np.testing.assert_array_equal(l2.data["TRACE1_WAVE"], wave)
 
@@ -269,7 +272,7 @@ def test_expres_l3_stitched_range():
     assert finite.mean() > 0.5
     # the red end (order 76, ~8000-8100 A) stitches without raising even
     # though order 75 has no finite flux at all
-    assert np.isfinite(flux[(wave > 7900) & (wave < 8000)]).mean() > 0.3
+    assert np.isfinite(flux[(wave > 7900) & (wave < 8000)]).mean() > 0.6
     assert l3.headers["PRIMARY"]["DATALVL"] == "L3"
     assert l3.headers["PRIMARY"]["INSTRUME"] == "EXPRES"
 
@@ -323,6 +326,8 @@ def test_expres_l4_primary_and_rv1():
     assert h["BJDTDB"] == pytest.approx(barymjd + 2400000.5, abs=1e-9)
     assert h["BERV"] == pytest.approx(z_hdr * const.c.to("km/s").value, rel=1e-9)
     assert h["SYSVEL"] == 0.0
+    # DRPTAG at L4 is the ccf file's pipeline version, not the fitspec's
+    assert h["DRPTAG"] == ch["VERSION"]
 
     rv1 = l4.data["RV1"]
     assert len(rv1) == len(per_order) == 75
@@ -341,15 +346,19 @@ def test_expres_l4_primary_and_rv1():
     assert rv1h["RVMETHOD"] == "CCF"
     assert rv1h["SKYRMVD"] is False
     assert rv1h["TELLRMVD"] == bool(ch["DIV_TELL"])
+    assert rv1h["RED_ORD"] == ch["RED_ORD"]
+    assert rv1h["BLUE_ORD"] == ch["BLUE_ORD"]
 
     ccf1 = l4.data["CCF1"]
     assert ccf1.shape == (75, 1001)
     np.testing.assert_array_equal(ccf1, per_order["ccfs"].astype(np.float64))
     c1h = l4.headers["CCF1"]
-    assert c1h["CCFSTART"] == pytest.approx(vgrid[0] / 1e5)
-    assert c1h["CCFSTEP"] == pytest.approx((vgrid[1] - vgrid[0]) / 1e5)
+    assert c1h["VELSTART"] == pytest.approx(vgrid[0] / 1e5)
+    assert c1h["VELSTEP"] == pytest.approx((vgrid[1] - vgrid[0]) / 1e5)
     assert c1h["VELNSTEP"] == 1001
     assert c1h["CCFMASK"] == ch["MASK"]
+    assert c1h["RED_ORD"] == ch["RED_ORD"]
+    assert c1h["BLUE_ORD"] == ch["BLUE_ORD"]
 
     cc = l4.data["CUSTOM_CCF1"]
     assert cc.shape == (1, 1001)
@@ -416,3 +425,83 @@ def test_expres_l4_diagnostics_optional_cards(tmp_path):
     names = list(l4.data["DIAGNOSTICS1"]["metric_name"].value)
     assert "HALPHA" not in names
     assert "SNR" in names and "CHI2" in names
+
+
+def test_expres_l4_rv1_weight():
+    _, ccf = expres_fixture_files()
+    l4 = RV4.from_fits(ccf, instrument="EXPRES")
+    with fits.open(ccf) as c:
+        ch = c[0].header
+        per_order = c[2].data
+        orders = per_order["orders"].astype(int)
+        e_v = per_order["e_v"].astype(np.float64)
+    rv1 = l4.data["RV1"]
+    assert "WEIGHT" in rv1.colnames
+    weight = rv1["WEIGHT"].value
+    red_ord, blue_ord = ch["RED_ORD"], ch["BLUE_ORD"]
+    in_window = (orders >= red_ord) & (orders <= blue_ord)
+    finite = np.isfinite(e_v)
+    # fixture has four non-finite RV_ERR rows, at these echelle orders
+    non_finite_orders = set(orders[~finite].tolist())
+    assert non_finite_orders == {109, 106, 97, 81}
+    assert np.all(weight[~finite] == 0.0)
+    assert np.all(weight[~in_window] == 0.0)
+    expected_ones = in_window & finite
+    assert np.all(weight[expected_ones] == 1.0)
+    assert np.all(weight[~expected_ones] == 0.0)
+    assert (weight == 1.0).sum() == expected_ones.sum()
+
+
+def test_expres_l4_order_mismatch(tmp_path):
+    """A ccf echelle order missing from the fitspec ORDER_TABLE raises a
+    clear error instead of a bare numpy IndexError."""
+    fitspec, ccf = expres_fixture_files()
+    root = tmp_path
+    (root / "fitspec").mkdir()
+    (root / "ccf").mkdir()
+    with fits.open(fitspec, memmap=False) as hdul:
+        orders = hdul[1].data["orders"].astype(int)
+        assert orders[0] == 160
+        keep = np.arange(len(orders)) != 0
+        hdul[1].data = hdul[1].data[keep]
+        hdul.writeto(root / "fitspec" / FIXTURE_BASENAME)
+    (root / "ccf" / FIXTURE_BASENAME).write_bytes(open(ccf, "rb").read())
+    with pytest.raises(ValueError, match="order 160"):
+        RV4.from_fits(str(root / "ccf" / FIXTURE_BASENAME), instrument="EXPRES")
+
+
+def test_expres_l4_stellar_branch(tmp_path):
+    """A non-solar target leaves SYSVEL undefined at L4."""
+    fitspec, ccf = expres_fixture_files()
+    root = tmp_path
+    (root / "fitspec").mkdir()
+    (root / "ccf").mkdir()
+    with fits.open(fitspec, memmap=False) as hdul:
+        hdul[0].header["OBJECT"] = "HD 10700"
+        hdul[0].header["OBSTYPE"] = "Science"
+        hdul.writeto(root / "fitspec" / FIXTURE_BASENAME)
+    (root / "ccf" / FIXTURE_BASENAME).write_bytes(open(ccf, "rb").read())
+    l4 = RV4.from_fits(str(root / "ccf" / FIXTURE_BASENAME), instrument="EXPRES")
+    h = l4.headers["PRIMARY"]
+    assert h["ISSOLAR"] is False
+    assert h["SYSVEL"] is None
+
+
+def test_expres_l2_snr_consistency():
+    """The pipeline's per-order SNR card is an independent check on the
+    flux/variance scaling: max(flux / sqrt(var)) in that order should be
+    close to the pipeline's own per-pixel SNR number."""
+    fitspec, ccf = expres_fixture_files()
+    l2 = RV2.from_fits(fitspec, instrument="EXPRES")
+    with fits.open(ccf) as c:
+        snr_card = c[0].header["SNR"]
+        snr_comment = c[0].header.comments["SNR"]
+    order = int(re.search(r"order (\d+)", snr_comment).group(1))
+    ot = l2.data["ORDER_TABLE"]
+    row = int(np.where(ot["ECHELLE_ORDER"].value == order)[0][0])
+    flux = l2.data["TRACE1_FLUX"][row]
+    var = l2.data["TRACE1_VAR"][row]
+    quality = l2.data["TRACE1_QUALITY"][row]
+    good = (quality == 0) & np.isfinite(flux) & np.isfinite(var) & (var > 0)
+    snr = np.max(flux[good] / np.sqrt(var[good]))
+    assert snr == pytest.approx(snr_card, rel=0.15)

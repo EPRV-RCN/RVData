@@ -108,11 +108,17 @@ class EXPRESRV4(RV4):
 
         phead = l2.headers["PRIMARY"].copy()
         phead["DATALVL"] = "L4"
+        # DRPTAG at L4 is the ccf file's pipeline version, not the fitspec's
+        # (the fitspec version stays recorded in DRP_CONFIG as optimal:VERSION).
+        phead["DRPTAG"] = str(ccf_head["VERSION"])
         phead["BJDTDB"] = bjd_tdb
         phead["RV"] = float(ccf_head["V"]) / CM_PER_KM
         phead["RVERR"] = float(ccf_head["E_V"]) / CM_PER_KM
         phead["RVMETHOD"] = "CCF"
-        phead["BERV"] = berv_kms
+        phead["BERV"] = (
+            berv_kms,
+            "wtd_mdpt_bc*c; solar: incl. GR term, not purely kinematic",
+        )
         # The pipeline subtracts no systemic velocity; for the Sun the
         # systemic velocity is zero by definition, otherwise it is unknown.
         phead["SYSVEL"] = 0.0 if phead["ISSOLAR"] else None
@@ -136,8 +142,29 @@ class EXPRESRV4(RV4):
         order_table = l2.data["ORDER_TABLE"]
         l1_orders = order_table["ECHELLE_ORDER"].value.astype(int)
         ccf_orders = per_order["orders"].astype(int)
-        rows = np.array([int(np.where(l1_orders == o)[0][0]) for o in ccf_orders])
+        order_to_row = {order: i for i, order in enumerate(l1_orders)}
+        rows = []
+        for o in ccf_orders:
+            if o not in order_to_row:
+                raise ValueError(
+                    f"ccf echelle order {o} not present in the fitspec "
+                    f"ORDER_TABLE of {fitspec_path}"
+                )
+            rows.append(order_to_row[o])
+        rows = np.array(rows, dtype=int)
         n = len(ccf_orders)
+
+        # BLUE_ORD/RED_ORD bound the echelle-order window the pipeline
+        # combines into the PRIMARY RV; WEIGHT marks the per-order rows that
+        # fall inside that window and have a finite native uncertainty.
+        red_ord = int(ccf_head["RED_ORD"])
+        blue_ord = int(ccf_head["BLUE_ORD"])
+        red_ord_comment = ccf_head.comments["RED_ORD"]
+        blue_ord_comment = ccf_head.comments["BLUE_ORD"]
+        e_v_native = per_order["e_v"].astype(np.float64)
+        in_window = (ccf_orders >= red_ord) & (ccf_orders <= blue_ord)
+        weight = np.where(in_window & np.isfinite(e_v_native), 1.0, 0.0)
+
         rv1 = OrderedDict(
             {
                 "BJD_TDB": np.full(n, bjd_tdb, dtype=np.float64),
@@ -148,30 +175,31 @@ class EXPRESRV4(RV4):
                 "WAVE_END": order_table["WAVE_END"].value[rows],
                 "ORDER_INDEX": rows,
                 "ECHELLE_ORDER": ccf_orders,
+                "WEIGHT": weight,
             }
         )
         self.set_data("RV1", pd.DataFrame(rv1))
-        self.set_header(
-            "RV1",
-            fits.Header(
-                {
-                    "RVMETHOD": "CCF",
-                    "SKYRMVD": False,
-                    "TELLRMVD": bool(ccf_head.get("DIV_TELL", False)),
-                }
-            ),
+        rv1_header = fits.Header(
+            {
+                "RVMETHOD": "CCF",
+                "SKYRMVD": False,
+                "TELLRMVD": bool(ccf_head.get("DIV_TELL", False)),
+            }
         )
+        rv1_header["RED_ORD"] = (red_ord, red_ord_comment)
+        rv1_header["BLUE_ORD"] = (blue_ord, blue_ord_comment)
+        self.set_header("RV1", rv1_header)
         describe("RV1", "Order-wise CCF RVs for the EXPRES science trace (km/s)")
 
         vgrid = combined["V_grid"].astype(np.float64) / CM_PER_KM
-        ccf_header = OrderedDict(
-            {
-                "CCFSTART": float(vgrid[0]),
-                "CCFSTEP": float(vgrid[1] - vgrid[0]),
-                "VELNSTEP": int(len(vgrid)),
-                "CCFMASK": str(ccf_head["MASK"]),
-            }
-        )
+        ccf_header = fits.Header()
+        ccf_header["VELSTART"] = float(vgrid[0])
+        ccf_header["VELSTEP"] = float(vgrid[1] - vgrid[0])
+        ccf_header["VELNSTEP"] = int(len(vgrid))
+        ccf_header["CCFMASK"] = str(ccf_head["MASK"])
+        custom_ccf_header = ccf_header.copy()
+        ccf_header["RED_ORD"] = (red_ord, red_ord_comment)
+        ccf_header["BLUE_ORD"] = (blue_ord, blue_ord_comment)
         self.create_extension(
             "CCF1",
             "ImageHDU",
@@ -184,7 +212,7 @@ class EXPRESRV4(RV4):
             "CUSTOM_CCF1",
             "ImageHDU",
             data=combined["ccf"].astype(np.float64)[np.newaxis, :],
-            header=OrderedDict(ccf_header),
+            header=custom_ccf_header,
         )
         describe("CUSTOM_CCF1", "Combined (order-summed) CCF from which the PRIMARY RV was derived")
         custom_rv = OrderedDict(

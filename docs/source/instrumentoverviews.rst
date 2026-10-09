@@ -94,6 +94,8 @@ EXPRES
 * Resolution: 137,500
 * Fiber vs. slit: fiber
 
+TELESCOP and TELEID1 carry the native header value "DCT" (the Lowell Discovery Telescope's former name) pending confirmation from the EXPRES team.
+
 **Documentation & Data Locations**
 
 * Link to instrument manual: https://ui.adsabs.harvard.edu/abs/2016SPIE.9908E..6TJ/abstract
