@@ -1,30 +1,58 @@
-import numpy as np
+"""
+RVData Level 2 reader for EXPRES.
+
+The native input is an EXPRES "fitspec" file (optimally extracted spectrum,
+one FITS file per exposure, produced by the EXPRES pipeline described in
+Petersburg et al. 2020, AJ 159, 187):
+
+* HDU 0 ``PRIMARY``: observation header (no data).
+* HDU 1 ``optimal``: BinTable with one row per echelle order and the columns
+  ``spectrum``, ``uncertainty``, ``blaze``, ``wavelength`` (vacuum Angstrom),
+  ``bary_wavelength``, ``pixel_mask``, ``tellurics``, ``orders`` (absolute
+  echelle order) and more. Its header carries the pipeline version, the
+  barycentric MJD (``BARYMJD``, TDB, at the Sun for solar data) and the
+  activity indicators.
+* HDU 2 ``EXPOSURE METER + BARY_CORR``: chromatic exposure meter time series
+  and the barycentric correction inputs/outputs.
+
+Every standard keyword is filled from a native value or a verified constant;
+anything the native file does not carry is left undefined rather than guessed.
+"""
+
 import os
+import warnings
+from collections import OrderedDict
+from datetime import datetime, timezone
+
+import numpy as np
+import pandas as pd
+from astropy import constants as const
 from astropy.io import fits
 from astropy.time import Time
 
-# import astropy.units as u
-from astropy.constants import c
-from collections import OrderedDict
-import pandas as pd
-
-# import base class
+import rvdata
 from rvdata.core.models.level2 import RV2
 
+_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
+
+# Instrument eras: version tag and UT start date of each permanent change.
 expres_epochs, epoch_start_isot = np.loadtxt(
-    os.path.join(os.path.join(os.path.dirname(__file__), "config/expres_epochs.csv")),
+    os.path.join(_CONFIG_DIR, "expres_epochs.csv"),
     delimiter=",",
     skiprows=1,
-    dtype="str",
+    dtype=str,
+    encoding="utf-8-sig",
 ).T
 epoch_start_mjd = Time(epoch_start_isot).mjd
 
-header_map = pd.read_csv(
-    os.path.join(os.path.dirname(__file__), "config/expres_header_map.csv")
-).set_index("standard")
-header_map.fillna("", inplace=True)
+# standard keyword -> native keyword (blank = filled in code or undefined)
+header_map = (
+    pd.read_csv(os.path.join(_CONFIG_DIR, "expres_header_map.csv"))
+    .fillna("")
+    .set_index("standard")
+)
 
-static_headers = {"ORGANIZA": "Yale", "DATALVL": "L2", "NUMTRACE": 1}
+# Native OBSTYPE -> standard OBSTYPE
 obstype_map = {
     "Science": "Sci",
     "Solar": "Sci",
@@ -35,267 +63,220 @@ obstype_map = {
     "LFC": "Cal",
 }
 
+# FITS structural cards that are not pipeline configuration
+_STRUCTURAL_PREFIXES = (
+    "XTENSION", "BITPIX", "NAXIS", "PCOUNT", "GCOUNT", "TFIELDS",
+    "TTYPE", "TFORM", "TDIM", "TUNIT", "EXTNAME", "SIMPLE", "EXTEND",
+)
 
-# EXPRES Level2 Reader
+
+def _is_structural(key):
+    return any(key.startswith(p) for p in _STRUCTURAL_PREFIXES)
+
+
+def drp_flag(hdul):
+    """Pass if every column the translator needs is present in HDU 1."""
+    needed = {
+        "spectrum", "uncertainty", "blaze", "wavelength", "bary_wavelength",
+        "pixel_mask", "tellurics", "orders",
+    }
+    return "Pass" if needed.issubset(set(hdul[1].columns.names)) else "Fail"
+
+
+def instrument_era(mjd):
+    """INSTERA tag for an observation at the given MJD."""
+    return str(expres_epochs[np.sum(mjd >= epoch_start_mjd) - 1])
+
+
 class EXPRESRV2(RV2):
     """
-    Read EXPRES extracted file and convert it to the EPRV standard format Python object.
+    Data model and reader for RVData Level 2 data constructed from an EXPRES
+    fitspec file.
 
-    This class extends the `RV2` base class to handle the reading of EXPRES
-    (EXtreme PREcision Spectrograph) files and converts them into a standardized EPRV
-    format. Each extension from the FITS file is read, and relevant data, including flux,
-    wavelength, variance, and metadata, are stored as attributes of the resulting Python object.
-
-    Methods
-    -------
-    _read(hdul: fits.HDUList) -> None:
-        Reads the input FITS HDU list, extracts specific extensions related to the science
-
-    Attributes
+    Parameters
     ----------
-    extensions : dict
-        A dictionary containing all the created extensions (e.g., `C1_SCI1`)
-        where the keys are the extension names and the values are `SpectrumCollection` objects
-        for each respective dataset.
-
-    header : dict
-        A dictionary containing metadata headers from the FITS file, with each extension's
-        metadata stored under its respective key.
+    Inherits all parameters from :class:`RV2`.
 
     Notes
     -----
-    - The `_read` method processes science and calibration data,
-      and it extracts and organizes the science data.
-    - The method converts the flux, wavelength, and variance for each extension into
-      `SpectrumCollection` objects.
-    - Unused extensions are removed from the object.
+    Use the classmethod ``from_fits``:
 
-    Example
-    -------
-    >>> from astropy.io import fits
-    >>> hdul = fits.open('expres_level2_file.fits')
-    >>> rv2_obj = EXPRESRV2()
-    >>> rv2_obj._read(hdul)
+    >>> from rvdata.core.models.level2 import RV2
+    >>> l2 = RV2.from_fits("fitspec/Sun_20240126.5073.fits", instrument="EXPRES")
+    >>> l2.to_fits()
     """
 
-    def _read(self, hdul: fits.HDUList) -> None:
-        # Set up extension description table
-        data = hdul[1].data.copy()
-        ext_table = {
-            "extension_name": [],
-            "description": [],
-        }
+    def _read(self, hdul: fits.HDUList, **kwargs) -> None:
         head0 = hdul[0].header
-        primary_header = hdul[0].header
-        #        fitspec_header = hdul[1].header
-        expmeter_header = hdul[2].header
-        expmeter_data = hdul[2].data.copy()
-        itrace = 1
+        head1 = hdul[1].header
+        head2 = hdul[2].header
+        data = hdul[1].data
 
-        self.header_funcs = {
-            "OBSTYPE": (lambda hdul: obstype_map[hdul[0].header["OBSTYPE"]]),
-            "BINNING": (
-                lambda hdul: hdul[0]
-                .header["CCDBIN"]
-                .replace(" ", "")[1:-1]
-                .replace(",", "x")
-            ),
-            "NUMORDER": (lambda hdul: hdul[1].header["NAXIS2"]),
-            "FILENAME": (
-                lambda hdul: f"EXPRESL2_{hdul[0].header['MIDPOINT'][2:-1].replace('-', '')}.fits"
-            ),
-            "JD_UTC": (lambda hdul: Time(hdul[0].header["DATE-SHT"]).jd),
-            "INSTERA": (
-                lambda hdul: expres_epochs[
-                    np.sum(Time(hdul[0].header["MIDPOINT"]).mjd >= epoch_start_mjd) - 1
-                ]
-            ),
-            "INSTFLAG": (
-                lambda hdul: (
-                    "Pass"
-                    if (bool(hdul[0].header["EXPMTR"]) & bool(hdul[0].header["EXPMTR"]))
-                    else "Fail"
-                )
-            ),
-            "DRPFLAG": (lambda hdul: drpFlag(hdul)),
-            "DRPTAG": (lambda hdul: hdul[1].header["VERSION"]),
-            "VERSION": (lambda hdul: hdul[1].header["VERSION"]),
-            "EXTRACT": (lambda hdul: hdul[1].header["EXTNAME"]),
+        is_solar = str(head0["OBJECT"]).strip() == "Sun"
+        obstype = obstype_map[str(head0["OBSTYPE"]).strip()]
+        jd_utc = Time(head0["DATE-SHT"], format="isot", scale="utc").jd
+        mid_mjd = Time(head0["MIDPOINT"], format="isot", scale="utc").mjd
+        instflag = "Pass" if bool(head0.get("EXPMTR", False)) else "Fail"
+        drpflag = drp_flag(hdul)
+        version = rvdata.__version__ or ""
+
+        # Keywords that are computed rather than copied.
+        computed = {
+            "ORGANIZA": "Yale",
+            "DATALVL": "L2",
+            "OBSTYPE": obstype,
+            "BINNING": str(head0["CCDBIN"]).replace(" ", "")[1:-1].replace(",", "x"),
+            "NUMTRACE": 1,
+            "NUMORDER": int(head1["NAXIS2"]),
+            "FILENAME": "",  # overwritten by to_fits with the standard name
+            "DATE": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
+            "JD_UTC": jd_utc,
+            "TRACE1": "SCI" if obstype == "Sci" else "CAL",
+            "CLSRC1": None if obstype == "Sci" else str(head0["OBJECT"]).strip(),
+            "CSRC1": "SOLAR SYSTEM" if is_solar else None,
+            "CID1": "Sun" if is_solar else None,
+            # REQRA/REQDEC for the Sun are the apparent pointing at the
+            # observation, so the catalog epoch is the observation epoch.
+            "CEPCH1": Time(head0["MIDPOINT"], format="isot").decimalyear if is_solar else None,
+            "CRV1": 0.0 if is_solar else None,
+            "OBSERVAT": "Lowell Observatory",
+            "NUMTEL": 1,
+            # barycorrpy (HDU 2 kwargs LAT/LONGI/ALT) builds the site with
+            # astropy EarthLocation.from_geodetic, whose ellipsoid is WGS84.
+            "GEOSYS": "WGS84",
+            "OBSLON": float(head2.get("LONGI", head0["SITELONG"])),
+            "OBSLAT": float(head2.get("LAT", head0["SITELAT"])),
+            "OBSALT": float(head2.get("ALT", head0["SITEELEV"])),
+            "ISSOLAR": is_solar,
+            "DRPTAG": str(head1["VERSION"]),
+            "EPRVTAG": f"v{version}" if version else None,
+            "VOCLASS": f"EPRVSTANDARDv{version}" if version else None,
+            "INSTERA": instrument_era(mid_mjd),
+            "EXTRACT": str(head1.get("EXTNAME", "")) or None,
+            "FULLCOMP": "Yes",
+            "INSTFLAG": instflag,
+            "DRPFLAG": drpflag,
+            "SUMMFLAG": "Pass" if (instflag == "Pass" and drpflag == "Pass") else "Fail",
+            "DQLVL0": 0,
+            "DQLVL1": 0,
+            "DQLVL2": 0,
         }
 
-        # 0: Primary with just EPRV Standard FITS Headers
-        standard_head = OrderedDict()
+        # A real fits.Header (not a plain dict), following the NEID reader's
+        # style: RVDataModel.read() recasts PRIMARY header values by keyword
+        # after _read() returns, assigning (value, comment) tuples back into
+        # self.headers["PRIMARY"]. A fits.Header interprets that assignment
+        # as value+comment and still returns a plain scalar on lookup; a
+        # plain dict would instead store the literal tuple.
+        standard_head = fits.PrimaryHDU().header
         for key in header_map.index:
-            if key in static_headers.keys():  # Keywords that never change
-                standard_head[key] = static_headers[key]
-            elif key in self.header_funcs.keys():  # Keywords that require processing
-                standard_head[key] = self.header_funcs[key](hdul)
+            native_key = header_map.loc[key, "expres"]
+            required = header_map.loc[key, "required"] == "Y"
+            if key in computed:
+                value = computed[key]
+            elif native_key and native_key in head0:
+                value = head0[native_key]
             else:
-                _ = header_map.loc[key, "expres"]
-                if not _:
-                    expres_val = ""
+                value = None
+            if value is None and not required:
+                continue
+            standard_head[key] = value
+        self.set_header("PRIMARY", standard_head)
 
-                else:
-                    expres_val = head0[_]
-                if header_map.loc[key, "required"] == "N" and not expres_val:
-                    continue
-                standard_head[key] = expres_val
-        primary_header = standard_head
-        self.set_header("PRIMARY", primary_header)
-        ext_table["extension_name"].append("PRIMARY")
-        ext_table["description"].append("EPRV Standard Header")
+        ext_table = {"Name": [], "Description": []}
 
-        # 1: Instrument Header
+        def describe(name, description):
+            ext_table["Name"].append(name)
+            ext_table["Description"].append(description)
+
+        describe("PRIMARY", "EPRV Standard FITS HEADER (no data)")
+
         self.set_header("INSTRUMENT_HEADER", head0)
-        ext_table["extension_name"].append("INSTRUMENT_HEADER")
-        ext_table["description"].append("Primary header of native instrument file")
+        describe("INSTRUMENT_HEADER", "Inherited EXPRES fitspec primary header (no data)")
+        describe("RECEIPT", "Table of operations that have been performed on this file")
 
-        # 2: Receipt
-        ext_table["extension_name"].append("RECEIPT")
-        ext_table["description"].append("Receipt")
+        # DRP_CONFIG: every non-structural card of the extraction and exposure
+        # meter headers, prefixed by the native extension it came from.
+        entries = []
+        for prefix, header in (("optimal", head1), ("expmeter", head2)):
+            for card in header.cards:
+                if not card.keyword or _is_structural(card.keyword):
+                    continue
+                entries.append(f"{prefix}:{card.keyword} = {card.value}")
+        self.set_data("DRP_CONFIG", pd.DataFrame({"ENTRY": entries}))
+        describe("DRP_CONFIG", "Pipeline details (settings etc) to go from native data to L2")
+        describe("EXT_DESCRIPT", "Table describing contents of each extension")
 
-        # 3: DRP_CONFIG
-        ext_table["extension_name"].append("DRP_CONFIG")
-        ext_table["description"].append("drp configuration information")
+        wave = data["wavelength"].astype(np.float64)
+        spectrum = data["spectrum"].astype(np.float64)
+        uncertainty = data["uncertainty"].astype(np.float64)
+        blaze = data["blaze"].astype(np.float64)
+        bary_wave = data["bary_wavelength"].astype(np.float64)
+        pixel_mask = data["pixel_mask"].astype(bool)
+        orders = data["orders"].astype(int)
 
-        # 4: EXT_DESCRIPT
-        ext_table["extension_name"].append("EXT_DESCRIPT")
-        ext_table["description"].append("extension config information")
-
-        # 5: ORDER_TABLE
-        order_table_data = pd.DataFrame(
-            {
-                "ECHELLE_ORDER": 160 - np.arange(hdul[1].data["wavelength"].shape[0]),
-                "ORDER_INDEX": np.arange(hdul[1].data["wavelength"].shape[0]),
-                "WAVE_START": np.nanmin(hdul[1].data["wavelength"].data, axis=1),
-                "WAVE_END": np.nanmax(hdul[1].data["wavelength"].data, axis=1),
-            }
-        )
-        self.set_data("ORDER_TABLE", order_table_data)
-        ext_table["extension_name"].append("ORDER_TABLE")
-        ext_table["description"].append("Table of echelle order information")
-
-        # Spectrum data
-
-        itrace = 1
-        blaze = data["blaze"]
-
-        # 6: TRACE1_FLUX
-        spec = data["spectrum"] * blaze
-        self.set_data(f"TRACE{itrace}_FLUX", spec)
-        ext_table["extension_name"].append(f"TRACE{itrace}_FLUX")
-        ext_table["description"].append("Flux")
-
-        # 7: TRACE1_WAVE
-        wave = data["wavelength"]
-        self.set_data(f"TRACE{itrace}_WAVE", wave)
-        ext_table["extension_name"].append(f"TRACE{itrace}_WAVE")
-        ext_table["description"].append("Wavelength solution")
-
-        # 8: TRACE1_VAR
-        variance = data["uncertainty"] ** 2.0
-        self.set_data(f"TRACE{itrace}_VAR", variance)
-        ext_table["extension_name"].append(f"TRACE{itrace}_VAR")
-        ext_table["description"].append("Variance")
-
-        # 9: TRACE1_BLAZE
-        self.set_data(f"TRACE{itrace}_BLAZE", blaze)
-        ext_table["extension_name"].append(f"TRACE{itrace}_BLAZE")
-        ext_table["description"].append("Blaze function")
-
-        # # 10+11: BARYCORR_KMS + BARYCORR_Z
-        bary_arr = data["bary_wavelength"]  # data['bary_wavelength']
-        berv_kms = ((1 - bary_arr / wave) * c.to("km/s")).value
-        berv_z = 1 - bary_arr / wave
-        self.set_data("BARYCORR_KMS", berv_kms)
-        ext_table["extension_name"].append("BARYCORR_KMS")
-        ext_table["description"].append(
-            "Barycentric correction velocity per order in km/s"
-        )
-
-        self.set_data("BARYCORR_Z", berv_z)
-        ext_table["extension_name"].append("BARYCORR_Z")
-        ext_table["description"].append(
-            "Barycentric correction velocity per order in redshift (z)"
-        )
-
-        # # 12: BJD_TDB - need to convert this to by pixel
         self.set_data(
-            "BJD_TDB", np.array([hdul[2].header["wtd_mdpt"]]).astype(np.float64)
+            "ORDER_TABLE",
+            pd.DataFrame(
+                {
+                    "ECHELLE_ORDER": orders,
+                    "ORDER_INDEX": np.arange(len(orders)),
+                    "WAVE_START": np.nanmin(wave, axis=1),
+                    "WAVE_END": np.nanmax(wave, axis=1),
+                }
+            ),
         )
-        ext_table["extension_name"].append("BJD_TDB")
-        ext_table["description"].append(
-            "Photon weighted midpoint, barycentric dynamical time (JD)"
-        )
+        describe("ORDER_TABLE", "Table capturing the wavelength extent of each order in Trace 1")
 
-        # # 12: Exposure Meter
-        expmeter_header = hdul[2].header
-        expmeter_data = hdul[2].data.copy()
-        expmeter_array = np.array([row[0] for row in expmeter_data]).T
-        expmeter_times = hdul[2].data["midpoints"].astype(np.float64)
-        expmeter_wavelengths = hdul[2].data["wavelengths"][0].astype(np.float64)
-
-        expmeter_extension_data = {"time": expmeter_times}
-        for i_wave, col_wavelength in enumerate(expmeter_wavelengths):
-            expmeter_extension_data[str(col_wavelength)] = expmeter_array[i_wave]
+        # Native "spectrum" is the extracted flux divided by the blaze, and
+        # "uncertainty" is its 1-sigma error on the same scale.
+        self.set_data("TRACE1_FLUX", spectrum * blaze)
+        describe("TRACE1_FLUX", "Extracted flux in trace 1 (native spectrum x blaze)")
+        self.set_data("TRACE1_WAVE", wave)
+        describe("TRACE1_WAVE", "Vacuum wavelength solution for trace 1 (Angstrom)")
+        self.set_data("TRACE1_VAR", (uncertainty * blaze) ** 2)
+        describe("TRACE1_VAR", "Variance of TRACE1_FLUX")
+        self.set_data("TRACE1_BLAZE", blaze)
+        describe("TRACE1_BLAZE", "Blaze function for trace 1")
 
         self.create_extension(
-            "EXPMETER",
-            "BinTableHDU",
-            header=expmeter_header,
-            data=expmeter_extension_data,
+            "TRACE1_QUALITY", "ImageHDU", data=(~pixel_mask).astype(np.uint8)
         )
-        ext_table["extension_name"].append("EXPMETER")
-        ext_table["description"].append("Chromatic exposure meter")
+        describe("TRACE1_QUALITY", "Pixel quality for trace 1: 0 = good, 1 = masked by the pipeline")
 
-        # # 13: Telluric Model
-        telluric = data["tellurics"]
-        self.create_extension(f"TRACE{itrace}_TELLURIC", "ImageHDU", data=telluric)
-        ext_table["extension_name"].append("TRACE1_TELLURIC")
-        ext_table["description"].append("Telluric line and continuum absorption model")
+        # Barycentric correction as applied by the pipeline:
+        # bary_wavelength = wavelength * (1 + z)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            bary_z = bary_wave / wave - 1.0
+        self.set_data("BARYCORR_KMS", bary_z * const.c.to("km/s").value)
+        describe("BARYCORR_KMS", "Barycentric correction per pixel in km/s (lambda_bary = lambda * (1 + v/c))")
+        self.set_data("BARYCORR_Z", bary_z)
+        describe("BARYCORR_Z", "Barycentric correction per pixel as redshift z")
 
-        # Set extension description table
+        # BARYMJD is the barycentric (TDB) photon-weighted midpoint; for solar
+        # data it is the emission time at the Sun (light-travel corrected).
+        self.set_data(
+            "BJD_TDB", np.array([head1["BARYMJD"] + 2400000.5], dtype=np.float64)
+        )
+        describe("BJD_TDB", "Photon-weighted midpoint, BJD_TDB (at the Sun for solar data)")
+
+        # Exposure meter: one row per time sample, one column per wavelength.
+        expm = hdul[2].data
+        expm_counts = np.array([row["expm_specs"] for row in expm], dtype=np.float64).T
+        expm_times = expm["midpoints"].astype(np.float64)
+        expm_waves = np.array(expm["wavelengths"][0], dtype=np.float64)
+        expm_table = OrderedDict({"TIME": expm_times})
+        for wl, counts in zip(expm_waves, expm_counts):
+            expm_table[f"{wl:.3f}"] = counts
+        self.create_extension(
+            "EXPMETER", "BinTableHDU", header=head2, data=pd.DataFrame(expm_table)
+        )
+        describe("EXPMETER", "Chromatic exposure meter counts; TIME in seconds from exposure start, one column per wavelength (nm)")
+
+        self.create_extension(
+            "TRACE1_TELLURIC", "ImageHDU", data=data["tellurics"].astype(np.float64)
+        )
+        describe("TRACE1_TELLURIC", "SELENITE telluric model for trace 1 (unphysical where TRACE1_QUALITY = 1)")
+
         self.set_data("EXT_DESCRIPT", pd.DataFrame(ext_table))
-
-    # =============================================================================
-    # Methods for standardizing header keywords
-
-    def standardizeExpresHeader(self, hdul):
-        head0 = hdul[0].header
-        standard_head = OrderedDict()
-        for key in header_map.index:
-            if key in static_headers.keys():  # Keywords that never change
-                standard_head[key] = static_headers[key]
-            elif key in self.header_funcs.keys():  # Keywords that require processing
-                standard_head[key] = self.header_funcs[key](hdul)
-            else:
-                _ = header_map.loc[key, "expres"]
-                if not _:
-                    expres_val = ""
-
-                else:
-                    expres_val = head0[_]
-                if header_map.loc[key, "required"] == "N" and not expres_val:
-                    continue
-                standard_head[key] = expres_val
-        return standard_head
-
-
-def drpFlag(hdul):
-    extensions_to_check = [
-        "spectrum",
-        "blaze",
-        "wavelength",
-        "bary_wavelength",
-        "excalibur",
-        "bary_excalibur",  # We don't actually need this here
-        "continuum",
-        "tellurics",
-    ]
-    extension_list = hdul[1].data.dtype.names
-    percent_there = np.sum(
-        [extn in extension_list for extn in extensions_to_check]
-    ) / len(extensions_to_check)
-    if percent_there == 1:
-        return "Pass"
-    return "Fail" if percent_there == 0 else "Warn"
