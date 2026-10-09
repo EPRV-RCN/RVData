@@ -240,3 +240,48 @@ def test_expres_l2_cal_branch():
     assert h["TRACE1"] == "CAL"
     assert h["CLSRC1"] == "ThAr"
     assert h["ISSOLAR"] is False
+
+
+# ---------------------------------------------------------------- Level 3
+
+
+def test_expres_l3_compliance():
+    fitspec, _ = expres_fixture_files()
+    l3 = RV3.from_fits(fitspec, instrument="EXPRES")
+    out = l3.to_fits()
+    base = os.path.basename(out)
+    assert RVDataModel.FILENAME_PATTERN.match(base), base
+    assert base.startswith("expres_SL3_"), base
+    check_l3_compliance(out)
+
+
+def test_expres_l3_stitched_range():
+    fitspec, _ = expres_fixture_files()
+    l3 = RV3.from_fits(fitspec, instrument="EXPRES")
+    wave = l3.data["STITCHED_CORR_SCI_WAVE"]
+    flux = l3.data["STITCHED_CORR_SCI_FLUX"]
+    var = l3.data["STITCHED_CORR_SCI_VAR"]
+    assert wave.dtype == np.float64
+    assert wave.shape == flux.shape == var.shape
+    assert wave.min() >= 3800.0 and wave.max() <= 8100.0
+    assert np.all(np.diff(wave) > 0)
+    finite = np.isfinite(flux)
+    assert finite.mean() > 0.5
+    # the red end (order 76, ~8000-8100 A) stitches without raising even
+    # though order 75 has no finite flux at all
+    assert np.isfinite(flux[(wave > 7900) & (wave < 8000)]).mean() > 0.3
+    assert l3.headers["PRIMARY"]["DATALVL"] == "L3"
+    assert l3.headers["PRIMARY"]["INSTRUME"] == "EXPRES"
+
+
+def test_expres_l3_does_not_mutate_l2():
+    fitspec, _ = expres_fixture_files()
+    with fits.open(fitspec, memmap=False) as hdul:
+        l2 = EXPRESRV2()
+        l2.read(hdul, instrument="EXPRES")
+    keys_before = set(l2.headers["PRIMARY"].keys())
+    l3 = RV3()
+    l3.convert_level2_to_level3(l2)
+    assert l2.headers["PRIMARY"]["DATALVL"] == "L2"
+    assert set(l2.headers["PRIMARY"].keys()) == keys_before
+    assert l3.headers["PRIMARY"] is not l2.headers["PRIMARY"]
