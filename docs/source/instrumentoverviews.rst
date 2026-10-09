@@ -86,33 +86,28 @@ TBD
 EXPRES
 =================
 
-.. warning::
-
-   **Work in progress.** Support for this instrument is under active development
-   and not yet complete. Only Level 2 is currently available; the Level 3 and
-   Level 4 translators are not yet implemented. The data products and
-   documentation below may be incomplete or subject to change before a full
-   release.
-
 **Instrument Details**
 
-* Instrument Name:  EXPRES (Extreme Precision Spectrograph)
-* Telescope/Observatory: Lowell Discovery Telescope, Lowell Observatory
-* Wavelength Range: 390-780 nm
-* Resolution: 137,000
+* Instrument Name:  EXPRES (EXtreme PREcision Spectrograph)
+* Telescope/Observatory: Lowell Discovery Telescope (4.3 m), Lowell Observatory
+* Wavelength Range: 380-680 nm (full RV range; extraction extends to 822 nm)
+* Resolution: 137,500
 * Fiber vs. slit: fiber
 
 **Documentation & Data Locations**
 
-* Link to instrument manual: N/A
+* Link to instrument manual: https://ui.adsabs.harvard.edu/abs/2016SPIE.9908E..6TJ/abstract
 * Link to data reduction pipeline manual: https://ui.adsabs.harvard.edu/abs/2020AJ....159..187P/abstract
-* Link to data archive: 
-* Person/email for translator maintenance & bug reports: Lily Ling Zhao ()
+* Link to data archive: https://neid.ipac.caltech.edu/search_solar.php (EXPRES solar data at NExScI)
+* Person/email for translator maintenance & bug reports: EPRV-RCN RVData maintainers (GitHub issues)
+* Native inputs:
+   * L2 and L3: the ``fitspec`` file (extracted spectrum)
+   * L4: the ``ccf`` file plus its matching ``fitspec`` file (same basename, found in a sibling ``fitspec/`` directory or passed as ``l1_file=``)
 * Naming convention for all data standard products:
-   * L2 : 
-   * L3 : 
-   * L4 : 
-* Date of last translator update and current version number: 
+   * L2 : ``expres_SL2_YYYYMMDDTHHMMSS.fits``
+   * L3 : ``expres_SL3_YYYYMMDDTHHMMSS.fits``
+   * L4 : ``expres_SL4_YYYYMMDDTHHMMSS.fits``
+* Date of last translator update and current version number: 2026-10-09, EXPRES pipeline 0.4.x
 
 **Instrument era (INSTERA keyword) date ranges**
 
