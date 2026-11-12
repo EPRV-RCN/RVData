@@ -6,6 +6,8 @@ from .convert_S2D_BLAZE import convert_S2D_BLAZE
 from .get_files_names import get_files_names
 from .create_PRIMARY import create_PRIMARY
 from .validate_fits_file import validate_fits_file
+from .convert_CCF import convert_CCF
+from .convert_S1D import convert_S1D
 
 __all__ = [
     "convert_BLAZE",
@@ -14,4 +16,6 @@ __all__ = [
     "get_files_names",
     "create_PRIMARY",
     "validate_fits_file",
+    "convert_CCF",
+    "convert_S1D",
 ]
