@@ -224,6 +224,13 @@ def create_PRIMARY(
         "CCLR",
     ]
 
+    # One telescope, and validate_fits_file refuses solar targets.
+    l2_hdu.header["NUMTEL"] = (1, "Number of telescopes used in the observation")
+    l2_hdu.header["TELEID1"] = (
+        l2_hdu.header["TELESCOP"],
+        "Labels for telescopes as indexed in TCS keywords",
+    )
+    l2_hdu.header["ISSOLAR"] = (False, "Is this an observation of the sun?")
     l2_hdu.header["DATALVL"] = (
         f"L{level}",
         header_map[header_map["Keyword"] == "DATALVL"]["Description"].iloc[0],
