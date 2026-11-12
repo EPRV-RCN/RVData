@@ -2,7 +2,6 @@ import numpy as np
 from astropy import constants
 from scipy.signal import savgol_filter
 from scipy.interpolate import PchipInterpolator
-from bindensity import libbindensity
 
 
 def bindensity_resampling_fixed(new_x, x, y, cov=None, kind="cubic"):
@@ -59,6 +58,9 @@ def bindensity_resampling_fixed(new_x, x, y, cov=None, kind="cubic"):
     loop for certain inputs.
     2025-01, Leonardo A. Paredes
     """
+    # Imported here so that reading and writing L3 files works without a
+    # bindensity build (it ships no wheel for some Python versions).
+    from bindensity import libbindensity
 
     # Check shapes
     new_n = new_x.size - 1

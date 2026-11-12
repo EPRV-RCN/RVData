@@ -3,6 +3,9 @@ Level 2 Data Model for RV spectral data
 """
 
 # External dependencies
+import re
+import warnings
+
 from astropy.io import fits
 from astropy.table import Table
 import numpy as np
@@ -82,15 +85,30 @@ class RV4(rvdata.core.models.base.RVDataModel):
         order_table_columns = LEVEL4_RV_TABLE_COLUMNS["Name"].tolist()
         self.set_data("RV1", pd.DataFrame(columns=order_table_columns))
 
-    def _read(self, hdul: fits.HDUList) -> None:
+    def _extension_data_type(self, hdu):
+        """DataType for an HDU being read, from the L4 config where possible."""
         l4_ext = LEVEL4_EXTENSIONS.set_index("Name")
+        # Numbered extensions share one config row: DIAGNOSTICS2 -> DIAGNOSTICS1
+        canonical = re.sub(r"\d+$", "1", hdu.name)
+        if hdu.name in l4_ext.index:
+            return l4_ext.loc[hdu.name]["DataType"]
+        if canonical in l4_ext.index:
+            return l4_ext.loc[canonical]["DataType"]
+        if "RV" in hdu.name:
+            return "BinTableHDU"
+        if "CCF" in hdu.name:
+            return "ImageHDU"
+        fits_type = type(hdu).__name__
+        warnings.warn(
+            f"Non-standard extension '{hdu.name}' found in L4 file; "
+            f"reading it as {fits_type}.",
+            UserWarning,
+        )
+        return fits_type
+
+    def _read(self, hdul: fits.HDUList) -> None:
         for hdu in hdul:
-            if "RV" in hdu.name:
-                fits_type = "BinTableHDU"
-            elif "CCF" in hdu.name:
-                fits_type = "ImageHDU"
-            else:
-                fits_type = l4_ext.loc[hdu.name]["DataType"]
+            fits_type = self._extension_data_type(hdu)
             if hdu.name not in self.extensions.keys():
                 self.create_extension(hdu.name, fits_type)
 
