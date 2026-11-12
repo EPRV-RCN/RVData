@@ -29,7 +29,7 @@ from rvdata.tests.regression.compliance import (
 )
 
 FIXTURE_BASENAME = "Sun_20240126.5073.fits"
-FIXTURE_URL_ROOT = "http://grinnell.as.arizona.edu/~rvdata/expres"
+FIXTURE_URL_ROOT = "http://grinnell.as.arizona.edu/~rvdata/express"
 LOCAL_FIXTURE_DIR = "expres_fixtures"
 
 
