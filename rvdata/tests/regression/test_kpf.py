@@ -1,6 +1,7 @@
 import requests
 import os
 from astropy.io import fits
+from astropy.time import Time
 from rvdata.core.models.base import RVDataModel
 from rvdata.core.models.level2 import RV2
 from rvdata.core.models.level3 import RV3
@@ -50,6 +51,28 @@ def assert_full_dateobs(standard_file):
         f"DATE-OBS '{dateobs}' in {standard_file} lacks a time component"
 
 
+def assert_jd_utc_matches_dateobs(standard_file):
+    # The standard defines JD_UTC as the full Julian Date of DATE-OBS. Native
+    # KPF only carries MJD-OBS, which was once copied across unconverted,
+    # leaving ~60605 where ~2460605 belongs (issue #186).
+    header = fits.getheader(standard_file)
+    jd_utc = header["JD_UTC"]
+    expected = Time(header["DATE-OBS"], scale="utc").jd
+    assert abs(jd_utc - expected) < 1e-5, \
+        f"JD_UTC {jd_utc} in {standard_file} is not the JD of DATE-OBS " \
+        f"{header['DATE-OBS']} ({expected})"
+
+
+def assert_numorder_matches(standard_file, ext_name):
+    # NUMORDER was once a hard-coded 65 in the header map while KPF products
+    # carry 67 orders (35 green + 32 red).
+    with fits.open(standard_file) as hdul:
+        numorder = hdul[0].header["NUMORDER"]
+        n_rows = len(hdul[ext_name].data)
+    assert numorder == n_rows, \
+        f"NUMORDER {numorder} in {standard_file} != {n_rows} rows in {ext_name}"
+
+
 def test_kpf():
     l0file, l1file, l2file = download_files()
 
@@ -61,6 +84,8 @@ def test_kpf():
     assert os.path.basename(l2_standard).startswith("kpf_SL2_"), \
         f"L2 filename should start with 'kpf_SL2_', got '{os.path.basename(l2_standard)}'"
     assert_full_dateobs(l2_standard)
+    assert_jd_utc_matches_dateobs(l2_standard)
+    assert_numorder_matches(l2_standard, "TRACE1_FLUX")
     check_l2_compliance(l2_standard)
 
     # Check L3
@@ -82,6 +107,8 @@ def test_kpf():
     assert os.path.basename(l4_standard).startswith("kpf_SL4_"), \
         f"L4 filename should start with 'kpf_SL4_', got '{os.path.basename(l4_standard)}'"
     assert_full_dateobs(l4_standard)
+    assert_jd_utc_matches_dateobs(l4_standard)
+    assert_numorder_matches(l4_standard, "RV1")
     check_l4_compliance(l4_standard)
 
 
