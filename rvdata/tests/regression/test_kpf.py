@@ -63,6 +63,16 @@ def assert_jd_utc_matches_dateobs(standard_file):
         f"{header['DATE-OBS']} ({expected})"
 
 
+def assert_numorder_matches(standard_file, ext_name):
+    # NUMORDER was once a hard-coded 65 in the header map while KPF products
+    # carry 67 orders (35 green + 32 red).
+    with fits.open(standard_file) as hdul:
+        numorder = hdul[0].header["NUMORDER"]
+        n_rows = len(hdul[ext_name].data)
+    assert numorder == n_rows, \
+        f"NUMORDER {numorder} in {standard_file} != {n_rows} rows in {ext_name}"
+
+
 def test_kpf():
     l0file, l1file, l2file = download_files()
 
@@ -75,6 +85,7 @@ def test_kpf():
         f"L2 filename should start with 'kpf_SL2_', got '{os.path.basename(l2_standard)}'"
     assert_full_dateobs(l2_standard)
     assert_jd_utc_matches_dateobs(l2_standard)
+    assert_numorder_matches(l2_standard, "TRACE1_FLUX")
     check_l2_compliance(l2_standard)
 
     # Check L3
@@ -97,6 +108,7 @@ def test_kpf():
         f"L4 filename should start with 'kpf_SL4_', got '{os.path.basename(l4_standard)}'"
     assert_full_dateobs(l4_standard)
     assert_jd_utc_matches_dateobs(l4_standard)
+    assert_numorder_matches(l4_standard, "RV1")
     check_l4_compliance(l4_standard)
 
 

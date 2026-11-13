@@ -131,6 +131,7 @@ class KPFRV4(RV4):
         rv_header["RVSTEP"] = ccf_meta["STEPV"]
         rv_header["MASK"] = ccf_meta["SCI_MASK"]
 
+        self.headers["PRIMARY"]["NUMORDER"] = len(rvdata)
         self.set_data("RV1", rvdata)
         self.set_header("RV1", rv_header)
 
