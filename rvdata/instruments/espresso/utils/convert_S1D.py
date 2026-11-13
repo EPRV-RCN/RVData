@@ -63,6 +63,11 @@ def convert_S1D(
     RV3.headers['PRIMARY']["BLZCORR"] = (True, 'Has blaze been removed?')
     RV3.headers['PRIMARY']["LMPCORR"] = (True, 'Has lamp SED been removed?')
     RV3.headers['PRIMARY']["SEDCORR"] = (False, 'Has SED been removed?')
+    # create_PRIMARY replaced the PRIMARY header, so set every required level 3
+    # keyword here. The DRS resampled the S1D and does not record how.
+    RV3.headers['PRIMARY']["INTERPMD"] = ('UNDEFINED', 'Resampled by the ESPRESSO DRS')
+    RV3.headers['PRIMARY']["FLXNRMMD"] = ('None', 'S1D flux is in e-, not normalized')
+    RV3.headers['PRIMARY']["DISPCORR"] = (False, 'Not recorded by the ESPRESSO DRS')
     for file in ['s1d_A', 's1d_B', 's1d_skysub_A', 's1d_tell_corr_A']:
         if not file_names[file] or not os.path.exists(file_names[file]):
             print(f"File {file_names[file]} does not exist.")
@@ -76,15 +81,17 @@ def convert_S1D(
                         continue
                     corr = 'SKYSUB' if 'skysub' in file else ('TELLCORR' if 'tell_corr' in file else 'CORR')
                     extname = extname.replace('CORR', corr)
+                    # The DRS 'error' column is 1-sigma; the VAR extensions hold variance.
+                    values = data[col] ** 2 if col == 'error' else data[col]
                     if extname not in RV3.extensions:
                         # If the extension does not exist, create it
                         RV3.create_extension(
                             ext_name=extname,
                             ext_type=ext_type,
-                            data=data[col],
+                            data=values,
                         )
                     else:
                         # If the extension exists, update its data and header
-                        RV3.set_data(extname, data[col])
+                        RV3.set_data(extname, values)
                     if extname not in RV3.data['EXT_DESCRIPT']['Name']:
                         add_to_ext_descript(RV3, extname, ext_descript[extname])
