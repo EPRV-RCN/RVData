@@ -12,8 +12,16 @@ import re
 import warnings
 from collections import OrderedDict
 
-import git
-from git.exc import InvalidGitRepositoryError
+try:
+    import git
+    from git.exc import InvalidGitRepositoryError
+except ImportError:
+    # GitPython is installed but cannot find a git executable (e.g. a minimal
+    # compute node). Receipts then take the version from package metadata.
+    git = None
+
+    class InvalidGitRepositoryError(Exception):
+        """Stand-in for git.exc.InvalidGitRepositoryError when git is unavailable."""
 
 import numpy as np
 import pandas as pd
@@ -534,6 +542,8 @@ class RVDataModel(object):
             # git.Repo() must be inside the try: it raises InvalidGitRepositoryError
             # when run outside a checkout (e.g. a pip-installed package), which the
             # except clause below is meant to handle by falling back to package metadata.
+            if git is None:
+                raise InvalidGitRepositoryError("no git executable")
             repo = git.Repo(search_parent_directories=True)
             git_commit_hash = repo.head.object.hexsha
             git_branch = repo.active_branch.name
