@@ -268,10 +268,14 @@ class RV3(rvdata.core.models.base.RVDataModel):
                     inst_stitch_config["velpix"],
                 )
 
-                # Stitch the deblazed spectrum into wavelength grid using inverse-variance weighting
+                # Stitch the deblazed spectrum into wavelength grid using inverse-variance weighting.
+                # The bin edges are the level 2 wavelengths, not sci_wavm: a
+                # masked pixel's flux is already NaN, and NaN-ing its
+                # wavelength too would move the edge of its neighbour's bin.
+                sci_wav_edges = np.where(sci_wav > 0, sci_wav, np.nan)
                 st_wav[trace_num], st_flx[trace_num], st_var[trace_num] = (
                     stitch_spectrum.stitch_deblazed_spectrum(
-                        wavegrid, sci_wavm, sci_dflxm, sci_dcovm
+                        wavegrid, sci_wav_edges, sci_dflxm, sci_dcovm
                     )
                 )
 
