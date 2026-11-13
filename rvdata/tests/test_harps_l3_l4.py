@@ -18,7 +18,11 @@ from rvdata.core.models.level3 import RV3
 from rvdata.core.models.level4 import RV4
 
 INSTRUMENTS = {"harps": "ESO", "harpsn": "TNG"}
-RAW = "HARPS.2023-01-01T00:00:00.000.fits"
+# Real ESO archive names carry colons (HARPS.2023-01-01T00:00:00.000.fits),
+# but Windows forbids ':' in filenames and these tests write the derived
+# products to disk. The L3/L4 name derivation is pure string concatenation,
+# so a colon-free stand-in exercises the same code.
+RAW = "HARPS.2023-01-01T00-00-00.000.fits"
 NPIX, NVEL, NORDER = 6, 5, 3
 
 
