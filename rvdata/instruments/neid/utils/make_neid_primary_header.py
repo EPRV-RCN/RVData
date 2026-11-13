@@ -4,6 +4,21 @@ import os
 import pandas as pd
 
 
+# Required catalogue keywords for a science trace whose object has no catalogue entry
+# (e.g. the Sun on solar-feed frames, where QOBJECT is blank). Values follow the
+# Default column of L2-PRIMARY-keywords.csv; Float keywords get an undefined value
+# rather than the string "UNDEFINED".
+UNKNOWN_CATALOGUE = {
+    "CSRC": "UNKNOWN",
+    "CID": "UNKNOWN",
+    "CRA": "UNKNOWN",
+    "CDEC": "UNKNOWN",
+    "CEQNX": None,
+    "CEPCH": None,
+    "CRV": None,
+}
+
+
 def get_neid_instrument_era(obs_jd):
     """Function to determine which NEID instrument era a given
        observation falls under.
@@ -108,18 +123,27 @@ def make_base_primary_header(inst_pri_hdr):
             for pkey, ikey in catalogue_map.items():
                 mode_dep_phead[f"{pkey}{i_fiber + 1}"] = inst_pri_hdr[ikey]
             mode_dep_phead[f"CSRC{i_fiber + 1}"] = "GAIADR2"
+        elif fiber == "SCI":
+            for pkey, value in UNKNOWN_CATALOGUE.items():
+                mode_dep_phead[f"{pkey}{i_fiber + 1}"] = value
 
     # Set up data standard primary header
     hmap_path = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "config/header_map.csv"
     )
-    headmap = pd.read_csv(hmap_path, header=0)
+    # Only blank cells are missing: the DEFAULT column holds the literal string "None"
+    # (CLSRC1/CLSRC2), which pandas would otherwise read as NaN.
+    headmap = pd.read_csv(hmap_path, header=0, keep_default_na=False, na_values=[""])
 
     phead = fits.PrimaryHDU().header
     for i, row in headmap.iterrows():
         skey = row["STANDARD"]
         instkey = row["INSTRUMENT"]
-        if row["MODE_DEP"] != "Y":
+        if skey in mode_dep_phead.keys():
+            # Values set for this observation (e.g. CLSRC on calibration frames) win
+            # over the static map, including for keys that have a DEFAULT.
+            phead[skey] = mode_dep_phead[skey]
+        elif row["MODE_DEP"] != "Y":
             if pd.notnull(instkey):
                 instval = inst_pri_hdr[instkey]
             else:
@@ -129,10 +153,7 @@ def make_base_primary_header(inst_pri_hdr):
             else:
                 phead[skey] = None
         else:
-            if skey in mode_dep_phead.keys():
-                phead[skey] = mode_dep_phead[skey]
-            else:
-                continue
+            continue
 
     # Add instrument era
     phead["INSTERA"] = get_neid_instrument_era(phead["JD_UTC"])
