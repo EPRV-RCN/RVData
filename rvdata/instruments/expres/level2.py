@@ -92,6 +92,16 @@ def instrument_era(mjd):
     return str(expres_epochs[np.sum(mjd >= epoch_start_mjd) - 1])
 
 
+def _site_coord(head2, key2, head0, key0):
+    """Site coordinate barycorrpy used (HDU 2), else the primary SITE* card,
+    else None. Only reads the fallback when HDU 2 lacks the key."""
+    if key2 in head2:
+        return float(head2[key2])
+    if key0 in head0:
+        return float(head0[key0])
+    return None
+
+
 class EXPRESRV2(RV2):
     """
     Data model and reader for RVData Level 2 data constructed from an EXPRES
@@ -154,9 +164,9 @@ class EXPRESRV2(RV2):
             # barycorrpy (HDU 2 kwargs LAT/LONGI/ALT) builds the site with
             # astropy EarthLocation.from_geodetic, whose ellipsoid is WGS84.
             "GEOSYS": "WGS84",
-            "OBSLON": float(head2.get("LONGI", head0["SITELONG"])),
-            "OBSLAT": float(head2.get("LAT", head0["SITELAT"])),
-            "OBSALT": float(head2.get("ALT", head0["SITEELEV"])),
+            "OBSLON": _site_coord(head2, "LONGI", head0, "SITELONG"),
+            "OBSLAT": _site_coord(head2, "LAT", head0, "SITELAT"),
+            "OBSALT": _site_coord(head2, "ALT", head0, "SITEELEV"),
             "ISSOLAR": is_solar,
             "DRPTAG": str(head1["VERSION"]),
             "EPRVTAG": f"v{version}" if version else None,

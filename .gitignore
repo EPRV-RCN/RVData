@@ -172,3 +172,5 @@ log.txt
 checkout_summary.txt
 standard.fits
 .vscode/settings.json
+# Standard files that translators write to the working directory
+/*_SL[234]_*.fits
