@@ -9,4 +9,5 @@
    tutorials/KPF_Tutorial
    tutorials/MAROONX_Tutorial
    tutorials/NEID_Tutorial
+   tutorials/EXPRES_Tutorial
    tutorials/ESPRESSO_Tutorial
