@@ -585,6 +585,40 @@ def calculate_normalized_blaze_function(
         return sci_blze
 
 
+def _finite_bin_edges(order_wav):
+    """
+    Fill the NaN wavelengths of one order so it can serve as bin edges.
+
+    bindensity_resampling_fixed finds bins with np.searchsorted, which needs
+    finite, sorted edges. With NaNs among the edges its result is undefined,
+    and it changed between numpy 2.3 and 2.5. Interior NaNs are interpolated
+    from the neighbouring pixels and NaNs at either end are extrapolated
+    linearly. The flux of those pixels stays NaN, so their bins stay undefined.
+
+    Parameters:
+    -----------
+    order_wav : np.ndarray
+        Increasing wavelengths of one order, possibly with NaNs.
+
+    Returns:
+    --------
+    np.ndarray or None
+        The filled wavelengths, or None if fewer than two are finite.
+    """
+    good = np.isfinite(order_wav)
+    idx = np.flatnonzero(good)
+    if idx.size < 2:
+        return None
+    if idx.size == order_wav.size:
+        return order_wav
+    pix = np.arange(order_wav.size)
+    edges = np.interp(pix, idx, order_wav[idx])
+    for end, ref in ((pix < idx[0], idx[:2]), (pix > idx[-1], idx[-2:])):
+        slope = (order_wav[ref[1]] - order_wav[ref[0]]) / (ref[1] - ref[0])
+        edges[end] = order_wav[ref[0]] + slope * (pix[end] - ref[0])
+    return edges
+
+
 def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1):
     """
     Stitch deblazed spectrum from multiple echelle orders onto a common wavelength grid.
@@ -633,10 +667,16 @@ def stitch_deblazed_spectrum(wavegrid, sci_wav, sci_dflx, sci_dcov, min_orders=1
     flx_stack = []
     var_stack = []
     for iord in range(sci_dflx.shape[0]):
+        edges = _finite_bin_edges(sci_wav[iord, :])
+        if edges is None:  # no usable wavelengths in this order
+            flx_stack.append(np.full(wavegrid.size - 1, np.nan))
+            var_stack.append(np.full(wavegrid.size - 1, np.nan))
+            continue
+
         # temporary replacement of bindensity.resampling until fixed in bindensity package
         flx_var_grid = bindensity_resampling_fixed(
             wavegrid,
-            sci_wav[iord, :],
+            edges,
             sci_dflx[
                 iord, :-1
             ],  # bindensity expects flux array pixel dimension to be length N-1
