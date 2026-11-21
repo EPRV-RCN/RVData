@@ -195,8 +195,10 @@ class NEIDRV2(RV2):
 
         # Drift
 
-        # Just set the value of driftrv0 from the header in km/s
-        drift_data = np.array([hdul["PRIMARY"].header["driftrv0"] / 1e3])
+        # Just set the value of driftrv0 from the header in km/s. Some frames leave it
+        # blank, which astropy reads as None.
+        driftrv0 = hdul["PRIMARY"].header.get("DRIFTRV0")
+        drift_data = np.array([driftrv0 / 1e3 if driftrv0 is not None else np.nan])
         drift_meta = fits.Header(
             {"COMMENT": "NEID drift relative to start of observing session"}
         )
