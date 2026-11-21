@@ -8,6 +8,7 @@ from collections import OrderedDict
 # import base class
 from rvdata.core.models.level4 import RV4
 from rvdata.core.models.definitions import LEVEL4_EXTENSIONS
+from rvdata.instruments.kpf.utils import jd_utc
 
 
 # KPF Level2 Reader
@@ -83,6 +84,7 @@ class KPFRV4(RV4):
                 phead[skey] = kpfval
             else:
                 phead[skey] = None
+        phead["JD_UTC"] = jd_utc(phead["DATE-OBS"], ihead)
 
         self.set_header("PRIMARY", phead)
         self.set_header("INSTRUMENT_HEADER", ihead)
@@ -129,6 +131,7 @@ class KPFRV4(RV4):
         rv_header["RVSTEP"] = ccf_meta["STEPV"]
         rv_header["MASK"] = ccf_meta["SCI_MASK"]
 
+        self.headers["PRIMARY"]["NUMORDER"] = len(rvdata)
         self.set_data("RV1", rvdata)
         self.set_header("RV1", rv_header)
 
