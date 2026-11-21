@@ -39,6 +39,13 @@ extnames = {
     "DLLDATA_VAC_BARY": "_DISP",
 }
 
+# Allows the conversion of S1D files (level 3)
+extnames_s1d = {
+    "wavelength": ["STITCHED_CORR_SCI_WAVE"],
+    "flux": ["STITCHED_CORR_SCI_FLUX"],
+    "error": ["STITCHED_CORR_SCI_VAR"],
+}
+
 # Define the time ranges of instrument versions
 INSTRUMENT_VERSIONS = [
     {

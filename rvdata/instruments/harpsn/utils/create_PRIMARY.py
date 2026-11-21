@@ -42,7 +42,9 @@ import rvdata.instruments.harpsn.config.config as config
 from rvdata.core.models.level2 import RV2
 
 
-def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> None:
+def create_PRIMARY(
+    RV2: RV2, names: list[str], nb_trace: int, nb_slice: int, level: int = 2
+) -> None:
     """
     Create the PRIMARY HDU for the L2 FITS file by copying relevant metadata
     from different files and applying necessary transformations.
@@ -58,6 +60,8 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> 
             to their corresponding file paths.
         nb_trace (int): Number of traces in the dataset.
         nb_slice (int): Number of slices in the dataset.
+        level (int): Data level of the file being built (2, 3 or 4).
+            Sets DATALVL; EXSNRW is only written at level 2.
 
     Returns:
         None : The function modifies the RV2 object in place by adding or
@@ -209,6 +213,17 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> 
         "CCLR",
     ]
 
+    # One telescope, and validate_fits_file refuses solar targets.
+    l2_hdu.header["NUMTEL"] = (1, "Number of telescopes used in the observation")
+    l2_hdu.header["TELEID1"] = (
+        l2_hdu.header["TELESCOP"],
+        "Labels for telescopes as indexed in TCS keywords",
+    )
+    l2_hdu.header["ISSOLAR"] = (False, "Is this an observation of the sun?")
+    l2_hdu.header["DATALVL"] = (
+        f"L{level}",
+        header_map[header_map["Keyword"] == "DATALVL"]["Description"].iloc[0],
+    )
     with fits.open(names["raw_file"]) as hdu_raw:
         dpr_type = hdu_raw["PRIMARY"].header["HIERARCH TNG DPR TYPE"].split(",")
         for i in range(1, nb_trace + 1):
@@ -416,8 +431,8 @@ def create_PRIMARY(RV2: RV2, names: list[str], nb_trace: int, nb_slice: int) -> 
             header_map[header_map["Keyword"] == "EXSNR"]["Description"].iloc[0],
         )
 
-    # EXSNRW-N KEYWORD
-    for i in range(int(l2_hdu.header["NUMORDER"])):
+    # EXSNRW-N KEYWORD (needs the level 2 wavelength solution)
+    for i in range(int(l2_hdu.header["NUMORDER"]) if level == 2 else 0):
         l2_hdu.header[f"EXSNRW{str(i+1)}"] = (
             round(
                 RV2.data["TRACE1_WAVE"][i, 0]
