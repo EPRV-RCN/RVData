@@ -146,7 +146,7 @@ class MAROONXRV4(RV4):
         phead = phdr
         phead["DATALVL"] = 'L4'
         # Add RV specific entries to the primary header
-        phead["BJD_TDB"] = bjd_tdb
+        phead["BJDTDB"] = bjd_tdb
         phead["RV"] = rv_sel/1000
         phead["RVERR"] = erv_sel/1000
         phead["RVMETHOD"] = "SERVAL"

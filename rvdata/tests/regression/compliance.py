@@ -4,6 +4,19 @@ import re
 import pandas as pd
 from astropy.io import fits
 
+_TRUTHY = {"true", "yes", "y", "1"}
+
+
+def _is_required(value):
+    """Interpret a config CSV "Required" cell.
+
+    pandas parses a True/False column as bool, while some CSVs spell it
+    Yes/No, so compare normalized strings rather than one literal.
+    """
+    if pd.isna(value):
+        return False
+    return str(value).strip().casefold() in _TRUTHY
+
 
 def check_l2_extensions(inpfile):
     l2_csv = (
@@ -13,10 +26,9 @@ def check_l2_extensions(inpfile):
     extdf = reference_extensions
     with fits.open(inpfile) as hdul:
         # check that all required extensions exist
-        hdul = fits.open(inpfile)
         for i, row in extdf.iterrows():
             ext = row["Name"]
-            req = row["Required"]
+            req = _is_required(row["Required"])
             if req:
                 assert ext in hdul, f"Required extension {ext} not found in {inpfile}"
 
@@ -49,7 +61,7 @@ def check_l2_header(header):
     reference_header = pd.read_csv(ref_csv)
     for i, row in reference_header.iterrows():
         key = row["Keyword"].split()[0]
-        req = row["Required"]
+        req = _is_required(row["Required"])
         if req and (key not in header):
             print(key, req)
             assert key in header, f"Keyword {key} not found in header"
@@ -70,7 +82,7 @@ def check_l3_extensions(inpfile):
         # check that all required extensions exist
         for i, row in extdf.iterrows():
             ext = row["Name"]
-            req = row["Required"]
+            req = _is_required(row["Required"])
             if req:
                 assert ext in hdul, f"Required extension {ext} not found in {inpfile}"
 
@@ -109,7 +121,7 @@ def check_l3_header(header):
     )
     for i, row in reference_header.iterrows():
         key = row["Keyword"]
-        req = row["Required"] == "Y"
+        req = _is_required(row["Required"])
         if "#" in key or "..." in key:
             # print(f"Stripping multi keyword: {key}")
             key = key.split("...")[0].strip()
@@ -133,7 +145,7 @@ def check_l4_extensions(inpfile):
         # check that all required extensions exist
         for i, row in extdf.iterrows():
             ext = row["Name"]
-            req = row["Required"]
+            req = _is_required(row["Required"])
             if req:
                 assert ext in hdul, f"Required extension {ext} not found in {inpfile}"
 
@@ -154,8 +166,6 @@ def check_l4_extensions(inpfile):
                 hdu.name in ext_names_in_table
             ), f"Extension {hdu.name} present in data but missing from EXT_DESCRIPT table."
 
-    hdul.close()
-
 
 def check_l4_header(header):
     ref_csv_l2 = (
@@ -171,7 +181,7 @@ def check_l4_header(header):
     )
     for i, row in reference_header.iterrows():
         key = row["Keyword"]
-        req = row["Required"] == "Y"
+        req = _is_required(row["Required"])
         if "#" in key or "..." in key:
             # print(f"Stripping multi keyword: {key}")
             key = key.split("...")[0].strip()
@@ -309,15 +319,8 @@ def _check_table_columns(
     # Determine required columns: if CSV has a Required column use it,
     # otherwise all columns are required
     if "Required" in reference_columns.columns:
-        normalized_required = (
-            reference_columns["Required"]
-            .astype(str)
-            .str.strip()
-            .str.casefold()
-        )
-        truthy_values = {"yes", "y", "true", "1"}
         required_columns = reference_columns.loc[
-            normalized_required.isin(truthy_values), "Name"
+            reference_columns["Required"].map(_is_required), "Name"
         ].tolist()
     else:
         required_columns = all_standard_columns

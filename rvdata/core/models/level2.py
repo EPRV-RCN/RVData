@@ -4,6 +4,7 @@ Level 2 Data Model for RV spectral data
 
 # External dependencies
 import re
+import warnings
 
 from astropy.io import fits
 from astropy.table import Table
@@ -81,19 +82,37 @@ class RV2(rvdata.core.models.base.RVDataModel):
         order_table_columns = BASE_ORDER_TABLE_COLUMNS["Name"].tolist()
         self.set_data("ORDER_TABLE", pd.DataFrame(columns=order_table_columns))
 
-    def _read(self, hdul: fits.HDUList) -> None:
-        l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
+    @staticmethod
+    def _canonical_ext_name(ext_name):
+        """Map a numbered extension to its config row name.
 
+        Example: CUSTOM2_TRACE3_WAVE -> CUSTOM1_TRACE1_WAVE
+        """
+        canonical = re.sub(r"(?<=CUSTOM)\d+", "1", ext_name)
+        return re.sub(r"(?<=TRACE)\d+", "1", canonical)
+
+    def _extension_data_type(self, hdu):
+        """DataType for an HDU being read, from the L2 config where possible."""
+        l2_ext = LEVEL2_EXTENSIONS.set_index("Name")
+        canonical = self._canonical_ext_name(hdu.name)
+        if canonical in l2_ext.index:
+            return l2_ext.loc[canonical]["DataType"]
+        if "IMAGE" in hdu.name:
+            return l2_ext.loc["IMAGE"]["DataType"]
+        if "DRIFT" in hdu.name:
+            # e.g. the HARPS and HARPS-N translators write a plain "DRIFT"
+            return l2_ext.loc["TRACE1_DRIFT"]["DataType"]
+        fits_type = type(hdu).__name__
+        warnings.warn(
+            f"Non-standard extension '{hdu.name}' found in L2 file; "
+            f"reading it as {fits_type}.",
+            UserWarning,
+        )
+        return fits_type
+
+    def _read(self, hdul: fits.HDUList) -> None:
         for hdu in hdul:
-            if "TRACE" in hdu.name:
-                t1 = "TRACE1_" + hdu.name.split("_")[1]
-                fits_type = l2_ext.loc[t1]["DataType"]
-            elif "IMAGE" in hdu.name:
-                fits_type = l2_ext.loc["IMAGE"]["DataType"]
-            elif "DRIFT" in hdu.name:
-                fits_type = l2_ext.loc["DRIFT"]["DataType"]
-            else:
-                fits_type = l2_ext.loc[hdu.name]["DataType"]
+            fits_type = self._extension_data_type(hdu)
             if hdu.name not in self.extensions.keys():
                 self.create_extension(hdu.name, fits_type)
 
@@ -111,8 +130,7 @@ class RV2(rvdata.core.models.base.RVDataModel):
     def _get_min_bit_depth(self, ext_name):
         """Look up MinBitDepth for an ImageHDU extension from the L2 config."""
         # Handle multiplicity: CUSTOM2_TRACE2_WAVE -> CUSTOM1_TRACE1_WAVE
-        canonical = re.sub(r'(?<=CUSTOM)\d+', '1', ext_name)
-        canonical = re.sub(r'(?<=TRACE)\d+', '1', canonical)
+        canonical = self._canonical_ext_name(ext_name)
         row = LEVEL2_EXTENSIONS[LEVEL2_EXTENSIONS["Name"] == canonical]
         if row.empty:
             row = LEVEL2_EXTENSIONS[LEVEL2_EXTENSIONS["Name"] == ext_name]
