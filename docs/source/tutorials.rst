@@ -36,6 +36,15 @@ The :doc:`NEID Tutorial <tutorials/NEID_Tutorial>` provides a comprehensive guid
 - **Level 3**: Creating stitched 1D spectra from L2, accessing full stitched spectra, examining spectral features
 - **Level 4**: Creating RV measurements from native NEID L2, analyzing velocities
 
+EXPRES Tutorial
+---------------
+
+The :doc:`EXPRES Tutorial <tutorials/EXPRES_Tutorial>` provides a guide to working with EXPRES data at all levels:
+
+- **Level 2**: Creating L2 from the native EXPRES fitspec file, examining the primary header and echelle orders
+- **Level 3**: Creating the stitched 1D spectrum from the fitspec file
+- **Level 4**: Creating RV measurements from the native ccf + fitspec pair, per-order RVs, the combined CCF and activity diagnostics
+
 ESPRESSO Tutorial
 -----------------
 
