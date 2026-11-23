@@ -218,30 +218,20 @@ class NEIDRV4(RV4):
             "Mn539": "Mn539",
         }
 
+        activity = hdul["ACTIVITY"].data
         for index_name_neid, index_name_std in neid_activity_use.items():
-            # Location in the NEID table with that index
-            table_loc = np.where(hdul["ACTIVITY"].data["INDEX"] == index_name_neid)[0]
-
-            diagnostics_table_data["metric_name"].append(index_name_std)
-            diagnostics_table_data["value"].append(
-                hdul["ACTIVITY"].data["VALUE"][table_loc][0]
-            )
-            diagnostics_table_data["uncertainty"].append(
-                hdul["ACTIVITY"].data["UNCERTAINTY"][table_loc][0]
-            )
-
-            # Also output the telluric corrected version
-            table_loc = np.where(
-                hdul["ACTIVITY"].data["INDEX"] == (index_name_neid + "_tellcorr")
-            )[0]
-
-            diagnostics_table_data["metric_name"].append(index_name_std + "_tellcorr")
-            diagnostics_table_data["value"].append(
-                hdul["ACTIVITY"].data["VALUE"][table_loc][0]
-            )
-            diagnostics_table_data["uncertainty"].append(
-                hdul["ACTIVITY"].data["UNCERTAINTY"][table_loc][0]
-            )
+            # The plain index, then its telluric-corrected version. An index the
+            # NEID pipeline did not compute is recorded as NaN.
+            for suffix in ("", "_tellcorr"):
+                table_loc = np.where(activity["INDEX"] == index_name_neid + suffix)[0]
+                found = len(table_loc) > 0
+                diagnostics_table_data["metric_name"].append(index_name_std + suffix)
+                diagnostics_table_data["value"].append(
+                    activity["VALUE"][table_loc[0]] if found else np.nan
+                )
+                diagnostics_table_data["uncertainty"].append(
+                    activity["UNCERTAINTY"][table_loc[0]] if found else np.nan
+                )
 
         # Add CCF activity indicators as well
         diagnostics_table_data["metric_name"].append("CCF_FWHM")
