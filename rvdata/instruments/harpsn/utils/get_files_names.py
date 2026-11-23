@@ -22,7 +22,9 @@ import os
 import rvdata.instruments.harpsn.config.config as config
 
 
-def get_files_names(full_path: str, directory_structure: str) -> dict:
+def get_files_names(
+    full_path: str, directory_structure: str, level: int = 2
+) -> dict:
     """
     This function retrieves the names of related FITS files based on a given
     file's path and constructs a dictionary containing paths to these files.
@@ -31,6 +33,9 @@ def get_files_names(full_path: str, directory_structure: str) -> dict:
         full_path (str): The full path to the raw file.
         directory_structure (str): Type of database architecture that stores
             resources. Must be either 'dace' or 'standard'.
+        level (int): Data level being produced. 2 (the default) needs
+            the S2D, BLAZE and DRIFT products, 3 the S1D ones and 4 the
+            CCF ones.
 
     Returns:
         dict: A dictionary with keys representing the file types and values
@@ -44,6 +49,23 @@ def get_files_names(full_path: str, directory_structure: str) -> dict:
         repo_path = repo_path.replace(
             "HARPNRAW/raw", f"HARPNDRS/{config.DRS_VERSION}/reduced"
         )
+
+    if level == 3:
+        return {
+            "raw_file": full_path,
+            "s1d_A": _product(repo_path, base_file_name, "S1D_A"),
+            "s1d_B": _product(repo_path, base_file_name, "S1D_B"),
+            "s1d_skysub_A": _product(repo_path, base_file_name, "S1D_SKYSUB_A"),
+            "s1d_tell_corr_A": _product(repo_path, base_file_name, "S1D_TELL_CORR_A"),
+        }
+    if level == 4:
+        return {
+            "raw_file": full_path,
+            "ccf_file": _product(repo_path, base_file_name, "CCF_A"),
+            "ccf_file_B": _product(repo_path, base_file_name, "CCF_B"),
+            "ccf_tel_corr_file": _product(repo_path, base_file_name, "CCF_TELL_CORR_A"),
+            "ccf_sky_file": _product(repo_path, base_file_name, "CCF_SKYSUB_A"),
+        }
 
     # Construct paths for the S2D and BLAZE FITS files (both A and B versions)
     s2d_blaze_file_A = os.path.join(
@@ -106,6 +128,11 @@ def get_files_names(full_path: str, directory_structure: str) -> dict:
         "drift_file_B": drift_file_B,
     }
     return names
+
+
+def _product(repo_path: str, base_file_name: str, suffix: str) -> str:
+    """Path of the DRS product ``r.<raw name>_<suffix>.fits``."""
+    return os.path.join(repo_path, "r." + base_file_name[:-5] + f"_{suffix}.fits")
 
 
 def adjust_repo_path(
