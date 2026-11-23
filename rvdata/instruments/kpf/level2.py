@@ -9,6 +9,7 @@ from collections import OrderedDict
 
 # import base class
 from rvdata.core.models.level2 import RV2
+from rvdata.instruments.kpf.utils import jd_utc
 
 
 # KPF Level2 Reader
@@ -312,6 +313,8 @@ class KPFRV2(RV2):
                 phead[skey] = (None, description)
 
         phead["ISSOLAR"] = (ihead["OBJECT"].lower() == "socal", "Is this the Sun?")
+        phead["JD_UTC"] = (jd_utc(phead["DATE-OBS"][0], ihead), phead["JD_UTC"][1])
+        phead["NUMORDER"] = (wavelengths.shape[0], phead["NUMORDER"][1])
         self.set_header("PRIMARY", phead)
 
         # overwrite EXT_DESCRIPT as a DataFrame, dropping the Comments column
